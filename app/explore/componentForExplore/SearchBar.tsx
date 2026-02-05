@@ -1,4 +1,6 @@
-import { Search, SlidersHorizontal } from 'lucide-react';
+'use client';
+
+import { Search, Mic } from 'lucide-react';
 
 interface SearchBarProps {
   searchQuery: string;
@@ -10,31 +12,22 @@ interface SearchBarProps {
 export function SearchBar({ 
   searchQuery, 
   onSearchChange, 
-  onFiltersToggle,
-  showFiltersIndicator = false 
 }: SearchBarProps) {
   return (
-  
-    <div className="px-4 py-3  bg-white">
-      <div className="relative">
+    <div className="px-3 sm:px-4 md:px-5 py-2 sm:py-3 bg-white">
+      <div className="relative max-w-full sm:max-w-md md:max-w-lg mx-auto">
+        <Search className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 w-4 sm:w-5 h-4 sm:h-5 text-[#9CA3AF]" />
         <input
           type="text"
-          placeholder="ابحث عن مطعم أو وجبة…"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="w-full py-3 px-12 bg-[#F9FAFB] border border-[#E5E7EB] rounded-2xl text-right placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#E5A04D] focus:border-transparent transition-all"
-        />        <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#6B7280]" />
-        <button 
-          onClick={onFiltersToggle}
-          className="absolute left-4 top-1/2 -translate-y-1/2 p-1 hover:bg-[#F3F4F6] rounded-lg transition-colors"
-        >
-          <SlidersHorizontal className="w-5 h-5 text-[#6B7280]" />
-          {showFiltersIndicator && (
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#E5A04D] rounded-full"></span>
-          )}
+          placeholder="ابحث عن مطعم..."
+          className="w-full h-10 sm:h-11 md:h-12 pr-10 sm:pr-12 pl-10 sm:pl-12 bg-[#F3F4F6] border-none rounded-full text-xs sm:text-sm placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#E5A04D] focus:bg-white transition-all"
+        />
+        <button className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 w-6 sm:w-7 h-6 sm:h-7 flex items-center justify-center text-[#9CA3AF] hover:text-[#E5A04D] active:scale-95 transition-all rounded-full hover:bg-[#FEF3E2]">
+          <Mic className="w-4 sm:w-5 h-4 sm:h-5" />
         </button>
       </div>
     </div>
-  
   );
 }

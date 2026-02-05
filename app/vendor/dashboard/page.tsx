@@ -54,8 +54,6 @@ export default function VendorDashboard() {
     totalDishes: 0,
     topDishes: [],
     recentOrders: [],
-   
-
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -107,11 +105,13 @@ export default function VendorDashboard() {
 
       const stats = dashboardRes.data;
       const orders = ordersRes.data.orders || [];
+const resStatus = await api.get('/restaurant/profile-status');
+
 console.log('Fetched dashboard stats:', stats);
       console.log('Fetched recent orders:', orders);
       setDashboardData({
         restaurantName: stats.restaurant.name || 'مطعمي',
-        isOpen: stats.restaurant.isOpen ?? true,
+        isOpen: resStatus.data.is_open,
         todayRevenue: stats.stats.revenue.today || 0,
         todayOrders: stats.stats.orders.today || 0,
         pendingOrders: stats.stats.orders.pending || 0,

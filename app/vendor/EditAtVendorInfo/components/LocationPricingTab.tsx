@@ -1,13 +1,27 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Toggle } from './Toggle';
-import { MapPin, Truck } from 'lucide-react';
+import { MapPin, Truck, Map, Locate, RefreshCw } from 'lucide-react';
+import dynamic from 'next/dynamic';
+import { reverseGeocode, forwardGeocode } from '../utils/geocoding';
+
+const LocationPicker = dynamic(() => import('../../../signup/vendor/LocationPicker'), {
+  ssr: false,
+  loading: () => <div className="h-[400px] w-full bg-gray-100 animate-pulse rounded-xl" />,
+});
 
 interface LocationData {
   location?: string;
   allowed_radius_km?: number;
   delivery_fees?: number;
+  latitude?: number | null;
+  longitude?: number | null;
+}
+
+interface Coordinates {
+  lat: number | null;
+  lng: number | null;
 }
 
 interface LocationPricingTabProps {
@@ -17,26 +31,155 @@ interface LocationPricingTabProps {
 
 export function LocationPricingTab({ data, onChange }: LocationPricingTabProps) {
   const [deliveryEnabled, setDeliveryEnabled] = useState(true);
+  const [showMap, setShowMap] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
+  const [coords, setCoords] = useState<Coordinates>({ 
+    lat: data.latitude || null, 
+    lng: data.longitude || null 
+  });
+  const [locationMessage, setLocationMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
+
+  // استخراج الـ coordinates من الـ location text عند التحميل (مرة واحدة)
+  useEffect(() => {
+    const fetchCoordsFromLocation = async () => {
+      // لو الـ coordinates موجودين من الـ data، استخدمهم
+      if (data.latitude && data.longitude) {
+        setCoords({ lat: data.latitude, lng: data.longitude });
+        return;
+      }
+
+      // لو مفيش coordinates بس فيه location text، حول الـ text لـ coordinates
+      if (data.location && !data.latitude && !data.longitude) {
+        const result = await forwardGeocode(data.location);
+        if (result) {
+          setCoords({ lat: result.lat, lng: result.lng });
+          // حدث الـ parent بالـ coordinates
+          onChange({ 
+            latitude: result.lat, 
+            longitude: result.lng 
+          });
+        }
+      }
+    };
+
+    fetchCoordsFromLocation();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once on mount
 
   const handleDeliveryToggle = (enabled: boolean) => {
     setDeliveryEnabled(enabled);
   };
+  // الحصول على الموقع الحالي - فقط يحدث الـ state مش الـ Backend
+  const handleGetCurrentLocation = useCallback(async () => {
+    setIsLocating(true);
+    setLocationMessage(null);
 
-  // Parse location if it's a string (e.g., "30.0444,31.2357")
-  const parseLocation = (location: string) => {
-    if (!location) return { lat: '', lng: '' };
-    const parts = location.split(',');
-    return {
-      lat: parts[0]?.trim() || '',
-      lng: parts[1]?.trim() || '',
-    };
-  };
+    // التحقق من أن المتصفح يدعم تحديد الموقع
+    if (!('geolocation' in navigator)) {
+      setLocationMessage({ type: 'error', text: 'المتصفح لا يدعم تحديد الموقع' });
+      setIsLocating(false);
+      return;
+    }
 
-  const coords = parseLocation(data.location || '');
+    // التحقق من أن الموقع يعمل على HTTPS (مطلوب لـ geolocation)
+    if (typeof window !== 'undefined' && window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+      setLocationMessage({ 
+        type: 'error', 
+        text: 'تحديد الموقع يتطلب اتصال آمن (HTTPS). يرجى استخدام الخريطة بدلاً من ذلك.' 
+      });
+      setIsLocating(false);
+      return;
+    }
+
+    // التحقق من صلاحيات الموقع
+    if ('permissions' in navigator) {
+      try {
+        const permission = await navigator.permissions.query({ name: 'geolocation' });
+        if (permission.state === 'denied') {
+          setLocationMessage({ 
+            type: 'error', 
+            text: 'تم رفض إذن الموقع. يرجى تفعيل صلاحية الموقع من إعدادات المتصفح أو استخدم الخريطة.' 
+          });
+          setIsLocating(false);
+          return;
+        }
+      } catch {
+        // بعض المتصفحات لا تدعم permissions API، نكمل عادي
+      }
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        
+        // تحويل الـ coordinates لاسم شارع
+        const locationName = await reverseGeocode(latitude, longitude);
+        
+        // تحديث الـ local state
+        setCoords({ lat: latitude, lng: longitude });
+        
+        // تحديث الـ parent state (لكن مش نبعت للـ Backend)
+        onChange({ 
+          location: locationName, 
+          latitude: latitude,
+          longitude: longitude
+        });
+        
+        setLocationMessage({ type: 'info', text: '📍 تم تحديد الموقع - اضغط "حفظ التغييرات" للتأكيد' });
+        setTimeout(() => setLocationMessage(null), 5000);
+        
+        setIsLocating(false);
+      },
+      (error) => {
+        console.error('Geolocation error:', error.code, error.message);
+        
+        let errorMessage = 'تعذر الوصول إلى موقعك الحالي';
+        
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = 'تم رفض إذن الموقع. يرجى السماح بالوصول للموقع من إعدادات المتصفح أو استخدم الخريطة.';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = 'خدمة الموقع غير متاحة حالياً. تأكد من تفعيل GPS أو استخدم الخريطة.';
+            break;
+          case error.TIMEOUT:
+            errorMessage = 'انتهت مهلة تحديد الموقع. حاول مرة أخرى أو استخدم الخريطة.';
+            break;
+        }
+        
+        setLocationMessage({ type: 'error', text: errorMessage });
+        setIsLocating(false);
+      },
+      { 
+        enableHighAccuracy: true, 
+        timeout: 15000,  // زيادة الـ timeout لـ 15 ثانية
+        maximumAge: 60000  // السماح بموقع مخزن لمدة دقيقة
+      }
+    );
+  }, [onChange]);
+
+  // تحديث الموقع من الخريطة - فقط يحدث الـ state مش الـ Backend
+  const handleLocationChange = useCallback(async (lat: number, lng: number) => {
+    // تحويل الـ coordinates لاسم شارع
+    const locationName = await reverseGeocode(lat, lng);
+    
+    // تحديث الـ local state
+    setCoords({ lat, lng });
+    
+    // تحديث الـ parent state (لكن مش نبعت للـ Backend)
+    onChange({ 
+      location: locationName,
+      latitude: lat,
+      longitude: lng
+    });
+    
+    setLocationMessage({ type: 'info', text: '📍 تم تحديد الموقع - اضغط "حفظ التغييرات" للتأكيد' });
+    setTimeout(() => setLocationMessage(null), 5000);
+  }, [onChange]);
 
   return (
     <div className="space-y-6">
-      {/* Location Section - Editable ✓ */}
+      {/* Location Section */}
       <div className="bg-white rounded-2xl shadow-sm p-7">
         <div className="mb-6">
           <h3 className="text-xl font-semibold text-[#1A1A1A] mb-1 flex items-center gap-2">
@@ -46,35 +189,73 @@ export function LocationPricingTab({ data, onChange }: LocationPricingTabProps) 
           <p className="text-sm text-[#6B7280]">الموقع الذي يظهر للعملاء</p>
         </div>
 
+        {/* Status Message */}
+        {locationMessage && (
+          <div className={`mb-4 p-3 rounded-xl text-sm flex items-center gap-2 ${
+            locationMessage.type === 'success' 
+              ? 'bg-green-50 text-green-700 border border-green-200' 
+              : locationMessage.type === 'info'
+              ? 'bg-blue-50 text-blue-700 border border-blue-200'
+              : 'bg-red-50 text-red-700 border border-red-200'
+          }`}>
+            {locationMessage.text}
+          </div>
+        )}
+
         <div className="space-y-5">
-          {/* Location Input - Editable ✓ */}
-          <div>
-            <label className="text-sm font-medium text-[#1A1A1A] mb-2 flex items-center gap-2">
-              📍 إحداثيات الموقع <span className="text-[#10B981] text-xs">(قابل للتعديل)</span>
-            </label>
-            <input
-              type="text"
-              value={data.location || ''}
-              onChange={(e) => onChange({ ...data, location: e.target.value })}
-              placeholder="مثال: 30.0444,31.2357"
-              className="w-full h-12 px-4 border border-[#E5E7EB] rounded-[10px] text-sm focus:outline-none focus:ring-2 focus:ring-[#E5A04D]/20 focus:border-[#E5A04D]"
-            />
-            <p className="text-xs text-[#9CA3AF] mt-1">أدخل الإحداثيات بصيغة: خط العرض,خط الطول</p>
+          {/* Location Buttons */}
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={handleGetCurrentLocation}
+              disabled={isLocating}
+              className="flex-1 py-3 px-4 rounded-xl border-2 border-[#E5A04D] text-[#E5A04D] hover:bg-orange-50 font-medium text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLocating ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : (
+                <Locate className="w-4 h-4" />
+              )}
+              {isLocating ? 'جاري التحديد...' : 'تحديد موقعي الحالي'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowMap(true)}
+              className="flex-1 py-3 px-4 rounded-xl border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-medium text-sm transition-colors flex items-center justify-center gap-2"
+            >
+              <Map className="w-4 h-4" />
+              تحديد على الخريطة
+            </button>
           </div>
 
-          {/* Map Preview Placeholder */}
+          {/* Current Location Display */}
+          <div>
+            <label className="text-sm font-medium text-[#1A1A1A] mb-2 flex items-center gap-2">
+              📍 عنوان المطعم الحالي
+            </label>
+            <div className="w-full min-h-12 px-4 py-3 border border-[#E5E7EB] rounded-[10px] text-sm bg-[#F8FAFC] text-[#374151]">
+              {data.location || 'لم يتم تحديد العنوان بعد'}
+            </div>
+          </div>
+
+          {/* Map Preview */}
           <div>
             <label className="block text-sm font-medium text-[#1A1A1A] mb-2">
               الموقع على الخريطة
             </label>
-            <div className="w-full h-[280px] border border-[#E5E7EB] rounded-xl overflow-hidden bg-[#F8FAFC] flex items-center justify-center">
+            <div className="w-full h-64 border border-[#E5E7EB] rounded-xl overflow-hidden bg-[#F8FAFC] flex items-center justify-center">
               <div className="text-center">
-                <MapPin className="w-16 h-16 text-[#E5A04D] mx-auto mb-3" />
-                <p className="text-sm text-[#6B7280] mb-2">الإحداثيات الحالية:</p>
+                <MapPin className="w-12 h-12 text-[#E5A04D] mx-auto mb-3" />
                 {coords.lat && coords.lng ? (
-                  <p className="text-sm font-mono text-[#1A1A1A]">
-                    {coords.lat}, {coords.lng}
-                  </p>
+                  <>
+                    <p className="text-sm text-[#6B7280] mb-1">الإحداثيات:</p>
+                    <p className="text-sm font-mono text-[#1A1A1A] mb-2">
+                      {coords.lat.toFixed(6)}, {coords.lng.toFixed(6)}
+                    </p>
+                    <p className="text-xs text-[#E5A04D]">
+                      نطاق التوصيل: {data.allowed_radius_km || 15} كم
+                    </p>
+                  </>
                 ) : (
                   <p className="text-sm text-[#9CA3AF]">لم يتم تحديد الموقع</p>
                 )}
@@ -88,7 +269,7 @@ export function LocationPricingTab({ data, onChange }: LocationPricingTabProps) 
               <label className="block text-xs text-[#6B7280] mb-1">خط العرض (Latitude)</label>
               <input
                 type="text"
-                value={coords.lat}
+                value={coords.lat?.toFixed(6) || 'N/A'}
                 readOnly
                 className="w-full h-10 px-3 bg-[#F3F4F6] border border-[#E5E7EB] rounded-lg text-sm font-mono text-[#6B7280]"
               />
@@ -97,7 +278,7 @@ export function LocationPricingTab({ data, onChange }: LocationPricingTabProps) 
               <label className="block text-xs text-[#6B7280] mb-1">خط الطول (Longitude)</label>
               <input
                 type="text"
-                value={coords.lng}
+                value={coords.lng?.toFixed(6) || 'N/A'}
                 readOnly
                 className="w-full h-10 px-3 bg-[#F3F4F6] border border-[#E5E7EB] rounded-lg text-sm font-mono text-[#6B7280]"
               />
@@ -106,14 +287,13 @@ export function LocationPricingTab({ data, onChange }: LocationPricingTabProps) 
         </div>
       </div>
 
-      {/* Delivery Settings - Partially Editable */}
+      {/* Delivery Settings */}
       <div className="bg-white rounded-2xl shadow-sm p-7">
         <div className="mb-6">
           <h3 className="text-xl font-semibold text-[#1A1A1A] mb-1">إعدادات التوصيل</h3>
           <p className="text-sm text-[#6B7280]">حدد نطاق ورسوم التوصيل</p>
         </div>
 
-        {/* Enable Delivery Toggle */}
         <div className="bg-[#F8FAFC] border border-[#E5E7EB] rounded-xl p-5 mb-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -131,7 +311,7 @@ export function LocationPricingTab({ data, onChange }: LocationPricingTabProps) 
 
         {deliveryEnabled && (
           <div className="space-y-6 animate-fade-in">
-            {/* Delivery Radius - Editable ✓ */}
+            {/* Delivery Radius */}
             <div>
               <label className="block text-sm font-medium text-[#1A1A1A] mb-3">
                 أقصى مسافة للتوصيل <span className="text-[#10B981] text-xs">(قابل للتعديل)</span>
@@ -141,7 +321,8 @@ export function LocationPricingTab({ data, onChange }: LocationPricingTabProps) 
                   <input
                     type="number"
                     min="1"
-                    max="50"                    value={data.allowed_radius_km || ''}
+                    max="50"
+                    value={data.allowed_radius_km || ''}
                     onChange={(e) => onChange({ ...data, allowed_radius_km: Number(e.target.value) || 0 })}
                     className="w-full h-12 px-4 border border-[#E5E7EB] rounded-[10px] text-lg font-semibold text-center focus:outline-none focus:ring-2 focus:ring-[#E5A04D]/20 focus:border-[#E5A04D]"
                   />
@@ -151,12 +332,10 @@ export function LocationPricingTab({ data, onChange }: LocationPricingTabProps) 
                   <input
                     type="range"
                     min="1"
-                    max="50"                    value={data.allowed_radius_km || 15}
+                    max="50"
+                    value={data.allowed_radius_km || 15}
                     onChange={(e) => onChange({ ...data, allowed_radius_km: Number(e.target.value) })}
-                    className="w-full h-2 bg-[#E5E7EB] rounded-full appearance-none cursor-pointer"
-                    style={{
-                      background: `linear-gradient(to left, #E5E7EB ${100 - (Number(data.allowed_radius_km || 15) / 50) * 100}%, #E5A04D ${100 - (Number(data.allowed_radius_km || 15) / 50) * 100}%)`,
-                    }}
+                    className="w-full h-2 bg-[#E5E7EB] rounded-full appearance-none cursor-pointer accent-[#E5A04D]"
                   />
                   <div className="flex justify-between text-xs text-[#9CA3AF] mt-1">
                     <span>1 كم</span>
@@ -166,11 +345,12 @@ export function LocationPricingTab({ data, onChange }: LocationPricingTabProps) 
               </div>
             </div>
 
-            {/* Delivery Fees - Editable ✓ */}
+            {/* Delivery Fees */}
             <div>
               <label className="block text-sm font-medium text-[#1A1A1A] mb-3">
                 رسوم التوصيل <span className="text-[#10B981] text-xs">(قابل للتعديل)</span>
-              </label>              <div className="relative w-48">
+              </label>
+              <div className="relative w-48">
                 <input
                   type="number"
                   min="0"
@@ -189,39 +369,23 @@ export function LocationPricingTab({ data, onChange }: LocationPricingTabProps) 
         )}
       </div>
 
+      {/* Map Modal */}
+      {showMap && (
+        <LocationPicker
+          lat={coords.lat || 30.0444}
+          lng={coords.lng || 31.2357}
+          radiusKm={data.allowed_radius_km || 15}
+          onLocationChange={handleLocationChange}
+          onClose={() => setShowMap(false)}
+        />
+      )}
+
       <style>{`
         @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
         }
-        .animate-fade-in {
-          animation: fade-in 0.3s ease-out;
-        }
-        input[type="range"]::-webkit-slider-thumb {
-          appearance: none;
-          width: 20px;
-          height: 20px;
-          border-radius: 50%;
-          background: white;
-          border: 3px solid #E5A04D;
-          cursor: pointer;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        input[type="range"]::-moz-range-thumb {
-          width: 20px;
-          height: 20px;
-          border-radius: 50%;
-          background: white;
-          border: 3px solid #E5A04D;
-          cursor: pointer;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
+        .animate-fade-in { animation: fade-in 0.3s ease-out; }
       `}</style>
     </div>
   );

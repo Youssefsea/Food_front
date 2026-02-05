@@ -26,7 +26,7 @@ export default function LoginPage() {
   const loginForCustomer = async (): Promise<boolean> => {
     try {
       const res = await api.post('/customer/login', { ...formData });
-
+    
       if (res.status === 200) {
         return true;
       }

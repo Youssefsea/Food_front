@@ -25,7 +25,7 @@ export function QuickActionsPanel() {
       description: 'تحديث البيانات والمواعيد',
       buttonText: 'تعديل',
       buttonStyle: 'outlined' as const,
-      onClick: () => router.push('/vendor/settings'),
+      onClick: () => router.push('/vendor/EditAtVendorInfo'),
     },
     {
       id: 3,
