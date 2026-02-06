@@ -24,9 +24,7 @@ export function SearchBar({
           placeholder="ابحث عن مطعم..."
           className="w-full h-10 sm:h-11 md:h-12 pr-10 sm:pr-12 pl-10 sm:pl-12 bg-[#F3F4F6] border-none rounded-full text-xs sm:text-sm placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#E5A04D] focus:bg-white transition-all"
         />
-        <button className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 w-6 sm:w-7 h-6 sm:h-7 flex items-center justify-center text-[#9CA3AF] hover:text-[#E5A04D] active:scale-95 transition-all rounded-full hover:bg-[#FEF3E2]">
-          <Mic className="w-4 sm:w-5 h-4 sm:h-5" />
-        </button>
+      
       </div>
     </div>
   );
