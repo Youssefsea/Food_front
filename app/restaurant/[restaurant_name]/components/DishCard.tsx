@@ -26,7 +26,6 @@ interface DishCardProps {
 export function DishCard({ dish, onAddToCart, onClick, cartQuantity = 0 }: DishCardProps) {
   const [isAdding, setIsAdding] = useState(false);
 
-  // Use cartQuantity directly from props - no local state needed
   const quantity = cartQuantity;
 
   const imageUrl = dish.image?.split(',')[0]?.trim() || '/placeholder-dish.jpg';
@@ -69,7 +68,6 @@ return (
       }`}
     >
       <div className="flex flex-row gap-4 h-36 sm:h-40 md:h-44">
-        {/* Dish Image */}
         <div className="relative w-36 sm:w-40 md:w-44 flex-shrink-0">
           <img
             src={imageUrl}
@@ -78,7 +76,6 @@ return (
             loading="lazy"
           />
 
-          {/* Unavailable Overlay */}
           {!isAvailable && (
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
               <div className="bg-white/95 px-4 py-2 rounded-full shadow-lg">
@@ -87,7 +84,6 @@ return (
             </div>
           )}
 
-          {/* Badge للعروض أو الأطباق المميزة */}
           {dish.is_featured && (
             <div className="absolute top-2.5 left-2.5 bg-gradient-to-r from-[#E5A04D] to-[#D4903D] px-2.5 py-1 rounded-full shadow-lg">
               <span className="text-white text-[10px] sm:text-[11px] font-bold tracking-wide">⭐ مميز</span>
@@ -95,23 +91,18 @@ return (
           )}
         </div>
 
-        {/* Dish Content - مع مسافات أفضل */}
         <div className="flex-1 px-4 sm:px-5 md:px-6 py-3.5 sm:py-4 md:py-5 flex flex-col justify-between min-w-0">
-          {/* Header Row */}
           <div className="flex items-start justify-between gap-3 sm:gap-4">
             <div className="flex-1 min-w-0">
-              {/* Dish Name - خط أوضح */}
               <h3 className="text-base sm:text-lg md:text-xl font-bold text-[#1A1A1A] line-clamp-1 mb-2 leading-snug">
                 {dish.name}
               </h3>
               
-              {/* Description - خط أخف وأوضح */}
               <p className="text-xs sm:text-sm md:text-base text-[#6B7280] line-clamp-2 leading-relaxed font-normal">
                 {dish.description || 'وصف لذيذ للطبق'}
               </p>
             </div>
 
-            {/* Add/Quantity Controls */}
             {isAvailable && (
               <div className="flex-shrink-0">
                 {quantity === 0 ? (
@@ -149,7 +140,6 @@ return (
             )}
           </div>
 
-          {/* Footer - Price & Time - مع مسافة أفضل */}
           <div className="flex items-center justify-between pt-3 border-t border-[#F3F4F6] mt-auto">
             <div className="flex items-baseline gap-1.5">
               <span className="text-lg sm:text-xl md:text-2xl font-bold text-[#E5A04D] tracking-tight">

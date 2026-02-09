@@ -14,7 +14,6 @@ export function CartHeader({ itemCount, onClearCart, hasItems }: CartHeaderProps
 
   return (
     <div className="sticky top-0 z-50 bg-white h-[60px] px-5 flex items-center justify-between border-b border-[#E5E7EB] shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
-      {/* Right Side - Back Button */}
       <button 
         className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-[#F3F4F6] transition-colors"
         onClick={() => router.back()}
@@ -22,7 +21,6 @@ export function CartHeader({ itemCount, onClearCart, hasItems }: CartHeaderProps
         <ArrowRight className="w-6 h-6 text-[#1A1A1A]" />
       </button>
 
-      {/* Center - Title & Badge */}
       <div className="flex items-center gap-2">
         <span className="text-[20px] font-bold text-[#1A1A1A]">سلة المشتريات</span>
         <span className="bg-[#FEF3E2] text-[#E5A04D] px-2.5 py-1 rounded-xl text-[12px] font-semibold">
@@ -30,7 +28,6 @@ export function CartHeader({ itemCount, onClearCart, hasItems }: CartHeaderProps
         </span>
       </div>
 
-      {/* Left Side - Clear Cart */}
       {hasItems ? (
         <button
           onClick={onClearCart}

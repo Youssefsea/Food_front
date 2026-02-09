@@ -30,7 +30,6 @@ export function AccountSecurityTab({ data: _data }: AccountSecurityTabProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // حساب قوة كلمة المرور
   const calculatePasswordStrength = (password: string): number => {
     let strength = 0;
     if (password.length >= 8) strength++;
@@ -44,18 +43,15 @@ export function AccountSecurityTab({ data: _data }: AccountSecurityTabProps) {
   const strengthColors = ['#E5E7EB', '#EF4444', '#F59E0B', '#10B981', '#10B981'];
   const passwordStrength = calculatePasswordStrength(passwordData.new);
 
-  // Toggle password visibility
   const togglePasswordVisibility = (field: 'current' | 'new' | 'confirm') => {
     setShowPassword(prev => ({ ...prev, [field]: !prev[field] }));
   };
 
-  // Handle input change
   const handlePasswordChange = (field: 'current' | 'new' | 'confirm', value: string) => {
     setPasswordData(prev => ({ ...prev, [field]: value }));
     setMessage(null);
   };
 
-  // Validation
   const validatePasswords = (): string | null => {
     if (!passwordData.current) {
       return 'يرجى إدخال كلمة المرور الحالية';
@@ -78,7 +74,6 @@ export function AccountSecurityTab({ data: _data }: AccountSecurityTabProps) {
     return null;
   };
 
-  // Submit password change
   const handleChangePassword = async () => {
     const validationError = validatePasswords();
     if (validationError) {
@@ -96,14 +91,10 @@ export function AccountSecurityTab({ data: _data }: AccountSecurityTabProps) {
       });
 
       setMessage({ type: 'success', text: 'تم تغيير كلمة المرور بنجاح ✓' });
-      // Clear form
       setPasswordData({ current: '', new: '', confirm: '' });
       
-      // Clear success message after 5 seconds
       setTimeout(() => setMessage(null), 5000);
     } catch (error: unknown) {
-      console.error('Error changing password:', error);
-      
       const err = error as { response?: { data?: { error?: string } } };
       if (err.response?.data?.error === 'Old password is incorrect') {
         setMessage({ type: 'error', text: 'كلمة المرور الحالية غير صحيحة' });
@@ -291,7 +282,6 @@ export function AccountSecurityTab({ data: _data }: AccountSecurityTabProps) {
 
       <div className="h-8" />
 
-      {/* Section 3: Danger Zone - Not Available */}
       <div className="p-7">
         <div className="bg-[#FEF2F2] border border-[#FECACA] rounded-[14px] p-6">
           <div className="flex items-center gap-3 mb-5">

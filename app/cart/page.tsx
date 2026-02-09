@@ -17,8 +17,8 @@ import {
   RestaurantSelector
 } from './components';
 import { RestaurantCart, LocationData, PaymentMethod as PaymentMethodType, CartSummary } from './types';
+import { useCart } from '../context/CartContext';
 
-// API Response Types
 interface CartItemResponse {
   dishId: number;
   name: string;
@@ -31,7 +31,7 @@ interface CartItemResponse {
   restaurantLocation: string;
   restaurantCanDeliver: boolean;
   restaurantCanReserve: boolean;
-  deliveryFee: number; // This is delivery_fees per KM from backend
+  deliveryFee: number;
 }
 
 interface OrderResponse {
@@ -63,9 +63,8 @@ interface GroupedRestaurantResponse {
   totalItems: number;
 }
 
-// Haversine formula to calculate distance between two coordinates
 function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const R = 6371; // Earth's radius in kilometers
+  const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLng = (lng2 - lng1) * Math.PI / 180;
   const a = 
@@ -73,13 +72,13 @@ function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: numbe
     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
     Math.sin(dLng / 2) * Math.sin(dLng / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c; // Distance in km
+  return R * c;
 }
 
 export default function CartPage() {
   const router = useRouter();
+  const { incrementCount, decrementCount, setCount } = useCart();
 
-  // States
   const [isLoading, setIsLoading] = useState(true);
   const [groupedCarts, setGroupedCarts] = useState<RestaurantCart[]>([]);
   const [deliveryLocation, setDeliveryLocation] = useState<LocationData | null>(null);
@@ -89,21 +88,18 @@ export default function CartPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<number | null>(null);
   
-  // Order success state
   const [orderSuccess, setOrderSuccess] = useState<{
     show: boolean;
     orderId: number | null;
     countdown: number;
   }>({ show: false, orderId: null, countdown: 5 });
 
-  // Fetch cart data from API
   const fetchCart = useCallback(async () => {
     try {
       setIsLoading(true);
       const res = await api.get('/customer/view-cart');
       const data = res.data;
       
-      // Check if using groupedByRestaurant from backend
       const restaurants = data.groupedByRestaurant || [];
       
       if (restaurants.length === 0 && (!data.cartItems || data.cartItems.length === 0)) {
@@ -112,7 +108,6 @@ export default function CartPage() {
         return;
       }
 
-      // If backend returns groupedByRestaurant, use it directly
       if (restaurants.length > 0) {
         const mapped: RestaurantCart[] = restaurants.map((r: GroupedRestaurantResponse) => ({
           restaurantId: r.restaurantId,
@@ -121,10 +116,10 @@ export default function CartPage() {
           restaurantLogo: '',
           restaurantLat: r.restaurantLat || null,
           restaurantLng: r.restaurantLng || null,
-          is_open: 1, // Assume open by default
+          is_open: 1,
           can_reserve: r.restaurantCanReserve || false,
           can_delivery: r.restaurantCanDeliver || false,
-          delivery_fees: r.deliveryFee || 0, // Per KM rate
+          delivery_fees: r.deliveryFee || 0,
           calculatedDeliveryFee: 0,
           distanceKm: 0,
           dishes: r.dishes.map((d) => ({
@@ -146,12 +141,10 @@ export default function CartPage() {
         
         setGroupedCarts(mapped);
         
-        // Auto-select if only one restaurant
         if (mapped.length === 1) {
           setSelectedRestaurantId(mapped[0].restaurantId);
         }
       } else {
-        // Fallback: group cartItems manually
         const cartItems: CartItemResponse[] = data.cartItems || [];
         
         const grouped = cartItems.reduce((acc, item) => {
@@ -200,13 +193,11 @@ export default function CartPage() {
         const cartsList = Object.values(grouped);
         setGroupedCarts(cartsList);
         
-        // Auto-select if only one restaurant
         if (cartsList.length === 1) {
           setSelectedRestaurantId(cartsList[0].restaurantId);
         }
       }
     } catch (err) {
-      console.error('Error fetching cart:', err);
       toast.error('حدث خطأ في تحميل السلة');
     } finally {
       setIsLoading(false);
@@ -223,6 +214,11 @@ export default function CartPage() {
     
     if (orderSuccess.countdown <= 0) {
       router.push('/explore');
+  useEffect(() => {
+    if (!orderSuccess.show) return;
+    
+    if (orderSuccess.countdown <= 0) {
+      router.push('/explore');
       return;
     }
 
@@ -233,7 +229,6 @@ export default function CartPage() {
     return () => clearTimeout(timer);
   }, [orderSuccess.show, orderSuccess.countdown, router]);
 
-  // Recalculate delivery fees when location changes
   useEffect(() => {
     if (!deliveryLocation) return;
 
@@ -241,7 +236,6 @@ export default function CartPage() {
       let distanceKm = 0;
       let calculatedFee = 0;
       
-      // Calculate actual distance if restaurant coordinates are available
       if (restaurant.restaurantLat && restaurant.restaurantLng) {
         distanceKm = calculateDistance(
           deliveryLocation.lat,
@@ -249,12 +243,9 @@ export default function CartPage() {
           restaurant.restaurantLat,
           restaurant.restaurantLng
         );
-        // Round to 2 decimal places
         distanceKm = Math.round(distanceKm * 100) / 100;
-        // Calculate fee based on distance and per-km rate
         calculatedFee = Math.round(restaurant.delivery_fees * distanceKm);
       } else {
-        // If no coordinates, use a default estimate (5km)
         distanceKm = 5;
         calculatedFee = restaurant.delivery_fees * distanceKm;
       }
@@ -267,18 +258,10 @@ export default function CartPage() {
     }));
   }, [deliveryLocation]);
 
-  // Get selected restaurant
   const selectedRestaurant = useMemo(() => {
     return groupedCarts.find(r => r.restaurantId === selectedRestaurantId) || null;
   }, [groupedCarts, selectedRestaurantId]);
 
-  // Calculate summary for selected restaurant only
-  const summary: CartSummary = useMemo(() => {
-    if (selectedRestaurant) {
-      return {
-        totalRestaurants: 1,
-        totalItems: selectedRestaurant.totalItems,
-        subtotal: selectedRestaurant.totalPrice,
         totalDeliveryFees: selectedRestaurant.calculatedDeliveryFee || 0,
         grandTotal: selectedRestaurant.totalPrice + (selectedRestaurant.calculatedDeliveryFee || 0)
       };
@@ -298,13 +281,30 @@ export default function CartPage() {
   const handleQuantityChange = async (restaurantId: number, dishId: number, newQuantity: number) => {
     if (newQuantity < 1) return;
 
+    // Find current quantity for this dish
+    const restaurant = groupedCarts.find(r => r.restaurantId === restaurantId);
+    const currentDish = restaurant?.dishes.find(d => d.dishId === dishId);
+    const currentQuantity = currentDish?.quantity || 0;
+    const quantityDiff = newQuantity - currentQuantity;
+
+    try {
+      await api.put('/customer/update-dish-quantity-in-cart', {
+        dishId,
+        quantity: newQuantity
+  const handleQuantityChange = async (restaurantId: number, dishId: number, newQuantity: number) => {
+    if (newQuantity < 1) return;
+
+    const restaurant = groupedCarts.find(r => r.restaurantId === restaurantId);
+    const currentDish = restaurant?.dishes.find(d => d.dishId === dishId);
+    const currentQuantity = currentDish?.quantity || 0;
+    const quantityDiff = newQuantity - currentQuantity;
+
     try {
       await api.put('/customer/update-dish-quantity-in-cart', {
         dishId,
         quantity: newQuantity
       });
 
-      // Update local state
       setGroupedCarts(prev => prev.map(restaurant => {
         if (restaurant.restaurantId !== restaurantId) return restaurant;
 
@@ -323,21 +323,28 @@ export default function CartPage() {
         return { ...restaurant, dishes: updatedDishes, totalPrice, totalItems };
       }));
 
+      if (quantityDiff > 0) {
+        incrementCount(quantityDiff);
+      } else if (quantityDiff < 0) {
+        decrementCount(Math.abs(quantityDiff));
+      }
+
       toast.success('تم تحديث الكمية');
     } catch (err) {
-      console.error('Error updating quantity:', err);
       toast.error('حدث خطأ في تحديث الكمية');
     }
   };
 
-  // Handle remove dish
   const handleRemoveDish = async (restaurantId: number, dishId: number) => {
+    const restaurant = groupedCarts.find(r => r.restaurantId === restaurantId);
+    const removedDish = restaurant?.dishes.find(d => d.dishId === dishId);
+    const removedQuantity = removedDish?.quantity || 0;
+
     try {
       await api.delete('/customer/remove-dish-from-cart', {
         data: { dishId }
       });
 
-      // Update local state
       setGroupedCarts(prev => {
         const updated = prev.map(restaurant => {
           if (restaurant.restaurantId !== restaurantId) return restaurant;
@@ -349,10 +356,8 @@ export default function CartPage() {
           return { ...restaurant, dishes: updatedDishes, totalPrice, totalItems };
         });
 
-        // Remove restaurants with no dishes
         const filtered = updated.filter(r => r.dishes.length > 0);
         
-        // Reset selection if selected restaurant was removed
         if (selectedRestaurantId && !filtered.find(r => r.restaurantId === selectedRestaurantId)) {
           setSelectedRestaurantId(filtered.length === 1 ? filtered[0].restaurantId : null);
         }
@@ -360,19 +365,18 @@ export default function CartPage() {
         return filtered;
       });
 
+      decrementCount(removedQuantity);
+
       toast.success('تم حذف الطبق من السلة');
     } catch (err) {
-      console.error('Error removing dish:', err);
       toast.error('حدث خطأ في حذف الطبق');
     }
   };
 
-  // Handle clear cart
   const handleClearCart = async () => {
     if (!confirm('هل أنت متأكد من إفراغ السلة بالكامل؟')) return;
 
     try {
-      // Remove all dishes one by one (or use bulk API if available)
       for (const restaurant of groupedCarts) {
         for (const dish of restaurant.dishes) {
           await api.delete('/customer/remove-dish-from-cart', {
@@ -383,26 +387,13 @@ export default function CartPage() {
 
       setGroupedCarts([]);
       setSelectedRestaurantId(null);
+      
+      setCount(0);
+      
       toast.success('تم إفراغ السلة');
     } catch (err) {
-      console.error('Error clearing cart:', err);
       toast.error('حدث خطأ في إفراغ السلة');
     }
-  };
-
-  // Handle order type change per restaurant
-  const handleOrderTypeChange = (restaurantId: number, orderType: 'instant' | 'reservation') => {
-    setGroupedCarts(prev => prev.map(r => 
-      r.restaurantId === restaurantId 
-        ? { ...r, orderType, reservationDate: '', reservationTime: '' }
-        : r
-    ));
-  };
-
-  const handleReservationDateChange = (restaurantId: number, date: string) => {
-    setGroupedCarts(prev => prev.map(r => 
-      r.restaurantId === restaurantId ? { ...r, reservationDate: date } : r
-    ));
   };
 
   const handleReservationTimeChange = (restaurantId: number, time: string) => {
@@ -436,14 +427,11 @@ export default function CartPage() {
     if (restaurant) {
       if (restaurant.orderType === 'reservation') {
         if (!restaurant.reservationDate || !restaurant.reservationTime) {
-          return `حدد موعد الحجز لـ ${restaurant.restaurantName}`;
-        }
-      }
-      
-      if (restaurant.is_open === 0) {
-        return 'المطعم المختار مغلق';
-      }
-    }
+  const handleSelectRestaurant = (restaurantId: number) => {
+    setSelectedRestaurantId(restaurantId);
+    setPaymentImage(null);
+  };
+
 
     return '';
   };
@@ -478,10 +466,36 @@ export default function CartPage() {
         // إرسال ID المطعم المختار للباك اند
         restaurantId: restaurantToOrder.restaurantId
       };
+const handleCheckout = async () => {
+    const disabledReason = getCheckoutDisabledReason();
+    if (disabledReason) {
+      toast.error(disabledReason);
+      return;
+    }
+
+    if (!selectedRestaurant && groupedCarts.length > 1) {
+      toast.error('يرجى اختيار مطعم واحد للطلب');
+      return;
+    }
+
+    const restaurantToOrder = selectedRestaurant || groupedCarts[0];
+    setIsSubmitting(true);
+
+    try {(restaurantToOrder.restaurantId)
+      ) || createdOrders[0];
+
+      // Step 2: Upload payment proof
+      const formData = new FormData();
+      formData.append('orderId', ourOrder.orderId.toString());
+      formData.append('payment_method', paymentMethod!);
+      formData.append('images', paymentImage!);
+
+      const paymentResponse = await api.post('/customer/upload-payment-proof', formData, {
+        restaurantId: restaurantToOrder.restaurantId
+      };
 
       const orderResponse = await api.post('/customer/place-order', orderData);
       
-      // Check for created orders
       const createdOrders = orderResponse.data.createdOrders || [];
       const failedOrders = orderResponse.data.failedOrders || [];
       
@@ -492,32 +506,24 @@ export default function CartPage() {
         return;
       }
 
-      // Find the order for our selected restaurant
       const ourOrder = createdOrders.find((o: OrderResponse) => 
         o.restaurantId === restaurantToOrder.restaurantId || 
         o.restaurantId === String(restaurantToOrder.restaurantId)
       ) || createdOrders[0];
+rder:', err);
+      const axiosError = err as { response?: { data?: { error?: string; message?: string } } };
+      const errorMessage = axiosError.response?.data?.error || axiosError.response?.data?.message || 'حدث خطأ في إنشاء الطلب';
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-      // Step 2: Upload payment proof
-      const formData = new FormData();
-      formData.append('orderId', ourOrder.orderId.toString());
-      formData.append('payment_method', paymentMethod!);
-      formData.append('images', paymentImage!);
-
-      const paymentResponse = await api.post('/customer/upload-payment-proof', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-
-      if (paymentResponse.data.success) {
-        // Remove ordered items from local cart
-        setGroupedCarts(prev => prev.filter(r => r.restaurantId !== restaurantToOrder.restaurantId));
+  // LoasetGroupedCarts(prev => prev.filter(r => r.restaurantId !== restaurantToOrder.restaurantId));
         setSelectedRestaurantId(null);
         setPaymentImage(null);
         setPaymentMethod(null);
         
-        // Show success modal with countdown
         setOrderSuccess({
           show: true,
           orderId: ourOrder.orderId,
@@ -528,7 +534,6 @@ export default function CartPage() {
       }
 
     } catch (err) {
-      console.error('Error creating order:', err);
       const axiosError = err as { response?: { data?: { error?: string; message?: string } } };
       const errorMessage = axiosError.response?.data?.error || axiosError.response?.data?.message || 'حدث خطأ في إنشاء الطلب';
       toast.error(errorMessage);
@@ -536,30 +541,7 @@ export default function CartPage() {
       setIsSubmitting(false);
     }
   };
-
-  // Loading state
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center" dir="rtl">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-[#E5A04D] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-[#6B7280]">جاري تحميل السلة...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Empty cart
-  if (groupedCarts.length === 0) {
-    return <EmptyCart />;
-  }
-
-  // Get display restaurants (only selected or all if single)
-  const displayRestaurants = selectedRestaurant ? [selectedRestaurant] : groupedCarts;
-
-  return (
-    <div className="min-h-screen bg-[#FAFAFA] pb-32" dir="rtl">
-      <Toaster position="top-center" richColors />
+ition="top-center" richColors />
       <div className="h-4"/>
       
       {/* Header */}
@@ -575,11 +557,9 @@ export default function CartPage() {
 
       {/* Restaurant Selector - Only show when multiple restaurants */}
       <RestaurantSelector
-        restaurants={groupedCarts}
-        selectedRestaurantId={selectedRestaurantId}
-        onSelectRestaurant={handleSelectRestaurant}
-        hasLocation={!!deliveryLocation}
-      />
+  if (groupedCarts.length === 0) {
+    return <EmptyCart />;
+  }
 
       {/* Restaurant Cart Groups - Show only selected or all if single */}
       <div className="px-5 pt-5">
@@ -594,16 +574,29 @@ export default function CartPage() {
             onReservationDateChange={handleReservationDateChange}
             onReservationTimeChange={handleReservationTimeChange}
           />
-        ))}
-      </div>
+      <CartHeader 
+        itemCount={summary.totalItems}
+        onClearCart={handleClearCart}
+        hasItems={groupedCarts.length > 0}
+      />
+      <div className="h-4"/>
 
-      {/* Delivery Location */}
+      {groupedCarts.length > 1 && <NoticeBanner />}
+
+      <RestaurantSelector
+        restaurants={groupedCarts}
+        selectedRestaurantId={selectedRestaurantId}
+        onSelectRestaurant={handleSelectRestaurant}
+        hasLocation={!!deliveryLocation}
+      />
+
+
+      {/* Order Summary */}
       <DeliveryLocation
         location={deliveryLocation}
         onOpenLocationPicker={() => setIsLocationModalOpen(true)}
       />
 
-      {/* Payment Method - Only show when restaurant is selected (or single restaurant) */}
       {(selectedRestaurantId || groupedCarts.length === 1) && (
         <PaymentMethod
           paymentMethod={paymentMethod}
@@ -615,32 +608,11 @@ export default function CartPage() {
         />
       )}
 
-      {/* Order Summary */}
       <OrderSummary
         summary={summary}
         restaurants={selectedRestaurant ? [selectedRestaurant] : groupedCarts}
       />
-
-      {/* Checkout Button */}
-      <CheckoutButton
-        totalItems={summary.totalItems}
-        totalRestaurants={groupedCarts.length > 1 && selectedRestaurantId ? 1 : summary.totalRestaurants}
-        grandTotal={summary.grandTotal}
-        isDisabled={isCheckoutDisabled}
-        disabledReason={getCheckoutDisabledReason()}
-        isSubmitting={isSubmitting}
-        onCheckout={handleCheckout}
-      />
-
-      {/* Location Picker Modal */}
-      <LocationPickerModal
-        isOpen={isLocationModalOpen}
-        onClose={() => setIsLocationModalOpen(false)}
-        onSelectLocation={setDeliveryLocation}
-        initialLocation={deliveryLocation}
-      />
-
-      {/* Order Success Modal */}
+ */}
       {orderSuccess.show && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="bg-white rounded-[20px] p-8 mx-5 max-w-sm w-full text-center shadow-2xl animate-in zoom-in-95 duration-300">
@@ -652,21 +624,34 @@ export default function CartPage() {
             </div>
             
             {/* Title */}
+      <LocationPickerModal
+        isOpen={isLocationModalOpen}
+        onClose={() => setIsLocationModalOpen(false)}
+        onSelectLocation={setDeliveryLocation}
+        initialLocation={deliveryLocation}
+      />
+
+      {orderSuccess.show && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-[20px] p-8 mx-5 max-w-sm w-full text-center shadow-2xl animate-in zoom-in-95 duration-300">
+            <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-5 shadow-lg">
+              <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            
             <h2 className="text-[22px] font-bold text-[#1A1A1A] mb-2">
               تم الطلب بنجاح! 🎉
             </h2>
             
-            {/* Order ID */}
             <p className="text-[16px] text-[#6B7280] mb-4">
               رقم الطلب: <span className="font-bold text-[#E5A04D]">#{orderSuccess.orderId}</span>
             </p>
             
-            {/* Message */}
             <p className="text-[14px] text-[#9CA3AF] mb-6">
               شكراً لك! سيتم التواصل معك قريباً لتأكيد الطلب
             </p>
             
-            {/* Countdown */}
             <div className="flex items-center justify-center gap-2 text-[14px] text-[#6B7280]">
               <div className="w-8 h-8 rounded-full bg-[#E5A04D]/10 flex items-center justify-center">
                 <span className="text-[#E5A04D] font-bold">{orderSuccess.countdown}</span>
@@ -674,7 +659,6 @@ export default function CartPage() {
               <span>جاري التحويل إلى الصفحة الرئيسية...</span>
             </div>
             
-            {/* Progress Bar */}
             <div className="mt-4 h-1 bg-gray-200 rounded-full overflow-hidden">
               <div 
                 className="h-full bg-gradient-to-r from-[#E5A04D] to-[#F8B358] transition-all duration-1000 ease-linear"
@@ -684,28 +668,7 @@ export default function CartPage() {
           </div>
         </div>
       )}
-
-      {/* Global Styles */}
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap');
-        
-        * {
-          -webkit-tap-highlight-color: transparent;
-        }
-        
-        body {
-          font-family: 'Cairo', sans-serif;
-        }
-
-        .line-clamp-1 {
-          display: -webkit-box;
-          -webkit-line-clamp: 1;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-        }
-
-        .line-clamp-2 {
-          display: -webkit-box;
+box;
           -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
           overflow: hidden;

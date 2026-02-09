@@ -66,7 +66,6 @@ export function RecentOrdersTable({ orders, onStatusChange }: RecentOrdersTableP
             const res = await api.post('/restaurant/payment-status', { orderId: order.id });
             statuses[order.id] = res.data.paymentStatus as PaymentStatus;
           } catch (error) {
-            console.error(`Error fetching payment status for order ${order.id}:`, error);
             statuses[order.id] = 'pending';
           }
         })
@@ -100,7 +99,6 @@ export function RecentOrdersTable({ orders, onStatusChange }: RecentOrdersTableP
       });
       onStatusChange();
     } catch (error) {
-      console.error('Error updating order status:', error);
     } finally {
       setUpdatingOrder(null);
     }

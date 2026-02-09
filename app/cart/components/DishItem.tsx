@@ -16,7 +16,6 @@ export function DishItem({ dish, isLast, onQuantityChange, onRemove }: DishItemP
 
   return (
     <div className={`p-4 flex gap-3.5 ${!isLast ? 'border-b border-[#F3F4F6]' : ''}`}>
-      {/* Dish Image */}
       <div className="w-[70px] h-[70px] rounded-[10px] overflow-hidden flex-shrink-0 bg-gray-100">
         <img 
           src={imageUrl} 
@@ -25,9 +24,7 @@ export function DishItem({ dish, isLast, onQuantityChange, onRemove }: DishItemP
         />
       </div>
 
-      {/* Dish Content */}
       <div className="flex-1 flex flex-col">
-        {/* Name & Price Row */}
         <div className="flex justify-between items-start gap-2">
           <h3 className="text-[15px] font-medium text-[#1A1A1A] line-clamp-1">
             {dish.dishName}
@@ -37,14 +34,11 @@ export function DishItem({ dish, isLast, onQuantityChange, onRemove }: DishItemP
           </span>
         </div>
 
-        {/* Description */}
         <p className="text-[12px] text-[#9CA3AF] mt-1 line-clamp-1">
           {dish.description}
         </p>
 
-        {/* Quantity & Delete Row */}
         <div className="flex justify-between items-center mt-3">
-          {/* Quantity Selector */}
           <div className="flex items-center bg-[#F3F4F6] rounded-[10px] h-9 overflow-hidden">
             <button
               onClick={() => onQuantityChange(dish.quantity - 1)}
@@ -66,7 +60,6 @@ export function DishItem({ dish, isLast, onQuantityChange, onRemove }: DishItemP
             </button>
           </div>
 
-          {/* Delete Button */}
           <button
             onClick={onRemove}
             className="flex items-center gap-1 text-[#EF4444] text-[13px] hover:bg-[#FEE2E2] px-3 py-2 rounded-lg transition-colors"

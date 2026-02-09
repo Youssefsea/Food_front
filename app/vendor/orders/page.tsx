@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 import api from '../../../axios';
+import Cookies from 'js-cookie';
 import { Order, OrderStatus, OrdersStats as StatsType } from './types';
 import {
   OrderCard,
@@ -10,6 +11,7 @@ import {
   OrdersHeader,
   OrdersStats,
   EmptyOrdersState,
+  VendorChatModal,
 } from './components';
 
 export default function OrdersPage() {
@@ -23,7 +25,27 @@ export default function OrdersPage() {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  // Fetch orders from API - دايماً بنجيب كل الطلبات
+  
+  // Chat state
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [selectedOrderIdForChat, setSelectedOrderIdForChat] = useState<number | null>(null);
+  const [selectedCustomerName, setSelectedCustomerName] = useState("");
+  
+  useEffect(() => {
+    const syncVendorToken = async () => {
+      const vendorToken = localStorage.getItem('vendorToken');
+      if (!vendorToken) {
+        const cookieToken = Cookies.get('token');
+        if (cookieToken) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('customerToken');
+          localStorage.setItem('vendorToken', cookieToken);
+        }
+      }
+    };
+    syncVendorToken();
+  }, []);
+
   const fetchOrders = useCallback(async (showRefreshing = false) => {
     try {
       if (showRefreshing) setIsRefreshing(true);
@@ -31,14 +53,11 @@ export default function OrdersPage() {
       
       setError(null);
 
-      // بنجيب كل الطلبات بدون فلتر - الفلترة هتتم في الـ frontend
       const params: { limit?: number } = { limit: 100 };
 
       const response = await api.get('/restaurant/orders', { params });
       setOrders(response.data.orders || []);
-      console.log('Fetched orders:', response.data.orders);
     } catch (err) {
-      console.error('Error fetching orders:', err);
       setError('فشل في تحميل الطلبات. يرجى المحاولة مرة أخرى.');
     } finally {
       setIsLoading(false);
@@ -51,7 +70,6 @@ export default function OrdersPage() {
     fetchOrders();
   }, [fetchOrders]);
 
-  // Calculate statistics
   const stats: StatsType = useMemo(() => {
     return {
       all: orders.length,
@@ -63,14 +81,11 @@ export default function OrdersPage() {
     };
   }, [orders]);
 
-  // Count active orders
   const activeOrdersCount = stats.cooking + stats.delivering;
 
-  // Filter orders based on selected status (from stats cards or filter bar)
   const filteredOrders = useMemo(() => {
     let result = [...orders];
 
-    // استخدم selectedStatus من كروت الإحصائيات أو statusFilter من الفلتر بار
     const activeFilter = selectedStatus || statusFilter;
     
     if (activeFilter && activeFilter !== 'all') {
@@ -80,7 +95,6 @@ export default function OrdersPage() {
     return result;
   }, [orders, selectedStatus, statusFilter]);
 
-  // Handle status change
   const handleStatusChange = async (orderId: number, newStatus: OrderStatus) => {
     try {
       await api.post('/restaurant/order-status', {
@@ -88,7 +102,6 @@ export default function OrdersPage() {
         status: newStatus,
       });
 
-      // Update local state
       setOrders((prev) =>
         prev.map((order) =>
           order.id === orderId ? { ...order, status: newStatus } : order
@@ -97,12 +110,10 @@ export default function OrdersPage() {
 
       showToast('success', 'تم تحديث حالة الطلب بنجاح');
     } catch (err) {
-      console.error('Error updating order status:', err);
       showToast('error', 'فشل في تحديث حالة الطلب');
     }
   };
 
-  // Handle cancel order
   const handleCancelOrder = async (orderId: number) => {
     if (!confirm('هل أنت متأكد من إلغاء هذا الطلب؟')) return;
 
@@ -112,7 +123,6 @@ export default function OrdersPage() {
         status: 'cancelled',
       });
 
-      // Update local state
       setOrders((prev) =>
         prev.map((order) =>
           order.id === orderId ? { ...order, status: 'cancelled' as OrderStatus } : order
@@ -121,27 +131,34 @@ export default function OrdersPage() {
 
       showToast('success', 'تم إلغاء الطلب');
     } catch (err) {
-      console.error('Error cancelling order:', err);
       showToast('error', 'فشل في إلغاء الطلب');
     }
   };
 
-  // View order details
   const handleViewDetails = (order: Order) => {
     setSelectedOrder(order);
     setIsDetailsModalOpen(true);
   };
 
-  // Toast helper
+  const handleChatClick = (orderId: number, customerName: string) => {
+    setSelectedOrderIdForChat(orderId);
+    setSelectedCustomerName(customerName);
+    setIsChatOpen(true);
+  };
+
+  const handleCloseChat = () => {
+    setIsChatOpen(false);
+    setSelectedOrderIdForChat(null);
+    setSelectedCustomerName("");
+  };
+
   const showToast = (type: 'success' | 'error', message: string) => {
     setToast({ type, message });
     setTimeout(() => setToast(null), 3000);
   };
 
-  // Handle status select from stats cards
   const handleStatsStatusSelect = (status: string | null) => {
     setSelectedStatus(status);
-   
     setStatusFilter(status || 'all');
   };
 
@@ -159,11 +176,9 @@ export default function OrdersPage() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] py-8 px-4 md:px-8" dir="rtl">
       <div className="max-w-[1400px] mx-auto">
-        {/* Header */}
         <div className="flex items-center justify-between mb-6 gap-3">
           <OrdersHeader activeOrdersCount={activeOrdersCount} />
           
-          {/* Refresh Button */}
           <button
             onClick={() => fetchOrders(true)}
             disabled={isRefreshing}
@@ -174,7 +189,6 @@ export default function OrdersPage() {
           </button>
         </div>
 
-        {/* Error State */}
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-center gap-3">
             <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
@@ -188,7 +202,6 @@ export default function OrdersPage() {
           </div>
         )}
         <div className='h-3'/>
-        {/* Statistics */}
         <div className="h-2"/>
         <OrdersStats
           stats={stats}
@@ -197,31 +210,28 @@ export default function OrdersPage() {
         />
         <div className="h-4"/>
 
-
-        {/* Filters */}
-     
         <div className="h-4"/>
 
-
-        {/* Orders List */}
         {filteredOrders.length === 0 ? (
           <EmptyOrdersState selectedStatus={selectedStatus} />
         ) : (
           <div className="space-y-5">
             {filteredOrders.map((order) => (
-              <OrderCard
+              <><OrderCard
                 key={order.id}
                 order={order}
                 onStatusChange={handleStatusChange}
                 onViewDetails={handleViewDetails}
                 onCancel={handleCancelOrder}
+                onChatClick={handleChatClick}
               />
+              <div className="h-5"/>
+              </>
             ))}
           </div>
         )}
       </div>
 
-      {/* Order Details Modal */}
       <OrderDetailsModal
         order={selectedOrder}
         isOpen={isDetailsModalOpen}
@@ -231,7 +241,15 @@ export default function OrdersPage() {
         }}
       />
 
-      {/* Toast Notification */}
+      {selectedOrderIdForChat && (
+        <VendorChatModal
+          isOpen={isChatOpen}
+          onClose={handleCloseChat}
+          orderId={selectedOrderIdForChat}
+          customerName={selectedCustomerName}
+        />
+      )}
+
       {toast && (
         <div
           className={`fixed bottom-6 left-6 px-5 py-3 rounded-xl shadow-lg flex items-center gap-2 z-50 animate-slide-up ${
@@ -245,7 +263,6 @@ export default function OrdersPage() {
         </div>
       )}
 
-      {/* Global Styles */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap');
         

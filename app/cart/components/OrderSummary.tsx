@@ -17,7 +17,6 @@ export function OrderSummary({ summary, restaurants }: OrderSummaryProps) {
     <div className="bg-white rounded-2xl mx-5 mb-5 p-5 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
       <h2 className="text-[18px] font-semibold text-[#1A1A1A] mb-4">📊 ملخص الطلبات</h2>
 
-      {/* Summary Details */}
       <div className="space-y-3">
         <div className="flex justify-between text-[14px]">
           <span className="text-[#6B7280]">عدد المطاعم</span>
@@ -45,10 +44,8 @@ export function OrderSummary({ summary, restaurants }: OrderSummaryProps) {
           <span className="text-[#1A1A1A]">{summary.totalDeliveryFees.toFixed(2)} ج.م</span>
         </div>
 
-        {/* Divider */}
         <div className="h-px bg-[#E5E7EB] my-2" />
 
-        {/* Grand Total */}
         <div className="bg-gradient-to-r from-[#E5A04D] to-[#F59E0B] rounded-xl p-4 flex justify-between items-center">
           <span className="text-[16px] font-semibold text-white">الإجمالي الكلي</span>
           <span className="text-[24px] font-bold text-white">
@@ -57,7 +54,6 @@ export function OrderSummary({ summary, restaurants }: OrderSummaryProps) {
         </div>
       </div>
 
-      {/* Orders Breakdown Toggle */}
       {restaurants.length > 1 && (
         <>
           <button
@@ -72,7 +68,6 @@ export function OrderSummary({ summary, restaurants }: OrderSummaryProps) {
             )}
           </button>
 
-          {/* Breakdown List */}
           <AnimatePresence>
             {showBreakdown && (
               <motion.div
@@ -113,6 +108,7 @@ export function OrderSummary({ summary, restaurants }: OrderSummaryProps) {
           </AnimatePresence>
         </>
       )}
+    
     </div>
   );
 }

@@ -12,13 +12,14 @@ import {
   FloatingCartBar 
 } from './components';
 import { Restaurant, Dish } from './types';
+import { useCart } from '../../context/CartContext';
 
 export default function RestaurantPage() {
   const params = useParams();
   const router = useRouter();
+  const { incrementCount, decrementCount } = useCart();
   const restaurantName = decodeURIComponent(params.restaurant_name as string);
 
-  // States
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [coverImage, setCoverImage] = useState<string>('');
@@ -33,7 +34,6 @@ export default function RestaurantPage() {
 
   const categoryRefs = useRef<Record<string, HTMLElement | null>>({});
 
-  // Fetch restaurant data
   const fetchRestaurant = useCallback(async () => {
     try {
       const res = await api.get('/restaurant/search-by-name', {
@@ -51,7 +51,6 @@ export default function RestaurantPage() {
         setError('المطعم غير موجود');
         return null;
       }    } catch (err) {
-      console.error('Error fetching restaurant:', err);
       const axiosError = err as { response?: { status?: number } };
       if (axiosError.response?.status === 404) {
         setError('المطعم غير موجود');
@@ -62,7 +61,6 @@ export default function RestaurantPage() {
     }
   }, [restaurantName]);
 
-  // Fetch dishes for restaurant
   const fetchDishes = useCallback(async (restaurantId: number) => {
     try {
       const res = await api.post('/restaurant/all-dishes-for-restaurantE', { 
@@ -70,15 +68,13 @@ export default function RestaurantPage() {
       });
       const dishesData: Dish[] = res.data.dishes || [];
       
-      // Mark popular dishes (top 3 by some criteria - could be order count)
       const processedDishes = dishesData.map((dish, index) => ({
         ...dish,
-        isPopular: index < 3, // First 3 dishes are marked as popular
+        isPopular: index < 3,
       }));
 
       setDishes(processedDishes);
 
-      // Get cover image from first dish with image
       if (processedDishes.length > 0) {
         const firstImage = processedDishes[0]?.image?.split(',')[0]?.trim();
         if (firstImage) {
@@ -86,28 +82,22 @@ export default function RestaurantPage() {
         }
       }
     } catch (err) {
-      console.error('Error fetching dishes:', err);
     }
   }, []);
-  // Fetch cart data
   const fetchCart = useCallback(async () => {
     try {
       const res = await api.get('/customer/view-cart');
       const cartItems = res.data.cartItems || [];
       
-      // Convert to our format
       const cartMap: Record<number, number> = {};
       cartItems.forEach((item: { dishId: number; quantity: number }) => {
         cartMap[item.dishId] = item.quantity;
       });
       setCart(cartMap);
     } catch (err) {
-      // Cart might be empty or user not logged in
-      console.log('Cart fetch info:', err);
     }
   }, []);
 
-  // Initial load
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
@@ -122,13 +112,11 @@ export default function RestaurantPage() {
     loadData();
   }, [fetchRestaurant, fetchDishes, fetchCart]);
 
-  // Get unique categories
   const categories = useMemo(() => {
     const uniqueCategories = [...new Set(dishes.map(d => d.category).filter(Boolean))];
     return ['الكل', ...uniqueCategories];
   }, [dishes]);
 
-  // Filter dishes by search and category
   const filteredDishes = useMemo(() => {
     return dishes.filter(dish => {
       const matchesSearch = searchQuery === '' ||
@@ -139,7 +127,6 @@ export default function RestaurantPage() {
     });
   }, [dishes, searchQuery, activeCategory]);
 
-  // Group dishes by category
   const dishesByCategory = useMemo(() => {
     return categories.reduce((acc, category) => {
       if (category === 'الكل') return acc;
@@ -148,7 +135,6 @@ export default function RestaurantPage() {
     }, {} as Record<string, Dish[]>);
   }, [categories, filteredDishes]);
 
-  // Dish counts per category
   const dishCounts = useMemo(() => {
     return categories.reduce((acc, category) => {
       if (category === 'الكل') return acc;
@@ -157,7 +143,6 @@ export default function RestaurantPage() {
     }, {} as Record<string, number>);
   }, [categories, dishes]);
 
-  // Calculate cart totals
   const cartItemCount = useMemo(() => 
     Object.values(cart).reduce((sum, qty) => sum + qty, 0),
     [cart]
@@ -170,13 +155,12 @@ export default function RestaurantPage() {
     }, 0),
     [cart, dishes]
   );
-  // Handle add/update/remove from cart
   const handleAddToCart = async (dishId: number, quantity: number, notes?: string) => {
     const currentQuantity = cart[dishId] || 0;
+    const quantityDiff = quantity - currentQuantity;
     
     try {
       if (quantity === 0) {
-        // Remove from cart
         await api.delete('/customer/remove-dish-from-cart', {
           data: { dishId }
         });
@@ -186,8 +170,9 @@ export default function RestaurantPage() {
           delete newCart[dishId];
           return newCart;
         });
+        
+        decrementCount(currentQuantity);
       } else if (currentQuantity === 0) {
-        // Add new item to cart
         await api.post('/customer/add-dish-to-cart', {
           dishId,
           quantity,
@@ -198,8 +183,9 @@ export default function RestaurantPage() {
           ...prev,
           [dishId]: quantity,
         }));
+        
+        incrementCount(quantity);
       } else {
-        // Update existing item quantity
         await api.put('/customer/update-dish-quantity-in-cart', {
           dishId,
           quantity
@@ -209,21 +195,31 @@ export default function RestaurantPage() {
           ...prev,
           [dishId]: quantity,
         }));
+        
+        if (quantityDiff > 0) {
+          incrementCount(quantityDiff);
+        } else if (quantityDiff < 0) {
+          decrementCount(Math.abs(quantityDiff));
+        }
       }
     } catch (err) {
-      console.error('Error updating cart:', err);
-      // Still update local state for better UX
       if (quantity === 0) {
         setCart(prev => {
           const newCart = { ...prev };
           delete newCart[dishId];
           return newCart;
         });
+        decrementCount(currentQuantity);
       } else {
         setCart(prev => ({
           ...prev,
           [dishId]: quantity,
         }));
+        if (quantityDiff > 0) {
+          incrementCount(quantityDiff);
+        } else if (quantityDiff < 0) {
+          decrementCount(Math.abs(quantityDiff));
+        }
       }
     }
   };
@@ -238,7 +234,7 @@ export default function RestaurantPage() {
     if (category !== 'الكل') {
       const element = categoryRefs.current[category];
       if (element) {
-        const offset = 160; // Header + tabs height
+        const offset = 160;
         const top = element.offsetTop - offset;
         window.scrollTo({ top, behavior: 'smooth' });
       }
@@ -249,8 +245,6 @@ export default function RestaurantPage() {
     router.push('/cart');
   };
 
-
-  // Loading state
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center" dir="rtl">
@@ -262,7 +256,6 @@ export default function RestaurantPage() {
     );
   }
 
-  // Error state
   if (error || !restaurant) {
     return (
       <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center" dir="rtl">
@@ -287,7 +280,6 @@ export default function RestaurantPage() {
 
   return (
     <div className="min-h-screen bg-[#FAFAFA]" dir="rtl">
-      {/* Restaurant Header */}
       <div className="h-2"/>
 
       <RestaurantHeader 
@@ -298,7 +290,6 @@ export default function RestaurantPage() {
 
       <div className="h-4"/>
 
-      {/* Category Tabs - Sticky */}
       <CategoryTabs
         categories={categories}
         activeCategory={activeCategory}
@@ -307,7 +298,6 @@ export default function RestaurantPage() {
       />
       <div className="h-3"/>
 
-      {/* Search Bar */}
       <MenuSearchBar
         value={searchQuery}
         onChange={setSearchQuery}
@@ -315,10 +305,8 @@ export default function RestaurantPage() {
 
       <div className="h-4"/>
 
-      {/* Menu / Dishes List */}
       <div className="px-3 sm:px-4 md:px-5 lg:px-6 py-4 sm:py-5 md:py-6 pb-28 sm:pb-32">
         {activeCategory === 'الكل' ? (
-          // Show all categories
           Object.entries(dishesByCategory).map(([category, categoryDishes]) => {
             if (categoryDishes.length === 0) return null;
             return (
@@ -350,7 +338,6 @@ export default function RestaurantPage() {
             );
           })
         ) : (
-          // Show selected category only
           <div>
             {filteredDishes.length > 0 ? (
               filteredDishes.map((dish) => (
@@ -374,7 +361,6 @@ export default function RestaurantPage() {
           </div>
         )}
 
-        {/* Empty state when no dishes */}
         {dishes.length === 0 && !isLoading && (
           <div className="text-center py-12 sm:py-16">
             <div className="text-5xl sm:text-6xl mb-4">🍽️</div>
@@ -386,7 +372,6 @@ export default function RestaurantPage() {
         )}
       </div>
 
-      {/* Dish Detail Modal */}
       <DishDetailModal
         dish={selectedDish}
         isOpen={isModalOpen}
@@ -395,14 +380,12 @@ export default function RestaurantPage() {
         initialQuantity={selectedDish ? cart[selectedDish.id] || 1 : 1}
       />
 
-      {/* Floating Cart Bar */}
       <FloatingCartBar
         itemCount={cartItemCount}
         totalPrice={cartTotal}
         onViewCart={handleViewCart}
       />
 
-      {/* Global Styles */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap');
         

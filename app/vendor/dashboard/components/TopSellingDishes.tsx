@@ -40,7 +40,7 @@ export function TopSellingDishes({ dishes }: TopSellingDishesProps) {
             <div
               key={dish.id}
               className="shrink-0 w-55 bg-white rounded-2xl shadow-sm hover:shadow-lg hover:scale-105 transition-all cursor-pointer"
-            >              {/* Dish Image */}
+            >
               <div className="relative h-40 rounded-t-2xl overflow-hidden bg-[#F3F4F6]">
                 {dishImgs[index] && dishImgs[index][0] ? (
                   <Image
@@ -54,22 +54,18 @@ export function TopSellingDishes({ dishes }: TopSellingDishesProps) {
                     🍽️
                   </div>
                 )}
-                {/* Rank Badge */}
                 <div className="absolute top-2 right-2 w-8 h-8 bg-[#E5A04D] rounded-full flex items-center justify-center text-white font-bold shadow-lg">
                   #{index + 1}
                 </div>
               </div>
 
-              {/* Dish Info */}
               <div className="p-4 space-y-2">
                 <h3 className="font-bold text-[#1A1A1A]">{dish.name}</h3>
 
-                {/* Price Badge */}
                 <div className="inline-block px-3 py-1 bg-[#E5A04D] text-white text-sm rounded-full font-medium">
                   {dish.price.toLocaleString('ar-EG')} ج.م
                 </div>
 
-                {/* Stats */}
                 <div className="space-y-1 pt-2">
                   {dish.soldCount !== undefined && (
                     <div className="text-xs text-[#9CA3AF]">

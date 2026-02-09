@@ -1,5 +1,3 @@
-// Cart Types
-
 export interface CartDish {
   dishId: number;
   dishName: string;
@@ -15,24 +13,20 @@ export interface RestaurantCart {
   restaurantName: string;
   restaurantLocation: string;
   restaurantLogo: string;
-  restaurantLat: number | null; // إحداثيات المطعم
+  restaurantLat: number | null;
   restaurantLng: number | null;
   is_open: number;
   can_reserve: boolean;
   can_delivery: boolean;
-  delivery_fees: number; // Per KM rate
-  calculatedDeliveryFee: number; // Actual calculated fee based on distance
-  distanceKm: number; // Distance in kilometers
+  delivery_fees: number;
+  calculatedDeliveryFee: number;
+  distanceKm: number;
   dishes: CartDish[];
   totalPrice: number;
   totalItems: number;
-
-  // Per-restaurant order settings
   orderType: 'instant' | 'reservation';
   reservationDate: string;
   reservationTime: string;
-  
-  // Selection state
   isSelected: boolean;
 }
 

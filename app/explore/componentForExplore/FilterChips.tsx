@@ -27,7 +27,6 @@ export function FilterChips({
     <div className="bg-white border-b border-[#E5E7EB] py-2 sm:py-2.5 md:py-3">
       <div className="overflow-x-auto hide-scrollbar">
         <div className="flex gap-1.5 sm:gap-2 md:gap-2.5 px-3 sm:px-4 md:px-5">
-          {/* Location Button */}
           <button
             onClick={onLocationClick}
             disabled={isLocating}
@@ -41,7 +40,6 @@ export function FilterChips({
             <span>موقعي</span>
           </button>
 
-          {/* Nearby Filter */}
           <button
             onClick={onNearbyToggle}
             className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 md:px-4 py-1.5 sm:py-2 rounded-full whitespace-nowrap transition-all active:scale-95 text-[11px] sm:text-xs md:text-[13px] font-medium border ${
@@ -54,7 +52,6 @@ export function FilterChips({
             <span>قريب مني</span>
           </button>
 
-          {/* Delivery Filter */}
           <button
             onClick={onDeliveryToggle}
             className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 md:px-4 py-1.5 sm:py-2 rounded-full whitespace-nowrap transition-all active:scale-95 text-[11px] sm:text-xs md:text-[13px] font-medium border ${
@@ -67,7 +64,6 @@ export function FilterChips({
             <span>توصيل</span>
           </button>
 
-          {/* Booking Filter */}
           <button
             onClick={onBookingToggle}
             className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 md:px-4 py-1.5 sm:py-2 rounded-full whitespace-nowrap transition-all active:scale-95 text-[11px] sm:text-xs md:text-[13px] font-medium border ${

@@ -39,21 +39,17 @@ export function LocationPricingTab({ data, onChange }: LocationPricingTabProps) 
   });
   const [locationMessage, setLocationMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
 
-  // استخراج الـ coordinates من الـ location text عند التحميل (مرة واحدة)
   useEffect(() => {
     const fetchCoordsFromLocation = async () => {
-      // لو الـ coordinates موجودين من الـ data، استخدمهم
       if (data.latitude && data.longitude) {
         setCoords({ lat: data.latitude, lng: data.longitude });
         return;
       }
 
-      // لو مفيش coordinates بس فيه location text، حول الـ text لـ coordinates
       if (data.location && !data.latitude && !data.longitude) {
         const result = await forwardGeocode(data.location);
         if (result) {
           setCoords({ lat: result.lat, lng: result.lng });
-          // حدث الـ parent بالـ coordinates
           onChange({ 
             latitude: result.lat, 
             longitude: result.lng 
@@ -64,24 +60,22 @@ export function LocationPricingTab({ data, onChange }: LocationPricingTabProps) 
 
     fetchCoordsFromLocation();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run only once on mount
+  }, []);
 
   const handleDeliveryToggle = (enabled: boolean) => {
     setDeliveryEnabled(enabled);
   };
-  // الحصول على الموقع الحالي - فقط يحدث الـ state مش الـ Backend
+
   const handleGetCurrentLocation = useCallback(async () => {
     setIsLocating(true);
     setLocationMessage(null);
 
-    // التحقق من أن المتصفح يدعم تحديد الموقع
     if (!('geolocation' in navigator)) {
       setLocationMessage({ type: 'error', text: 'المتصفح لا يدعم تحديد الموقع' });
       setIsLocating(false);
       return;
     }
 
-    // التحقق من أن الموقع يعمل على HTTPS (مطلوب لـ geolocation)
     if (typeof window !== 'undefined' && window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
       setLocationMessage({ 
         type: 'error', 
@@ -91,7 +85,6 @@ export function LocationPricingTab({ data, onChange }: LocationPricingTabProps) 
       return;
     }
 
-    // التحقق من صلاحيات الموقع
     if ('permissions' in navigator) {
       try {
         const permission = await navigator.permissions.query({ name: 'geolocation' });
@@ -104,7 +97,6 @@ export function LocationPricingTab({ data, onChange }: LocationPricingTabProps) 
           return;
         }
       } catch {
-        // بعض المتصفحات لا تدعم permissions API، نكمل عادي
       }
     }
 
@@ -112,13 +104,10 @@ export function LocationPricingTab({ data, onChange }: LocationPricingTabProps) 
       async (position) => {
         const { latitude, longitude } = position.coords;
         
-        // تحويل الـ coordinates لاسم شارع
         const locationName = await reverseGeocode(latitude, longitude);
         
-        // تحديث الـ local state
         setCoords({ lat: latitude, lng: longitude });
         
-        // تحديث الـ parent state (لكن مش نبعت للـ Backend)
         onChange({ 
           location: locationName, 
           latitude: latitude,
@@ -131,8 +120,6 @@ export function LocationPricingTab({ data, onChange }: LocationPricingTabProps) 
         setIsLocating(false);
       },
       (error) => {
-        console.error('Geolocation error:', error.code, error.message);
-        
         let errorMessage = 'تعذر الوصول إلى موقعك الحالي';
         
         switch (error.code) {
@@ -152,21 +139,17 @@ export function LocationPricingTab({ data, onChange }: LocationPricingTabProps) 
       },
       { 
         enableHighAccuracy: true, 
-        timeout: 15000,  // زيادة الـ timeout لـ 15 ثانية
-        maximumAge: 60000  // السماح بموقع مخزن لمدة دقيقة
+        timeout: 15000,
+        maximumAge: 60000
       }
     );
   }, [onChange]);
 
-  // تحديث الموقع من الخريطة - فقط يحدث الـ state مش الـ Backend
   const handleLocationChange = useCallback(async (lat: number, lng: number) => {
-    // تحويل الـ coordinates لاسم شارع
     const locationName = await reverseGeocode(lat, lng);
     
-    // تحديث الـ local state
     setCoords({ lat, lng });
     
-    // تحديث الـ parent state (لكن مش نبعت للـ Backend)
     onChange({ 
       location: locationName,
       latitude: lat,
@@ -179,7 +162,6 @@ export function LocationPricingTab({ data, onChange }: LocationPricingTabProps) 
 
   return (
     <div className="space-y-6">
-      {/* Location Section */}
       <div className="bg-white rounded-2xl shadow-sm p-7">
         <div className="mb-6">
           <h3 className="text-xl font-semibold text-[#1A1A1A] mb-1 flex items-center gap-2">
@@ -189,7 +171,6 @@ export function LocationPricingTab({ data, onChange }: LocationPricingTabProps) 
           <p className="text-sm text-[#6B7280]">الموقع الذي يظهر للعملاء</p>
         </div>
 
-        {/* Status Message */}
         {locationMessage && (
           <div className={`mb-4 p-3 rounded-xl text-sm flex items-center gap-2 ${
             locationMessage.type === 'success' 
@@ -203,7 +184,6 @@ export function LocationPricingTab({ data, onChange }: LocationPricingTabProps) 
         )}
 
         <div className="space-y-5">
-          {/* Location Buttons */}
           <div className="flex gap-3">
             <button
               type="button"
@@ -228,7 +208,6 @@ export function LocationPricingTab({ data, onChange }: LocationPricingTabProps) 
             </button>
           </div>
 
-          {/* Current Location Display */}
           <div>
             <label className="text-sm font-medium text-[#1A1A1A] mb-2 flex items-center gap-2">
               📍 عنوان المطعم الحالي
@@ -238,7 +217,6 @@ export function LocationPricingTab({ data, onChange }: LocationPricingTabProps) 
             </div>
           </div>
 
-          {/* Map Preview */}
           <div>
             <label className="block text-sm font-medium text-[#1A1A1A] mb-2">
               الموقع على الخريطة
@@ -263,7 +241,6 @@ export function LocationPricingTab({ data, onChange }: LocationPricingTabProps) 
             </div>
           </div>
 
-          {/* Coordinates Display */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs text-[#6B7280] mb-1">خط العرض (Latitude)</label>
@@ -287,7 +264,6 @@ export function LocationPricingTab({ data, onChange }: LocationPricingTabProps) 
         </div>
       </div>
 
-      {/* Delivery Settings */}
       <div className="bg-white rounded-2xl shadow-sm p-7">
         <div className="mb-6">
           <h3 className="text-xl font-semibold text-[#1A1A1A] mb-1">إعدادات التوصيل</h3>
@@ -311,7 +287,6 @@ export function LocationPricingTab({ data, onChange }: LocationPricingTabProps) 
 
         {deliveryEnabled && (
           <div className="space-y-6 animate-fade-in">
-            {/* Delivery Radius */}
             <div>
               <label className="block text-sm font-medium text-[#1A1A1A] mb-3">
                 أقصى مسافة للتوصيل <span className="text-[#10B981] text-xs">(قابل للتعديل)</span>
@@ -345,7 +320,6 @@ export function LocationPricingTab({ data, onChange }: LocationPricingTabProps) 
               </div>
             </div>
 
-            {/* Delivery Fees */}
             <div>
               <label className="block text-sm font-medium text-[#1A1A1A] mb-3">
                 رسوم التوصيل <span className="text-[#10B981] text-xs">(قابل للتعديل)</span>
@@ -369,7 +343,6 @@ export function LocationPricingTab({ data, onChange }: LocationPricingTabProps) 
         )}
       </div>
 
-      {/* Map Modal */}
       {showMap && (
         <LocationPicker
           lat={coords.lat || 30.0444}

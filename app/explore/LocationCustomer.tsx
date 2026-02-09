@@ -12,7 +12,6 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Locate } from "lucide-react";
 
-/* Fix Leaflet icon */
 const customIcon = new L.Icon({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
   iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
@@ -28,7 +27,6 @@ interface Props {
   onClose: () => void;
 }
 
-/* 🔥 يحرك الخريطة لما اللات/لانج يتغيروا */
 function RecenterMap({ lat, lng }: { lat: number; lng: number }) {
   const map = useMap();
 
@@ -39,7 +37,6 @@ function RecenterMap({ lat, lng }: { lat: number; lng: number }) {
   return null;
 }
 
-/* 📍 Marker يتغير مع أي تحديث */
 function CustomerMarker({
   lat,
   lng,
@@ -93,7 +90,6 @@ export default function LocationCustomer({
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl w-full max-w-2xl shadow-xl overflow-hidden">
 
-        {/* Header */}
         <div className="p-4 border-b flex justify-between items-center">
           <h3 className="font-semibold">حدد عنوانك</h3>
           <div className="flex gap-2">
@@ -108,7 +104,6 @@ export default function LocationCustomer({
           </div>
         </div>
 
-        {/* Map */}
         <div className="h-[400px]">
           <MapContainer
             center={[currentLat, currentLng]}
@@ -130,7 +125,6 @@ export default function LocationCustomer({
           </MapContainer>
         </div>
 
-        {/* Footer */}
         <div className="p-4 text-center space-y-3">
           <p className="text-xs text-gray-500">
             ({currentLat.toFixed(6)}, {currentLng.toFixed(6)})

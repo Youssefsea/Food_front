@@ -19,7 +19,6 @@ export function DeliveryLocation({ location, onOpenLocationPicker }: DeliveryLoc
       </div>
 
       {!location ? (
-        /* Empty State */
         <button
           onClick={onOpenLocationPicker}
           className="w-full bg-[#F9FAFB] border-2 border-dashed border-[#E5E7EB] rounded-xl p-8 text-center hover:border-[#E5A04D] hover:bg-[#FEF3E2] transition-all cursor-pointer"
@@ -33,14 +32,11 @@ export function DeliveryLocation({ location, onOpenLocationPicker }: DeliveryLoc
           </div>
         </button>
       ) : (
-        /* Location Set */
         <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl p-4 flex gap-3.5">
-          {/* Map Icon */}
           <div className="w-[60px] h-[60px] rounded-[10px] bg-gradient-to-br from-[#E5A04D] to-[#D4903D] flex items-center justify-center flex-shrink-0">
             <MapPin className="w-7 h-7 text-white" />
           </div>
 
-          {/* Location Details */}
           <div className="flex-1 min-w-0">
             <div className="text-[14px] text-[#1A1A1A] mb-1 line-clamp-2">
               {location.address}
@@ -50,7 +46,6 @@ export function DeliveryLocation({ location, onOpenLocationPicker }: DeliveryLoc
             </div>
           </div>
 
-          {/* Edit Button */}
           <button
             onClick={onOpenLocationPicker}
             className="text-[14px] font-semibold text-[#E5A04D] hover:underline self-start"

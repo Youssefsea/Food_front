@@ -64,14 +64,12 @@ export default function EditRestaurantSettings() {
     longitude: null,
   });
 
-  // Fetch restaurant profile
   const fetchProfile = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const res = await api.get('/restaurant/profile');
       const profile = res.data.restaurantProfile;
-      console.log('Fetched profile response:', profile);
 
       const data: RestaurantData = {
         name: profile.name || '',
@@ -87,11 +85,9 @@ export default function EditRestaurantSettings() {
         longitude: null,
       };
 
-      console.log('Fetched profile data:', data);
       setOriginalData(data);
       setFormData(data);
     } catch (err) {
-      console.error('Error fetching profile:', err);
       const error = err as { response?: { data?: { message?: string } } };
       setError(error.response?.data?.message || 'حدث خطأ في تحميل البيانات');
     } finally {
@@ -103,7 +99,6 @@ export default function EditRestaurantSettings() {
     fetchProfile();
   }, [fetchProfile]);
 
-  // Track changes
   useEffect(() => {
     const { latitude: fLat, longitude: fLng, ...formWithoutCoords } = formData;
     const { latitude: oLat, longitude: oLng, ...originalWithoutCoords } = originalData;
@@ -114,14 +109,12 @@ export default function EditRestaurantSettings() {
     setHasChanges(basicChanged || locationChanged);
   }, [formData, originalData]);
 
-  // Handle form data changes
   const handleChange = (newData: Partial<RestaurantData>) => {
     setFormData(prev => ({ ...prev, ...newData }));
     setError(null);
     setSuccessMessage(null);
   };
 
-  // Save changes
   const handleSave = async () => {
     try {
       setSaving(true);
@@ -181,12 +174,6 @@ export default function EditRestaurantSettings() {
           })
         );
 
-        console.log('📍 Saving location update:', {
-          lat: formData.latitude,
-          lng: formData.longitude,
-          radius: formData.allowed_radius_km,
-          location: formData.location,
-        });
       }
 
       if (promises.length > 0) {
@@ -199,7 +186,6 @@ export default function EditRestaurantSettings() {
 
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
-      console.error('Error saving changes:', err);
       const error = err as { response?: { data?: { error?: string } } };
       setError(error.response?.data?.error || 'حدث خطأ في حفظ التغييرات');
     } finally {
@@ -207,7 +193,6 @@ export default function EditRestaurantSettings() {
     }
   };
 
-  // Reset changes
   const handleReset = () => {
     setFormData({ ...originalData });
     setError(null);

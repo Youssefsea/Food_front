@@ -47,7 +47,7 @@ useEffect(() => {
 
   const interval = setInterval(() => {
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
-  }, 3000); // كل 3 ثواني
+  }, 3000);
 
   return () => clearInterval(interval);
 }, [images]);
@@ -61,7 +61,6 @@ useEffect(() => {
 
   return (
     <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-200 cursor-default">
-{/* Image Section */}
 <div className="relative w-full p-3 rounded-3xl h-40 bg-[#F3F4F6] overflow-hidden group">
   {images && images.length > 0 ? (
     <Image
@@ -76,7 +75,6 @@ useEffect(() => {
     </div>
   )}
 
-  {/* Multiple Images Indicator */}
   {images && images.length > 1 && (
     <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
       {images.slice(0, 3).map((_, index) => (
@@ -92,7 +90,6 @@ useEffect(() => {
     </div>
   )}
 
-  {/* Availability Badge */}
   <div className="absolute top-3 right-3">
     <span
       className={`px-3 py-1.5 rounded-full text-xs font-semibold ${
@@ -105,7 +102,6 @@ useEffect(() => {
     </span>
   </div>
 
-  {/* Category Badge */}
   <div className="absolute top-3 left-3">
     <span
       className="px-3 py-1.5 rounded-full text-xs font-semibold"
@@ -121,19 +117,15 @@ useEffect(() => {
 
 
 
-      {/* Content Section */}
       <div className="p-4">
-        {/* Dish Name */}
         <h3 className="text-lg font-semibold text-[#1A1A1A] mb-2 line-clamp-1">
           {dish.name}
         </h3>
 
-        {/* Description */}
         <p className="text-sm text-[#6B7280] mb-3 line-clamp-2 min-h-10">
           {dish.description}
         </p>
 
-        {/* Price & Prep Time */}
         <div className="flex items-center justify-between mb-4">
           <span className="text-[22px] font-bold text-[#E5A04D]">
             {dish.price} ج.م
@@ -145,9 +137,7 @@ useEffect(() => {
         </div>
       </div>
 
-      {/* Actions Footer */}
       <div className="border-t border-[#E5E7EB] px-4 py-3 flex items-center justify-between">
-        {/* Availability Toggle */}
         <div className="flex items-center gap-2">
           <button
             onClick={handleToggle}
@@ -167,7 +157,6 @@ useEffect(() => {
           </span>
         </div>
 
-        {/* Action Buttons */}
         <div className="flex items-center gap-2">
           <button
             onClick={() => onEdit(dish)}

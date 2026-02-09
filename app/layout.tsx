@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { CartProvider } from './context/CartContext';
+import ClientLayout from "./ClientLayout";
 
 export const metadata: Metadata = {
   title: "Wajbat - احجز وجبتك مقدماً",
@@ -8,13 +10,21 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="ar" dir="rtl">
       <body className="antialiased">
-        {children}
+        <CartProvider>
+
+          <main className="main-content-with-bottom-nav">
+            {children}
+          </main>
+
+          <ClientLayout />
+
+        </CartProvider>
       </body>
     </html>
   );

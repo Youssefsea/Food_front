@@ -28,7 +28,6 @@ export function RestaurantInfoTab({ data, onChange }: RestaurantInfoTabProps) {
     
     <div className="bg-white rounded-2xl shadow-sm ">
       
-      {/* Section 1: Branding - Visual Only (Not saved to backend) */}
       <div className="p-7 border-b border-[#E5E7EB]">
         <div className="mb-6">
             <div className="h-4" />
@@ -40,7 +39,6 @@ export function RestaurantInfoTab({ data, onChange }: RestaurantInfoTabProps) {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {/* Restaurant Name - Read Only from Backend */}
           <div>
             <label className="block text-sm font-medium text-[#1A1A1A] mb-4">
               اسم المطعم
@@ -60,7 +58,6 @@ export function RestaurantInfoTab({ data, onChange }: RestaurantInfoTabProps) {
 
           </div>
 
-          {/* Phone Number  */}
           <div>
             <label className="block text-sm font-medium text-[#1A1A1A] mb-2">
               رقم الهاتف
@@ -84,7 +81,6 @@ export function RestaurantInfoTab({ data, onChange }: RestaurantInfoTabProps) {
             </div>
           </div>
 
-          {/* Email  */}
           <div>
             <label className="block text-sm font-medium text-[#1A1A1A] mb-2">
               البريد الإلكتروني ✉️
@@ -112,7 +108,7 @@ export function RestaurantInfoTab({ data, onChange }: RestaurantInfoTabProps) {
             </div>
           </div>
 
-          {/* Description - Editable ✓ */}
+
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-[#1A1A1A] mb-2">
               وصف المطعم <span className="text-[#10B981] text-xs">(قابل للتعديل)</span>
@@ -140,7 +136,6 @@ export function RestaurantInfoTab({ data, onChange }: RestaurantInfoTabProps) {
             <div className="h-4" />
 
 
-      {/* Section 3: Working Hours - Synced with Backend */}
       <div className="p-7">
         <div className="mb-6">
           <h3 className="text-xl font-semibold text-[#1A1A1A] mb-1">أوقات العمل</h3>
@@ -152,7 +147,6 @@ export function RestaurantInfoTab({ data, onChange }: RestaurantInfoTabProps) {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 ">
-          {/* Open Time */}
           <div>
             <label className="block text-sm font-medium text-[#1A1A1A] mb-2">
               وقت الفتح <span className="text-[#10B981] text-xs">(قابل للتعديل)</span>
@@ -168,7 +162,6 @@ export function RestaurantInfoTab({ data, onChange }: RestaurantInfoTabProps) {
             />
           </div>
 
-          {/* Close Time */}
           <div>
             <label className="block text-sm font-medium text-[#1A1A1A] mb-2">
               وقت الإغلاق <span className="text-[#10B981] text-xs">(قابل للتعديل)</span>

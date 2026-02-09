@@ -31,7 +31,6 @@ export function DeleteConfirmationModal({
       await onConfirm(dish.id);
       onClose();
     } catch (error) {
-      console.error('Error deleting dish:', error);
     } finally {
       setLoading(false);
     }
@@ -39,39 +38,32 @@ export function DeleteConfirmationModal({
 
   return (
     <>
-      {/* Overlay */}
       <div
         className="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm"
         onClick={onClose}
       />
 
-      {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div
           className="bg-white rounded-2xl w-full max-w-[400px] p-8 text-center"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Warning Icon */}
           <div className="w-16 h-16 bg-[#FEE2E2] rounded-full flex items-center justify-center mx-auto mb-4 animate-shake">
             <Trash2 className="w-8 h-8 text-[#EF4444]" />
           </div>
 
-          {/* Title */}
           <h3 className="text-xl font-bold text-[#1A1A1A] mb-2">حذف الطبق؟</h3>
 
-          {/* Message */}
           <p className="text-sm text-[#6B7280] mb-1">
             هل أنت متأكد من حذف
             <span className="font-bold text-[#1A1A1A]"> «{dish.name}» </span>
             ؟
           </p>
 
-          {/* Warning Text */}
           <p className="text-xs text-[#EF4444] mb-6">
             هذا الإجراء لا يمكن التراجع عنه
           </p>
 
-          {/* Buttons */}
           <div className="flex gap-3 justify-center">
             <button
               onClick={onClose}

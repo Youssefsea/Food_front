@@ -7,7 +7,7 @@ import { Header } from "./componentForExplore/Header";
 import { SearchBar } from "./componentForExplore/SearchBar";
 import { FilterChips } from "./componentForExplore/FilterChips";
 import { RestaurantCard as RestaurantCardComponent } from "./componentForExplore/RestaurantCard";
-import { BottomNavigation } from "./componentForExplore/BottomNavigation";
+
 import { LoadingSkeleton } from "./componentForExplore/LoadingSkeleton";
 import { EmptyState } from "./componentForExplore/EmptyState";
 import axios from "axios";
@@ -67,7 +67,6 @@ export default function ExplorePage() {
         fetchRestaurantDishes(restaurant.id);
       });
     } catch (error) {
-      console.error("Error fetching restaurants:", error);
     } finally {
       setIsLoading(false);
     }
@@ -81,7 +80,6 @@ export default function ExplorePage() {
         [restaurantId]: res.data.dishes || []
       }));
     } catch (error) {
-      console.error(`Error fetching dishes for restaurant ${restaurantId}:`, error);
     }
   };
 
@@ -103,7 +101,6 @@ export default function ExplorePage() {
         setNearbyOnly(false);
       }
     } catch (error) {
-      console.error("Error fetching nearby restaurants:", error);
       setNearbyRestaurantIds(new Set<number>());
       setNearbyOnly(false);
     }
@@ -123,7 +120,6 @@ export default function ExplorePage() {
       const city = res.data?.address?.city || res.data?.address?.town || null;
       return city;
     } catch (err) {
-      console.error("Error fetching location name:", err);
       return null;
     }
   };
@@ -210,13 +206,10 @@ export default function ExplorePage() {
   return (
     <div className="min-h-screen bg-[#FAFAFA]" dir="rtl">
       <div className="h-1"/>
-      {/* Header */}
       <Header city={city} />
 
 <div className="h-7.5"/>
-      {/* Hero Section - Egyptian Style */}
       <section className="relative bg-gradient-to-br from-[#E5A04D] via-[#F97316] to-[#EF4444] pt-14 sm:pt-16 overflow-hidden">
-        {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-4 right-8 text-4xl sm:text-5xl rotate-12">🍕</div>
           <div className="absolute bottom-8 left-12 text-3xl sm:text-4xl -rotate-12">🍔</div>
@@ -224,7 +217,6 @@ export default function ExplorePage() {
         </div>
 
         <div className="relative px-4 sm:px-5 md:px-6 py-6 sm:py-8">
-          {/* Greeting Badge */}
           <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1.5 mb-3">
             <span className="text-lg sm:text-xl animate-bounce">👋</span>
             <p className="text-xs sm:text-sm text-white font-medium tracking-wide">
@@ -232,7 +224,6 @@ export default function ExplorePage() {
             </p>
           </div>
 
-          {/* Main Title - Styled */}
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white mb-2 leading-tight">
             <span className="block">نفسك في إيه</span>
             <span className="block bg-gradient-to-r from-white via-yellow-100 to-white bg-clip-text text-transparent drop-shadow-lg">
@@ -240,23 +231,19 @@ export default function ExplorePage() {
             </span>
           </h1>
 
-          {/* Subtitle */}
           <p className="text-sm sm:text-base text-white/80 font-light">
             اكتشف ألذ الأكلات حواليك
           </p>
         </div>
 
-        {/* Wave Bottom */}
         <svg className="absolute bottom-0 left-0 right-0 h-4 sm:h-6" viewBox="0 0 1440 24" fill="none" preserveAspectRatio="none">
           <path d="M0 24h1440V12c-120 8-240 12-360 12s-240-4-360-12c-120-8-240-12-360-12S120 4 0 12v12z" fill="#FAFAFA"/>
         </svg>
       </section>
 <div className="h-4"/>
 
-      {/* Quick Location Actions - Floating Pills */}
       <div className="px-4 sm:px-5 md:px-6 -mt-3 mb-2">
         <div className="flex gap-4">
-          {/* GPS Button */}
           <button
             onClick={handleGetCurrentLocation}
             disabled={isLocating}
@@ -271,7 +258,6 @@ export default function ExplorePage() {
             <span>موقعي</span>
           </button>
 
-          {/* Map Picker Button */}
           <button
             onClick={() => setShowPicker(true)}
             className="flex items-center gap-1.5 bg-white shadow-md rounded-full px-3 py-2 text-xs font-medium text-[#1A1A1A] hover:shadow-lg transition-all active:scale-[0.98]"
@@ -284,7 +270,6 @@ export default function ExplorePage() {
             <span>الخريطة</span>
           </button>
 
-          {/* Location Status Pill */}
           {city && (
             <div className="flex items-center gap-1.5 bg-[#D1FAE5] rounded-full px-3 py-2 text-xs font-medium text-[#10B981]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse"></span>
@@ -294,10 +279,8 @@ export default function ExplorePage() {
         </div>
       </div>
 
-      {/* Spacer */}
       <div className="h-4 sm:h-5" />
 
-      {/* Search Bar */}
       <SearchBar 
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -307,7 +290,6 @@ export default function ExplorePage() {
 <div className="h-2"/>
 
 
-      {/* Filter Chips - Sticky */}
       <div className="sticky top-[52px] sm:top-[56px] md:top-[60px] z-40">
         <FilterChips 
           nearbyOnly={nearbyOnly}
@@ -323,10 +305,8 @@ export default function ExplorePage() {
 <div className="h-2"/>
 
 
-      {/* Main Content */}
       <main className="py-4 sm:py-5 md:py-6 pb-24 sm:pb-10">
         <div className="px-3 sm:px-4 md:px-5">
-          {/* Section Title */}
           <div className="mb-4 sm:mb-5">
             <h2 className="text-base sm:text-lg md:text-xl font-semibold text-[#1A1A1A] flex items-center gap-1.5 sm:gap-2 mb-1">
               <span className="text-lg sm:text-xl">📍</span>
@@ -339,7 +319,6 @@ export default function ExplorePage() {
 <div className="h-2"/>
 
 
-          {/* Restaurant Grid */}
           {isLoading ? (
             <LoadingSkeleton />
           ) : filteredRestaurants.length > 0 ? (
@@ -366,11 +345,8 @@ export default function ExplorePage() {
 <div className="h-10"/>
 
 
-      {/* Bottom Navigation */}
-      <BottomNavigation />
 
 
-      {/* Location Picker Modal */}
       {showPicker && (
         <LocationCustomer
           lat={lat || 30.0444}
@@ -380,7 +356,6 @@ export default function ExplorePage() {
         />
       )}
 
-      {/* Global Styles */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap');
         
@@ -404,18 +379,15 @@ export default function ExplorePage() {
           display: none;
         }
 
-        /* Smooth scrolling for iOS */
         * {
           -webkit-overflow-scrolling: touch;
         }
 
-        /* Active states for mobile */
         button:active,
         a:active {
           opacity: 0.7;
         }
 
-        /* Prevent text selection on mobile */
         button,
         .no-select {
           -webkit-user-select: none;
@@ -424,14 +396,12 @@ export default function ExplorePage() {
           user-select: none;
         }
 
-        /* Mobile viewport fix */
         @supports (-webkit-touch-callout: none) {
           .min-h-screen {
             min-height: -webkit-fill-available;
           }
         }
 
-        /* iPhone SE and small devices */
         @media (max-width: 375px) {
           html {
             font-size: 14px;

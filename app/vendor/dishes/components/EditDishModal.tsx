@@ -95,7 +95,6 @@ export function EditDishModal({ isOpen, dish, onClose, onUpdate }: EditDishModal
       });
       onClose();
     } catch (error) {
-      console.error('Error updating dish:', error);
     } finally {
       setLoading(false);
     }
@@ -108,19 +107,16 @@ export function EditDishModal({ isOpen, dish, onClose, onUpdate }: EditDishModal
 
   return (
     <>
-      {/* Overlay */}
       <div
         className="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm"
         onClick={handleClose}
       />
 
-      {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div
           className="bg-white rounded-2xl w-full max-w-140 max-h-[90vh] flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-[#E5E7EB]">
             <h2 className="text-xl font-bold text-[#1A1A1A]">تعديل الطبق</h2>
             <button
@@ -131,10 +127,8 @@ export function EditDishModal({ isOpen, dish, onClose, onUpdate }: EditDishModal
             </button>
           </div>
 
-          {/* Body */}
           <div className="flex-1 overflow-y-auto p-6">
             <form onSubmit={handleSubmit} className="space-y-5">
-              {/* Current Images (Read-only) */}
               <div>
                 <label className="block text-sm font-semibold text-[#1A1A1A] mb-1">
                   صور الطبق الحالية
@@ -163,7 +157,6 @@ export function EditDishModal({ isOpen, dish, onClose, onUpdate }: EditDishModal
                 )}
               </div>
 
-              {/* Dish Name */}
               <div>
                 <label className="block text-sm font-semibold text-[#1A1A1A] mb-2">
                   اسم الطبق *
@@ -184,7 +177,6 @@ export function EditDishModal({ isOpen, dish, onClose, onUpdate }: EditDishModal
                 )}
               </div>
 
-              {/* Description */}
               <div>
                 <label className="block text-sm font-semibold text-[#1A1A1A] mb-2">
                   وصف الطبق
@@ -205,7 +197,6 @@ export function EditDishModal({ isOpen, dish, onClose, onUpdate }: EditDishModal
                 </p>
               </div>
 
-              {/* Price & Prep Time */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-[#1A1A1A] mb-2">
@@ -254,7 +245,6 @@ export function EditDishModal({ isOpen, dish, onClose, onUpdate }: EditDishModal
                 </div>
               </div>
 
-              {/* Category */}
               <div>
                 <label className="block text-sm font-semibold text-[#1A1A1A] mb-2">
                   التصنيف *
@@ -282,7 +272,6 @@ export function EditDishModal({ isOpen, dish, onClose, onUpdate }: EditDishModal
             </form>
           </div>
 
-          {/* Footer */}
           <div className="flex items-center justify-end gap-3 p-6 border-t border-[#E5E7EB]">
             <button
               onClick={handleClose}

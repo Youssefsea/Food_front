@@ -34,7 +34,6 @@ export default function DishesPage() {
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch dishes from API
   const fetchDishes = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -43,7 +42,6 @@ export default function DishesPage() {
       const dishesData = response.data.dishes || response.data || [];
       setDishes(dishesData);
     } catch (error) {
-      console.error('Error fetching dishes:', error);
       showToast('error', 'حدث خطأ في تحميل الأطباق');
     } finally {
       setIsLoading(false);
@@ -54,35 +52,29 @@ export default function DishesPage() {
     fetchDishes();
   }, [fetchDishes]);
 
-  // Get unique categories
   const categories = useMemo(() => {
     return ['الكل', ...Array.from(new Set(dishes.map((d) => d.category)))];
   }, [dishes]);
 
-  // Filter and sort dishes
   const filteredDishes = useMemo(() => {
     let result = [...dishes];
 
-    // Search filter
     if (searchQuery) {
       result = result.filter((dish) =>
         dish.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
-    // Category filter
     if (selectedCategory && selectedCategory !== 'الكل') {
       result = result.filter((dish) => dish.category === selectedCategory);
     }
 
-    // Availability filter
     if (availabilityFilter === 'available') {
       result = result.filter((dish) => dish.is_available);
     } else if (availabilityFilter === 'unavailable') {
       result = result.filter((dish) => !dish.is_available);
     }
 
-    // Sort
     switch (sortBy) {
       case 'name-asc':
         result.sort((a, b) => a.name.localeCompare(b.name, 'ar'));
@@ -102,7 +94,6 @@ export default function DishesPage() {
     return result;
   }, [dishes, searchQuery, selectedCategory, availabilityFilter, sortBy]);
 
-  // Stats
   const stats = useMemo(() => ({
     total: dishes.length,
     available: dishes.filter((d) => d.is_available).length,
@@ -114,7 +105,6 @@ export default function DishesPage() {
     setToast({ type, message });
   };
 
-  // Add dish via API
   const handleAddDish = async (dishData: {
     name: string;
     description: string;
@@ -142,15 +132,13 @@ export default function DishesPage() {
       });
 
       showToast('success', 'تم إضافة الطبق بنجاح ✓');
-      fetchDishes(); // Refresh dishes list
+      fetchDishes();
     } catch (error) {
-      console.error('Error adding dish:', error);
       showToast('error', 'حدث خطأ في إضافة الطبق');
       throw error;
     }
   };
 
-  // Update dish via API
   const handleUpdateDish = async (dishId: number, dishData: {
     name: string;
     description: string;
@@ -165,15 +153,13 @@ export default function DishesPage() {
       });
 
       showToast('success', 'تم تحديث الطبق بنجاح ✓');
-      fetchDishes(); // Refresh dishes list
+      fetchDishes();
     } catch (error) {
-      console.error('Error updating dish:', error);
       showToast('error', 'حدث خطأ في تحديث الطبق');
       throw error;
     }
   };
 
-  // Delete dish via API
   const handleDeleteDish = async (dishId: number) => {
     try {
       await api.delete('/restaurant/delete-dish', {
@@ -181,15 +167,13 @@ export default function DishesPage() {
       });
 
       showToast('success', 'تم حذف الطبق بنجاح ✓');
-      fetchDishes(); // Refresh dishes list
+      fetchDishes();
     } catch (error) {
-      console.error('Error deleting dish:', error);
       showToast('error', 'حدث خطأ في حذف الطبق');
       throw error;
     }
   };
 
-  // Toggle availability via API
   const handleToggleAvailability = async (dishId: number, isAvailable: boolean) => {
     try {
       await api.put('/restaurant/change-dish-availability', {
@@ -197,7 +181,6 @@ export default function DishesPage() {
         is_available: isAvailable,
       });
 
-      // Update local state
       setDishes(
         dishes.map((dish) =>
           dish.id === dishId ? { ...dish, is_available: isAvailable } : dish
@@ -209,7 +192,6 @@ export default function DishesPage() {
         isAvailable ? 'الطبق متاح الآن ✓' : 'الطبق غير متاح حالياً'
       );
     } catch (error) {
-      console.error('Error toggling availability:', error);
       showToast('error', 'حدث خطأ في تحديث حالة التوفر');
     }
   };
@@ -217,9 +199,7 @@ export default function DishesPage() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] py-8 px-8" dir="rtl">
       <div className="max-w-350 mx-auto">
-        {/* Page Header */}
         <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
-          {/* Right Side */}
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-[#E5A04D] rounded-full flex items-center justify-center">
               <Utensils className="w-6 h-6 text-white" />
@@ -233,11 +213,9 @@ export default function DishesPage() {
             </span>
           </div>
 
-          {/* Left Side */}
           <div className="flex items-center gap-3">
          
 
-            {/* Add Button */}
             <button
               onClick={() => setIsAddModalOpen(true)}
               className="flex items-center gap-2 px-6 py-3 bg-[#E5A04D] text-white rounded-xl hover:bg-[#D4903D] transition-colors"
@@ -249,9 +227,7 @@ export default function DishesPage() {
         </div>
          <div className="h-[30px]" />
 
-        {/* Filters & Search */}
         <div className="bg-white rounded-xl p-4 mb-6 flex items-center gap-4 flex-wrap">
-          {/* Search */}
           <div className="relative flex-1 min-w-70">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF]" />
             <input
@@ -263,7 +239,6 @@ export default function DishesPage() {
             />
           </div>
 
-          {/* Category Filter */}
           <div className="relative">
             <select
               value={selectedCategory}
@@ -279,7 +254,6 @@ export default function DishesPage() {
             <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF] pointer-events-none" />
           </div>
 
-          {/* Availability Filter */}
           <div className="flex gap-2">
             <button
               onClick={() => setAvailabilityFilter('all')}
@@ -313,7 +287,6 @@ export default function DishesPage() {
             </button>
           </div>
 
-          {/* Sort */}
           <div className="relative">
             <select
               value={sortBy}
@@ -330,9 +303,7 @@ export default function DishesPage() {
         </div>
          <div className="h-[30px]" />
 
-        {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
-          {/* Total Dishes */}
           <div className="bg-white rounded-xl p-5 shadow-sm">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 bg-[#DBEAFE] rounded-full flex items-center justify-center">
@@ -343,7 +314,6 @@ export default function DishesPage() {
             <div className="text-sm text-[#6B7280]">إجمالي الأطباق</div>
           </div>
 
-          {/* Available */}
           <div className="bg-white rounded-xl p-5 shadow-sm">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 bg-[#D1FAE5] rounded-full flex items-center justify-center">
@@ -354,7 +324,6 @@ export default function DishesPage() {
             <div className="text-sm text-[#6B7280]">أطباق متاحة</div>
           </div>
 
-          {/* Unavailable */}
           <div className="bg-white rounded-xl p-5 shadow-sm">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 bg-[#FEE2E2] rounded-full flex items-center justify-center">
@@ -365,7 +334,6 @@ export default function DishesPage() {
             <div className="text-sm text-[#6B7280]">غير متاحة</div>
           </div>
 
-          {/* Categories */}
           <div className="bg-white rounded-xl p-5 shadow-sm">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 bg-[#E9D5FF] rounded-full flex items-center justify-center">
@@ -377,7 +345,6 @@ export default function DishesPage() {
           </div>
         </div>
  <div className="h-[30px]" />
-        {/* Dishes Grid */}
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
@@ -429,7 +396,6 @@ export default function DishesPage() {
         )}
       </div>
 
-      {/* Modals */}
       <AddDishModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
@@ -456,7 +422,6 @@ export default function DishesPage() {
         onConfirm={handleDeleteDish}
       />
 
-      {/* Toast */}
       {toast && (
         <Toast
           type={toast.type}
@@ -465,9 +430,7 @@ export default function DishesPage() {
         />
       )}
 
-      {/* Global Styles */}
       <style>{`
-        /* Hide scrollbar */
         .no-scrollbar::-webkit-scrollbar {
           display: none;
         }
@@ -476,12 +439,10 @@ export default function DishesPage() {
           scrollbar-width: none;
         }
         
-        /* Smooth transitions */
         button, a, input {
           transition: all 0.2s ease;
         }
         
-        /* Button click effect */
         button:active {
           transform: scale(0.98);
         }

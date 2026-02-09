@@ -6,7 +6,6 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Locate } from "lucide-react";
 
-// Fix for default marker icon in Next.js
 const customIcon = new L.Icon({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
   iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
@@ -88,7 +87,6 @@ export default function LocationPicker({
           setCurrentLng(longitude);
         },
         (error) => {
-          console.error("Error getting location:", error);
           alert("تعذر الوصول إلى موقعك الحالي. يرجى التحقق من إعدادات المتصفح.");
         }
       );
@@ -100,7 +98,6 @@ export default function LocationPicker({
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl w-full max-w-2xl overflow-hidden shadow-xl">
-        {/* Header */}
         <div className="p-4 border-b flex items-center justify-between">
           <h3 className="text-lg font-semibold text-gray-800">حدد موقع المطعم</h3>
           <div className="flex items-center gap-2">
@@ -122,7 +119,6 @@ export default function LocationPicker({
           </div>
         </div>
 
-        {/* Map */}
         <div className="h-[400px] relative">
           <MapContainer
             center={[currentLat, currentLng]}
@@ -150,7 +146,6 @@ export default function LocationPicker({
           </MapContainer>
         </div>
 
-        {/* Info & Actions */}
         <div className="p-4 space-y-3">
           <div className="text-sm text-gray-600 text-center">
             <p>اضغط على الخريطة أو اسحب العلامة لتحديد الموقع</p>

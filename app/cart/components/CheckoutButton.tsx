@@ -23,10 +23,8 @@ export function CheckoutButton({
 }: CheckoutButtonProps) {
   return (
     <div 
-      className="fixed bottom-0 left-0 right-0 bg-white px-5 py-4 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] z-50 rounded-t-[20px]"
-      style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}
+      className="fixed left-0 right-0 bg-white px-5 py-4 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] z-50 rounded-t-[20px] fixed-above-bottom-nav"
     >
-      {/* Price Summary */}
       <div className="flex items-center justify-between mb-3">
         <span className="text-[13px] text-[#6B7280]">
           {totalItems} أصناف من {totalRestaurants} مطعم
@@ -36,7 +34,6 @@ export function CheckoutButton({
         </span>
       </div>
 
-      {/* Checkout Button */}
       <button
         onClick={onCheckout}
         disabled={isDisabled || isSubmitting}

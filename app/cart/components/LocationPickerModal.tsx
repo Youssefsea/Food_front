@@ -25,7 +25,6 @@ export function LocationPickerModal({
   const [accuracy, setAccuracy] = useState<number | null>(initialLocation?.accuracy || null);
   const [locationError, setLocationError] = useState<string | null>(null);
 
-  // Reverse geocoding using OpenStreetMap Nominatim
   const reverseGeocode = useCallback(async (lat: number, lng: number) => {
     try {
       const response = await fetch(
@@ -53,7 +52,7 @@ export function LocationPickerModal({
         async (position) => {
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
-          const acc = position.coords.accuracy; // دقة GPS بالمتر
+          const acc = position.coords.accuracy;
           
           setSelectedLat(lat);
           setSelectedLng(lng);
@@ -64,7 +63,6 @@ export function LocationPickerModal({
           setIsLoadingLocation(false);
         },
         (error) => {
-          console.error("Error getting location:", error);
           setIsLoadingLocation(false);
           
           switch(error.code) {
@@ -84,7 +82,7 @@ export function LocationPickerModal({
         { 
           enableHighAccuracy: true,
           timeout: 15000,
-          maximumAge: 0 // لا تستخدم موقع مخزن
+          maximumAge: 0
         }
       );
     } else {
@@ -106,10 +104,9 @@ export function LocationPickerModal({
   // تحديد لون الدقة
   const getAccuracyColor = () => {
     if (!accuracy) return 'text-[#6B7280]';
-    if (accuracy <= 20) return 'text-[#10B981]'; // ممتاز
-    if (accuracy <= 50) return 'text-[#F59E0B]'; // جيد
-    return 'text-[#EF4444]'; // ضعيف
-  };
+    if (accuracy <= 20) return 'text-[#10B981]';
+    if (accuracy <= 50) return 'text-[#F59E0B]';
+    return 'text-[#EF4444]';
 
   const getAccuracyLabel = () => {
     if (!accuracy) return '';
@@ -131,7 +128,6 @@ export function LocationPickerModal({
             onClick={onClose}
           />
 
-          {/* Modal */}
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
@@ -139,7 +135,6 @@ export function LocationPickerModal({
             className="fixed inset-x-0 bottom-0 z-[100] bg-white rounded-t-[24px] max-h-[90vh] overflow-hidden md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-full md:max-w-[500px] md:rounded-[24px]"
             dir="rtl"
           >
-            {/* Header */}
             <div className="flex items-center justify-between p-5 border-b border-[#E5E7EB]">
               <h2 className="text-[18px] font-semibold text-[#1A1A1A]">📍 حدد موقع التوصيل</h2>
               <button
@@ -150,10 +145,7 @@ export function LocationPickerModal({
               </button>
             </div>
 
-            {/* Content */}
             <div className="p-5 overflow-y-auto max-h-[calc(90vh-140px)]">
-              {/* Use Current Location Button */}
-              <button
                 onClick={handleUseCurrentLocation}
                 disabled={isLoadingLocation}
                 className="w-full h-[52px] bg-[#FEF3E2] border-2 border-dashed border-[#E5A04D] rounded-xl flex items-center justify-center gap-2 text-[#E5A04D] font-semibold hover:bg-[#FEF3E2]/80 transition-colors disabled:opacity-50"
@@ -177,9 +169,13 @@ export function LocationPickerModal({
                   <AlertCircle className="w-4 h-4 text-[#EF4444] flex-shrink-0 mt-0.5" />
                   <span className="text-[13px] text-[#991B1B]">{locationError}</span>
                 </div>
+              )locationError && (
+                <div className="mt-3 bg-[#FEE2E2] border border-[#FECACA] rounded-lg p-3 flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-[#EF4444] flex-shrink-0 mt-0.5" />
+                  <span className="text-[13px] text-[#991B1B]">{locationError}</span>
+                </div>
               )}
 
-              {/* GPS Accuracy Note */}
               <div className="mt-3 bg-[#F0F9FF] border border-[#BAE6FD] rounded-lg p-3">
                 <div className="flex items-start gap-2">
                   <span className="text-[14px]">💡</span>
@@ -190,9 +186,7 @@ export function LocationPickerModal({
                 </div>
               </div>
 
-              {/* Map Container - Placeholder */}
               <div className="mt-4 h-[250px] bg-gradient-to-br from-[#E5E7EB] to-[#F3F4F6] rounded-xl relative overflow-hidden flex items-center justify-center">
-                {/* Mock Map Grid */}
                 <div className="absolute inset-0 opacity-20">
                   <div className="grid grid-cols-8 grid-rows-8 h-full">
                     {Array.from({ length: 64 }).map((_, i) => (
@@ -201,7 +195,6 @@ export function LocationPickerModal({
                   </div>
                 </div>
                 
-                {/* Center Pin */}
                 <div className="relative z-10">
                   <MapPin 
                     className="w-12 h-12 text-[#E5A04D] drop-shadow-lg animate-bounce" 
@@ -209,13 +202,11 @@ export function LocationPickerModal({
                   />
                 </div>
 
-                {/* Note */}
                 <div className="absolute bottom-3 left-3 right-3 bg-white/90 rounded-lg p-2 text-center text-[12px] text-[#6B7280]">
                   💡 استخدم GPS لتحديد موقعك الحالي
                 </div>
               </div>
 
-              {/* Selected Address Preview */}
               <div className="mt-4 bg-[#F9FAFB] p-4 rounded-[10px]">
                 <div className="flex items-center justify-between mb-1">
                   <div className="text-[12px] text-[#6B7280]">العنوان المحدد:</div>
@@ -233,13 +224,6 @@ export function LocationPickerModal({
                 </div>
               </div>
 
-              {/* Confirm Button */}
-              <button
-                onClick={handleConfirm}
-                disabled={!address}
-                className="w-full h-[52px] bg-gradient-to-r from-[#E5A04D] to-[#D4903D] text-white text-[16px] font-bold rounded-xl mt-4 hover:scale-[1.01] active:scale-[0.98] transition-all shadow-[0_4px_16px_rgba(229,160,77,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                تأكيد الموقع
               </button>
             </div>
           </motion.div>

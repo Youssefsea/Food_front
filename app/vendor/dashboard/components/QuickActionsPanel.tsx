@@ -53,7 +53,6 @@ export function QuickActionsPanel() {
               key={action.id}
               className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-all border border-[#E5E7EB] hover:border-[#E5A04D]"
             >
-              {/* Icon */}
               <div className="flex items-start justify-between mb-4">
                 <Icon
                   className="w-12 h-12"
@@ -61,15 +60,12 @@ export function QuickActionsPanel() {
                 />
               </div>
 
-              {/* Title */}
               <h3 className="font-bold text-[#1A1A1A] mb-2">{action.title}</h3>
 
-              {/* Description */}
               <p className="text-sm text-[#6B7280] mb-4">
                 {action.description}
               </p>
 
-              {/* Button */}
               <button
                 onClick={action.onClick}
                 className={`w-full py-2.5 rounded-xl transition-all font-medium text-sm ${

@@ -21,13 +21,11 @@ export function PaymentProofUpload({
 
   const handleFileSelect = (file: File | null) => {
     if (file) {
-      // Validate file type
       if (!file.type.startsWith('image/')) {
         alert('يرجى اختيار صورة فقط');
         return;
       }
       
-      // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         alert('حجم الصورة يجب أن يكون أقل من 5 ميجابايت');
         return;
@@ -130,13 +128,11 @@ export function PaymentProofUpload({
             exit={{ opacity: 0, scale: 0.95 }}
             className="relative rounded-xl overflow-hidden border-2 border-[#10B981] bg-[#D1FAE5]/20"
           >
-            {/* Success Badge */}
             <div className="absolute top-3 right-3 bg-[#10B981] text-white px-3 py-1 rounded-full text-[12px] font-medium flex items-center gap-1 z-10">
               <Check className="w-3.5 h-3.5" />
               <span>تم التحميل</span>
             </div>
 
-            {/* Remove Button */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -148,7 +144,6 @@ export function PaymentProofUpload({
               <X className="w-4 h-4 text-[#EF4444]" />
             </button>
 
-            {/* Preview Image */}
             <div className="p-3">
               <div className="relative w-full h-[180px] rounded-lg overflow-hidden bg-[#F3F4F6]">
                 {previewUrl && (
@@ -160,7 +155,6 @@ export function PaymentProofUpload({
                 )}
               </div>
               
-              {/* File Info */}
               <div className="mt-3 flex items-center gap-2 text-[13px] text-[#6B7280]">
                 <ImageIcon className="w-4 h-4" />
                 <span className="truncate">{selectedImage.name}</span>
@@ -173,7 +167,6 @@ export function PaymentProofUpload({
         )}
       </AnimatePresence>
 
-      {/* Help Text */}
       <div className="mt-2 text-[12px] text-[#9CA3AF] flex items-start gap-1.5">
         <span>💡</span>
         <span>ارفع صورة واضحة لإيصال الدفع (سكرين شوت) لتأكيد طلبك</span>

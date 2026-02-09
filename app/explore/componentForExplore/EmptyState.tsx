@@ -15,7 +15,6 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center py-12 sm:py-16 md:py-20 px-4">
-      {/* Icon */}
       <div className="w-20 sm:w-24 md:w-28 h-20 sm:h-24 md:h-28 bg-[#FEF3E2] rounded-full flex items-center justify-center mb-4 sm:mb-5">
         <div className="relative">
           <Search className="w-10 sm:w-12 md:w-14 h-10 sm:h-12 md:h-14 text-[#E5A04D]" />
@@ -23,17 +22,14 @@ export function EmptyState({
         </div>
       </div>
 
-      {/* Title */}
       <h3 className="text-[#1A1A1A] text-base sm:text-lg md:text-xl font-bold mb-2 text-center">
         {message}
       </h3>
 
-      {/* Description */}
       <p className="text-[#6B7280] text-xs sm:text-sm text-center max-w-[280px] sm:max-w-xs mb-5 sm:mb-6 leading-relaxed">
         جرب تغيير الموقع أو الفلاتر للعثور على المطاعم المتاحة بالقرب منك
       </p>
 
-      {/* Clear Filters Button */}
       {hasActiveFilters && onClearFilters && (
         <button
           onClick={onClearFilters}
@@ -43,7 +39,6 @@ export function EmptyState({
         </button>
       )}
 
-      {/* Decorative Elements */}
       <div className="flex items-center gap-2 mt-6 sm:mt-8 text-[#D1D5DB]">
         <span className="text-xl sm:text-2xl">🍕</span>
         <span className="text-lg sm:text-xl">🍔</span>

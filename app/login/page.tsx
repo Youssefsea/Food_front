@@ -28,6 +28,11 @@ export default function LoginPage() {
       const res = await api.post('/customer/login', { ...formData });
     
       if (res.status === 200) {
+        if (res.data?.user?.token) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('vendorToken');
+          localStorage.setItem('customerToken', res.data.user.token);
+        }
         return true;
       }
       return false;
@@ -42,11 +47,16 @@ export default function LoginPage() {
     try {
       const res = await api.post('/restaurant/login', { ...formData });
       if (res.status === 200) {
+        if (res.data?.restaurant?.token) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('customerToken');
+          localStorage.setItem('vendorToken', res.data.restaurant.token);
+        }
         return true;
       }
       return false;
     } catch {
-      setErrorMsg("فشل تسجيل الدخول. يرجى التحقق من بيانات الاعتماد.");
+      setErrorMsg("فشل تسجيل الدخول. يرجى التحقق من بيانات الاعتماد.")
       return false;
     }
   };

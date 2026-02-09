@@ -33,7 +33,6 @@ export function PaymentMethod({
     setTimeout(() => setCopiedNumber(false), 2000);
   };
 
-  // هنا ممكن تحط رقم المحفظة الفعلي بتاعك
   const walletNumber = "01012345678";
 
   return (
@@ -43,9 +42,7 @@ export function PaymentMethod({
         <span className="text-[#EF4444] text-[18px]">*</span>
       </div>
 
-      {/* Payment Options */}
       <div className="space-y-3">
-        {/* Vodafone Cash */}
         <button
           onClick={() => setPaymentMethod("vodafone_cash")}
           className={`w-full p-4 rounded-xl border-2 transition-all flex items-center gap-3.5 ${
@@ -54,7 +51,6 @@ export function PaymentMethod({
               : "border-[#E5E7EB] bg-white"
           }`}
         >
-          {/* Radio Circle */}
           <div className={`w-[22px] h-[22px] rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
             paymentMethod === "vodafone_cash" ? "border-[#E5A04D]" : "border-[#E5E7EB]"
           }`}>
@@ -63,19 +59,16 @@ export function PaymentMethod({
             )}
           </div>
 
-          {/* Icon */}
           <div className="w-10 h-10 rounded-lg bg-[#E60000] flex items-center justify-center flex-shrink-0">
             <span className="text-[20px]">📱</span>
           </div>
 
-          {/* Details */}
           <div className="text-right flex-1">
             <div className="text-[15px] font-semibold text-[#1A1A1A]">فودافون كاش</div>
             <div className="text-[12px] text-[#6B7280]">ادفع عبر محفظة فودافون كاش</div>
           </div>
         </button>
 
-        {/* InstaPay */}
         <button
           onClick={() => setPaymentMethod("instapay")}
           className={`w-full p-4 rounded-xl border-2 transition-all flex items-center gap-3.5 ${
@@ -84,7 +77,6 @@ export function PaymentMethod({
               : "border-[#E5E7EB] bg-white"
           }`}
         >
-          {/* Radio Circle */}
           <div className={`w-[22px] h-[22px] rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
             paymentMethod === "instapay" ? "border-[#E5A04D]" : "border-[#E5E7EB]"
           }`}>
@@ -93,12 +85,10 @@ export function PaymentMethod({
             )}
           </div>
 
-          {/* Icon */}
           <div className="w-10 h-10 rounded-lg bg-[#3B82F6] flex items-center justify-center flex-shrink-0">
             <span className="text-[20px]">🏦</span>
           </div>
 
-          {/* Details */}
           <div className="text-right flex-1">
             <div className="text-[15px] font-semibold text-[#1A1A1A]">إنستاباي</div>
             <div className="text-[12px] text-[#6B7280]">تحويل فوري من أي بنك</div>
@@ -106,7 +96,6 @@ export function PaymentMethod({
         </button>
       </div>
 
-      {/* Payment Instructions */}
       <AnimatePresence>
         {paymentMethod && (
           <motion.div
@@ -151,6 +140,15 @@ export function PaymentMethod({
                 <button
                   onClick={() => copyToClipboard(walletNumber)}
                   className="flex items-center gap-1.5 text-[#E5A04D] text-[13px] hover:bg-[#FEF3E2] px-3 py-1.5 rounded-lg transition-colors"
+            <div className="mt-3 bg-white rounded-lg p-3">
+              <div className="text-[12px] text-[#6B7280] mb-1">رقم المحفظة</div>
+              <div className="flex items-center justify-between">
+                <span className="text-[18px] font-bold text-[#1A1A1A] font-mono">
+                  {walletNumber}
+                </span>
+                <button
+                  onClick={() => copyToClipboard(walletNumber)}
+                  className="flex items-center gap-1.5 text-[#E5A04D] text-[13px] hover:bg-[#FEF3E2] px-3 py-1.5 rounded-lg transition-colors"
                 >
                   <Copy className="w-4 h-4" />
                   <span>{copiedNumber ? "تم النسخ!" : "نسخ"}</span>
@@ -161,14 +159,3 @@ export function PaymentMethod({
         )}
       </AnimatePresence>
 
-      {/* Payment Proof Upload */}
-      {paymentMethod && (
-        <PaymentProofUpload
-          selectedImage={paymentImage}
-          onImageSelect={onImageSelect}
-          isDisabled={isDisabled}
-        />
-      )}
-    </div>
-  );
-}

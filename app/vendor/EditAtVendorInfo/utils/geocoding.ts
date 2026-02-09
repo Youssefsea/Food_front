@@ -1,14 +1,8 @@
-
-// Cache للـ geocoding results لتحسين Performance
 const geocodeCache = new Map<string, string>();
 
-/**
- * تحويل lat/lng إلى اسم شارع (Reverse Geocoding)
- */
 export async function reverseGeocode(lat: number, lng: number): Promise<string> {
   const cacheKey = `${lat.toFixed(6)},${lng.toFixed(6)}`;
   
-  // Check cache أولاً
   if (geocodeCache.has(cacheKey)) {
     return geocodeCache.get(cacheKey)!;
   }
@@ -29,11 +23,9 @@ export async function reverseGeocode(lat: number, lng: number): Promise<string> 
 
     const data = await response.json();
     
-    // بناء العنوان بشكل مختصر وواضح
     const address = data.address || {};
     const parts: string[] = [];
 
-    // الترتيب: رقم المنزل، الشارع، الحي، المدينة، البلد
     if (address.house_number) parts.push(address.house_number);
     if (address.road) parts.push(address.road);
     if (address.suburb || address.neighbourhood) parts.push(address.suburb || address.neighbourhood);
@@ -43,19 +35,14 @@ export async function reverseGeocode(lat: number, lng: number): Promise<string> 
 
     const locationName = parts.length > 0 ? parts.join(', ') : data.display_name || 'موقع غير معروف';
 
-    // Save to cache
     geocodeCache.set(cacheKey, locationName);
     
     return locationName;
   } catch (error) {
-    console.error('Reverse geocoding error:', error);
     return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
   }
 }
 
-/**
- * تحويل اسم مكان إلى lat/lng (Forward Geocoding)
- */
 export async function forwardGeocode(address: string): Promise<{ lat: number; lng: number } | null> {
   if (!address) return null;
 
@@ -84,14 +71,10 @@ export async function forwardGeocode(address: string): Promise<{ lat: number; ln
 
     return null;
   } catch (error) {
-    console.error('Forward geocoding error:', error);
     return null;
   }
 }
 
-/**
- * Generate circle polygon للـ delivery area
- */
 export function generateCirclePolygon(lat: number, lng: number, radiusKm: number): [number, number][] {
   const points = 64;
   const coords: [number, number][] = [];

@@ -32,7 +32,6 @@ if (res.status === 201) {
 
 }
 catch(error){
-  // console.error("Signup error:", error.response.data.error);
   if(error.response.data.error=="User already exists")
     {
      
@@ -73,8 +72,6 @@ catch(error){
 
   const bool=  await SignupForCustomer();
   if(bool==1){
-    console.log("Customer registration:", formData);
-    
    setTimeout(() => {
     setIsLoading(false);
     router.push('/login');
@@ -92,7 +89,6 @@ else{
   return (
     <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6">
       <div className="bg-white rounded-2xl sm:rounded-3xl min-h-[calc(100vh-1.5rem)] sm:min-h-[calc(100vh-2rem)] md:min-h-[calc(100vh-3rem)] flex flex-col shadow-sm">
-        {/* Header */}
         <header className="flex items-center justify-between px-4 py-4">
           <Link href="/signup" className="p-2 rounded-full hover:bg-gray-100 transition-colors">
             <ChevronLeft className="w-6 h-6 text-gray-800" />
@@ -101,7 +97,6 @@ else{
           <div className="w-10" />
         </header>
 
-        {/* Main Content */}
         <main className="flex-1 px-4 sm:px-6 py-4 overflow-y-auto">
           <h1 className="text-3xl font-light text-gray-800 mb-2">
             إنشاء حساب
@@ -133,7 +128,6 @@ else{
             </div>
           </div>
 
-          {/* Email */}
           <div style={{ marginBottom: '2rem' }}>
             <label style={{ display: 'block', marginBottom: '0.75rem', fontSize: '0.75rem', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               البريد الإلكتروني
@@ -153,7 +147,6 @@ else{
             </div>
           </div>
 
-          {/* Phone */}
           <div style={{ marginBottom: '2rem' }}>
             <label style={{ display: 'block', marginBottom: '0.75rem', fontSize: '0.75rem', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               رقم الهاتف
@@ -204,7 +197,6 @@ else{
             </div>
           </div>
 
-          {/* Submit Button */}
           <div style={{ marginBottom: '1rem' }}>
             <button
               type="submit"
@@ -225,7 +217,6 @@ else{
             </div>
           </div>
 
-          {/* Terms */}
           <p className="text-center text-gray-500 text-xs pb-4">
             بالتسجيل أنت توافق على{" "}
             <Link href="/terms" className="text-gray-700 underline">

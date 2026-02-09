@@ -31,7 +31,6 @@ export function Sidebar({ pendingOrders, unreadMessages, todayReservations, isVi
 
   return (
     <>
-      {/* Overlay */}
       <div 
         className={`fixed inset-0 bg-black/30 z-40 transition-opacity duration-300 ${
           isVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
@@ -39,13 +38,11 @@ export function Sidebar({ pendingOrders, unreadMessages, todayReservations, isVi
         onClick={onClose}
       />
       
-      {/* Sidebar */}
       <aside 
         className={`fixed right-0 top-1 h-full w-72 bg-white border-l border-[#E5E7EB] z-60 pt-6 shadow-2xl transition-transform duration-300 ease-in-out ${
           isVisible ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
-        {/* Close Button */}
         <button 
           onClick={onClose}
           className="absolute top-1 left-5 p-2 hover:bg-[#F3F4F6] rounded-lg transition-colors"
@@ -53,7 +50,6 @@ export function Sidebar({ pendingOrders, unreadMessages, todayReservations, isVi
           <X className="w-5 h-5 text-[#6B7280]" />
         </button>
 
-        {/* Logo/Title */}
         <div className="px-6 mb-6">
           <h2 className="text-xl font-bold text-[#E5A04D]">القائمة</h2>
         </div>

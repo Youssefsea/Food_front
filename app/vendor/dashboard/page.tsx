@@ -82,7 +82,6 @@ export default function VendorDashboard() {
                 count++;
               }
             } catch (error) {
-              console.error(`Error fetching payment status for order ${order.id}:`, error);
             }
           }
         })
@@ -90,7 +89,6 @@ export default function VendorDashboard() {
 
       setPendingPaidOrders(count);
     } catch (error) {
-      console.error('Error calculating pending paid orders:', error);
       setPendingPaidOrders(0);
     }
   }, []);
@@ -107,8 +105,6 @@ export default function VendorDashboard() {
       const orders = ordersRes.data.orders || [];
 const resStatus = await api.get('/restaurant/profile-status');
 
-console.log('Fetched dashboard stats:', stats);
-      console.log('Fetched recent orders:', orders);
       setDashboardData({
         restaurantName: stats.restaurant.name || 'مطعمي',
         isOpen: resStatus.data.is_open,
@@ -124,10 +120,7 @@ console.log('Fetched dashboard stats:', stats);
 
      
       await fetchPendingPaidOrdersCount(orders);
-
-       console.log('Dashboard data successfully updated.', dashboardData);
     } catch (err) {
-      console.error('Error fetching dashboard data:', err);
       const error = err as { response?: { data?: { message?: string } } };
       setError(error.response?.data?.message || 'حدث خطأ في تحميل البيانات');
     } finally {

@@ -79,17 +79,13 @@ export function DishDetailModal({
       className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center"
       onClick={handleBackdropClick}
     >
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fadeIn" />
 
-      {/* Modal Content */}
       <div className="relative bg-white w-full max-w-lg max-h-[90vh] sm:max-h-[85vh] overflow-y-auto rounded-t-3xl sm:rounded-2xl shadow-2xl animate-slideUp sm:animate-scaleIn">
-        {/* Drag Handle (Mobile) */}
         <div className="sm:hidden sticky top-0 bg-white pt-3 pb-2 flex justify-center z-10">
           <div className="w-10 h-1 bg-[#E5E7EB] rounded-full" />
         </div>
 
-        {/* Close Button */}
         <button
           onClick={onClose}
           className="absolute top-4 left-4 sm:top-5 sm:left-5 z-20 w-8 h-8 sm:w-9 sm:h-9 bg-black/50 backdrop-blur-sm text-white rounded-full flex items-center justify-center hover:bg-black/70 transition-colors"
@@ -98,7 +94,6 @@ export function DishDetailModal({
         </button>
 
         <div className="h-2" />
-        {/* Image Gallery */}
         <div className="relative h-56 sm:h-64 md:h-72 bg-[#F3F4F6]">
           <img
             src={images[currentImageIndex]?.trim() || '/placeholder-dish.jpg'}
@@ -106,7 +101,6 @@ export function DishDetailModal({
             className="w-full h-full object-cover"
           />
 
-          {/* Gallery Dots */}
           {images.length > 1 && (
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
               {images.map((_, index) => (
@@ -125,9 +119,7 @@ export function DishDetailModal({
         </div>
         <div className="h-2" />
 
-        {/* Content */}
         <div className="p-4 sm:p-5 md:p-6">
-          {/* Dish Name */}
           <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#1A1A1A] mb-2">
             {dish.name}
           </h2>
@@ -135,20 +127,17 @@ export function DishDetailModal({
         <div className="h-2" />
     
 
-          {/* Category Tag */}
           <div className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 bg-[#FEF3E2] text-[#E5A04D] rounded-full text-[10px] sm:text-xs md:text-sm font-medium mb-3 sm:mb-4">
             <span>🍕</span>
             <span>{dish.category}</span>
           </div>
         <div className="h-2" />
 
-          {/* Description */}
           <p className="text-xs sm:text-sm md:text-base text-[#6B7280] leading-relaxed mb-3 sm:mb-4">
             {dish.description}
           </p>
         <div className="h-2" />
 
-          {/* Prep Time & Calories */}
           <div className="flex items-center gap-4 sm:gap-6 text-xs sm:text-sm text-[#9CA3AF] mb-4 sm:mb-6">
             <div className="flex items-center gap-1 sm:gap-1.5">
               <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -159,15 +148,12 @@ export function DishDetailModal({
         <div className="h-2" />
 
 
-          {/* Divider */}
           <div className="border-t border-[#F3F4F6] my-4 sm:my-5" />
 
         </div>
 
-        {/* Bottom Action Bar */}
         <div className="sticky bottom-0 bg-white border-t border-[#E5E7EB] p-3 sm:p-4 md:p-5 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
           <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
-            {/* Quantity Selector */}
         <div className="h-2" />
 
             <div className="flex items-center bg-[#F3F4F6] rounded-xl overflow-hidden">
@@ -189,7 +175,6 @@ export function DishDetailModal({
               </button>
             </div>
 
-            {/* Add to Cart Button */}
             <button
               onClick={handleAddToCart}
               disabled={isAdding || dish.is_available === 0}
@@ -214,7 +199,6 @@ export function DishDetailModal({
 
       </div>
 
-      {/* Animations */}
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; }

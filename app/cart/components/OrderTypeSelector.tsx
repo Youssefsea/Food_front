@@ -24,7 +24,6 @@ export function OrderTypeSelector({
   setReservationTime,
   restaurantName
 }: OrderTypeSelectorProps) {
-  // Get tomorrow's date as minimum for reservation
   const getTomorrowDate = () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -38,9 +37,7 @@ export function OrderTypeSelector({
         <span>نوع الطلب {restaurantName ? `- ${restaurantName}` : ''}</span>
       </h3>
 
-      {/* Toggle Buttons */}
       <div className="grid grid-cols-2 gap-2">
-        {/* Instant Delivery */}
         <button
           onClick={() => setOrderType("instant")}
           className={`p-3 rounded-xl border-2 transition-all text-center ${
@@ -54,7 +51,6 @@ export function OrderTypeSelector({
           <div className="text-[11px] text-[#6B7280]">استلم الآن</div>
         </button>
 
-        {/* Reservation */}
         <button
           onClick={() => canReserve && setOrderType("reservation")}
           disabled={!canReserve}
@@ -73,7 +69,6 @@ export function OrderTypeSelector({
         </button>
       </div>
 
-      {/* Reservation Date/Time Picker */}
       <AnimatePresence>
         {orderType === "reservation" && (
           <motion.div
@@ -83,7 +78,6 @@ export function OrderTypeSelector({
             className="mt-4 pt-4 border-t border-dashed border-[#E5E7EB] overflow-hidden"
           >
             <div className="grid grid-cols-2 gap-3">
-              {/* Date Picker */}
               <div>
                 <label className="text-[13px] font-semibold text-[#1A1A1A] mb-2 block">
                   📅 التاريخ
@@ -97,7 +91,6 @@ export function OrderTypeSelector({
                 />
               </div>
 
-              {/* Time Picker */}
               <div>
                 <label className="text-[13px] font-semibold text-[#1A1A1A] mb-2 block">
                   🕐 الوقت
@@ -125,7 +118,6 @@ export function OrderTypeSelector({
               </div>
             </div>
 
-            {/* Info Note */}
             <div className="flex items-start gap-2 mt-3 text-[11px] text-[#6B7280]">
               <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
               <span>سيتم تجهيز طلبك قبل الموعد المحدد</span>

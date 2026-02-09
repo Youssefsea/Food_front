@@ -1,5 +1,3 @@
-// Types for Restaurant Page
-
 export interface Restaurant {
   id: number;
   user_id: number;
@@ -7,9 +5,9 @@ export interface Restaurant {
   description: string;
   location: string;
   delivery_fees: number;
-  can_deliver: number;  // 0 or 1
-  can_reserve: number;  // 0 or 1
-  is_open?: number;     // 0 or 1
+  can_deliver: number;
+  can_reserve: number;
+  is_open?: number;
   phone?: string;
   open_time?: string;
   close_time?: string;
@@ -29,7 +27,7 @@ export interface Dish {
   price: number;
   preparation_time: number;
   category: string;
-  image: string; // comma-separated URLs
+  image: string;
   is_available: number;
   isPopular?: boolean;
   rating?: number;

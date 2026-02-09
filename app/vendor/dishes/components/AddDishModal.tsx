@@ -54,7 +54,6 @@ export function AddDishModal({ isOpen, onClose, onAdd }: AddDishModalProps) {
 
     setImages([...images, ...files]);
     
-    // Create previews
     files.forEach((file) => {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -113,13 +112,11 @@ export function AddDishModal({ isOpen, onClose, onAdd }: AddDishModalProps) {
     setLoading(true);
     try {
       await onAdd({ ...formData, images });
-      // Reset form
       setFormData({ name: '', description: '', price: '', preparation_time: '', category: '' });
       setImages([]);
       setPreviews([]);
       onClose();
     } catch (error) {
-      console.error('Error adding dish:', error);
     } finally {
       setLoading(false);
     }
@@ -135,19 +132,16 @@ export function AddDishModal({ isOpen, onClose, onAdd }: AddDishModalProps) {
 
   return (
     <>
-      {/* Overlay */}
       <div
         className="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm"
         onClick={handleClose}
       />
 
-      {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div
           className="bg-white rounded-2xl w-full max-w-140 max-h-[90vh] flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-[#E5E7EB]">
             <h2 className="text-xl font-bold text-[#1A1A1A]">إضافة طبق جديد</h2>
             <button
@@ -158,10 +152,8 @@ export function AddDishModal({ isOpen, onClose, onAdd }: AddDishModalProps) {
             </button>
           </div>
 
-          {/* Body */}
           <div className="flex-1 overflow-y-auto p-6">
             <form onSubmit={handleSubmit} className="space-y-5">
-              {/* Image Upload */}
               <div>
                 <label className="block text-sm font-semibold text-[#1A1A1A] mb-1">
                   صور الطبق *
@@ -196,7 +188,6 @@ export function AddDishModal({ isOpen, onClose, onAdd }: AddDishModalProps) {
                   <p className="text-xs text-[#EF4444] mt-1">{errors.images}</p>
                 )}
 
-                {/* Image Previews */}
                 {previews.length > 0 && (
                   <div className="flex gap-2 mt-3 flex-wrap">
                     {previews.map((preview, index) => (
@@ -219,7 +210,6 @@ export function AddDishModal({ isOpen, onClose, onAdd }: AddDishModalProps) {
                 )}
               </div>
 
-              {/* Dish Name */}
               <div>
                 <label className="block text-sm font-semibold text-[#1A1A1A] mb-2">
                   اسم الطبق *
@@ -240,7 +230,6 @@ export function AddDishModal({ isOpen, onClose, onAdd }: AddDishModalProps) {
                 )}
               </div>
 
-              {/* Description */}
               <div>
                 <label className="block text-sm font-semibold text-[#1A1A1A] mb-2">
                   وصف الطبق
@@ -261,7 +250,6 @@ export function AddDishModal({ isOpen, onClose, onAdd }: AddDishModalProps) {
                 </p>
               </div>
 
-              {/* Price & Prep Time */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-[#1A1A1A] mb-2">
@@ -310,7 +298,6 @@ export function AddDishModal({ isOpen, onClose, onAdd }: AddDishModalProps) {
                 </div>
               </div>
 
-              {/* Category */}
               <div>
                 <label className="block text-sm font-semibold text-[#1A1A1A] mb-2">
                   التصنيف *
@@ -338,7 +325,6 @@ export function AddDishModal({ isOpen, onClose, onAdd }: AddDishModalProps) {
             </form>
           </div>
 
-          {/* Footer */}
           <div className="flex items-center justify-end gap-3 p-6 border-t border-[#E5E7EB]">
             <button
               onClick={handleClose}

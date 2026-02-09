@@ -58,8 +58,6 @@ export default function VendorSignUpPage() {
       ...prev,
       latitude: lat,
       longitude: lng,
-      // Optional: You could fetch the address from coordinates here (Reverse Geocoding)
-      // For now, we'll just keep the location text as is or update it with coords if empty
       location: prev.location || `${lat.toFixed(5)}, ${lng.toFixed(5)}`
     }));
   };
@@ -109,7 +107,6 @@ export default function VendorSignUpPage() {
           setIsLocating(false);
         },
         (error) => {
-          console.error("Error getting location:", error);
           alert("تعذر الوصول إلى موقعك الحالي. يرجى التحقق من إعدادات المتصفح.");
           setIsLocating(false);
         }
@@ -129,21 +126,18 @@ export default function VendorSignUpPage() {
     if (step > 1) setStep(step - 1);
   };
 
-  // Helper to generate circle polygon for delivery area
-const generateCirclePolygon = (lat: number, lng: number, radiusKm: number) => {
-  const points = 64; // عدد أكبر من النقاط للحصول على دائرة أدق
+  const generateCirclePolygon = (lat: number, lng: number, radiusKm: number) => {
+  const points = 64;
   const coords = [];
-  const earthRadius = 6371; // نصف قطر الأرض بالكيلومترات
+  const earthRadius = 6371;
 
   for (let i = 0; i <= points; i++) {
     const angle = (i * 360) / points;
     const rad = (angle * Math.PI) / 180;
 
-    // ✅ الصيغة الصحيحة لحساب نقاط الدائرة
     const dLat = (radiusKm / earthRadius) * (180 / Math.PI) * Math.cos(rad);
     const dLng = (radiusKm / earthRadius) * (180 / Math.PI) * Math.sin(rad) / Math.cos(lat * Math.PI / 180);
 
-    // ✅ الترتيب الصحيح: [longitude, latitude]
     coords.push([
       lng + dLng,
       lat + dLat
@@ -158,13 +152,10 @@ const generateCirclePolygon = (lat: number, lng: number, radiusKm: number) => {
   const signUpForVendor = async (data:any) => {
     try {
       const res = await api.post("/restaurant/signup", data);
-      console.log(res.data);
       if (res.status == 201) {
-        console.log("success", res.data.message);
       }
     }
     catch (error) {
-      console.log("errrr", error);
     }
   }
 
@@ -200,8 +191,6 @@ const generateCirclePolygon = (lat: number, lng: number, radiusKm: number) => {
         delivery_area: deliveryPolygon
       };
 
-      console.log("Submitting to backend:", payload, "Coords:", formData.latitude, formData.longitude);
-
       await signUpForVendor(payload);
 
       setTimeout(() => {
@@ -211,7 +200,6 @@ const generateCirclePolygon = (lat: number, lng: number, radiusKm: number) => {
       }, 2000);
 
     } catch (error) {
-      console.error(error);
       setIsLoading(false);
     }
   };
@@ -310,7 +298,6 @@ const generateCirclePolygon = (lat: number, lng: number, radiusKm: number) => {
       <div className="space-y-4">
         <label className="text-xs text-gray-400 uppercase tracking-wide">الموقع</label>
 
-        {/* Helper Buttons */}
         <div className="flex gap-3">
           <button
             type="button"
@@ -335,26 +322,6 @@ const generateCirclePolygon = (lat: number, lng: number, radiusKm: number) => {
           </button>
         </div>
 
-        {/* Coords Preview & Google Maps Link */}
-        {/* {(formData.latitude !== 0 && formData.longitude !== 0) && (
-          <div className="bg-gray-50 p-3 rounded-lg flex items-center justify-between text-xs text-gray-600">
-            <div className="flex flex-col">
-              <span className="font-medium text-gray-900">تم تحديد الإحداثيات successfully</span>
-              <span className="text-[10px] dir-ltr text-left">{formData.latitude.toFixed(6)}, {formData.longitude.toFixed(6)}</span>
-            </div>
-            <a
-              href={`https://www.google.com/maps?q=${formData.latitude},${formData.longitude}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[#E5A04D] hover:underline flex items-center gap-1"
-            >
-              عرض على Google Maps
-              <ChevronsRight className="w-3 h-3 rotate-180" />
-            </a>
-          </div>
-        )} */}
-
-        {/* Text Input */}
         <div className="relative">
           <input
             type="text"
@@ -367,42 +334,6 @@ const generateCirclePolygon = (lat: number, lng: number, radiusKm: number) => {
           />
           <MapPin className="absolute left-0 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
         </div>
-
-        {/* Manual Coords Toggle */}
-        {/* <div>
-          <button
-            type="button"
-            onClick={() => setShowManualCoords(!showManualCoords)}
-            className="text-[10px] text-gray-400 hover:text-[#E5A04D] underline transition-colors"
-          >
-            تعديل الإحداثيات يدوياً (متقدم)
-          </button>
-
-          {showManualCoords && (
-            <div className="grid grid-cols-2 gap-4 mt-2 animate-in fade-in slide-in-from-top-1">
-              <div className="space-y-1">
-                <label className="text-[10px] text-gray-400">خط العرض (Latitude)</label>
-                <input
-                  type="number"
-                  step="any"
-                  value={formData.latitude}
-                  onChange={(e) => setFormData(prev => ({ ...prev, latitude: parseFloat(e.target.value) || 0 }))}
-                  className="w-full py-1.5 border-b border-gray-200 focus:border-[#E5A04D] text-gray-800 text-sm ltr"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] text-gray-400">خط الطول (Longitude)</label>
-                <input
-                  type="number"
-                  step="any"
-                  value={formData.longitude}
-                  onChange={(e) => setFormData(prev => ({ ...prev, longitude: parseFloat(e.target.value) || 0 }))}
-                  className="w-full py-1.5 border-b border-gray-200 focus:border-[#E5A04D] text-gray-800 text-sm ltr"
-                />
-              </div>
-            </div>
-          )}
-        </div> */}
       </div>
 
       <div className="space-y-3">
@@ -495,7 +426,6 @@ const generateCirclePolygon = (lat: number, lng: number, radiusKm: number) => {
     <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6">
       <div className="bg-white rounded-2xl sm:rounded-3xl min-h-[calc(100vh-1.5rem)] sm:min-h-[calc(100vh-2rem)] md:min-h-[calc(100vh-3rem)] flex flex-col shadow-sm max-w-lg mx-auto w-full relative overflow-hidden">
 
-        {/* Header */}
         <header className="flex items-center justify-between px-6 py-5 border-b border-gray-50">
           <Link href={step === 1 ? "/signup" : "#"} onClick={step > 1 ? prevStep : undefined} className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors">
             <ChevronLeft className="w-5 h-5 text-gray-800" />
@@ -518,7 +448,6 @@ const generateCirclePolygon = (lat: number, lng: number, radiusKm: number) => {
           <div className="w-9" />
         </header>
 
-        {/* Main Content */}
         <main className="flex-1 px-6 py-6 overflow-y-auto">
           <div className="mb-8">
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
@@ -536,7 +465,6 @@ const generateCirclePolygon = (lat: number, lng: number, radiusKm: number) => {
             {step === 2 && renderStep2()}
             {step === 3 && renderStep3()}
 
-            {/* Navigation Buttons */}
             <div className="pt-4 flex gap-3">
               {step < totalSteps ? (
                 <button
@@ -561,7 +489,6 @@ const generateCirclePolygon = (lat: number, lng: number, radiusKm: number) => {
         </main>
       </div>
 
-      {/* Map Modal */}
       {showMap && (
         <LocationPicker
           lat={formData.latitude}

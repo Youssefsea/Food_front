@@ -34,20 +34,12 @@ export function DashboardHeader({
     month: 'long',
     year: 'numeric',
   });
-  
-  
-
-
-
 
   const handleToggleStatus = async () => {
     try {
       const res = await api.get('/restaurant/is-open');
-     
-    
       onToggleStatus();
     } catch (error) {
-      console.error('Error toggling restaurant status:', error);
     }
   };
 
@@ -55,9 +47,7 @@ export function DashboardHeader({
   <header className="fixed top-1 right-1 left-1 z-50 h-20 w-full bg-white border-b border-[#E5E7EB] shadow-sm">
   <div className="max-w-full mx-auto px-4 sm:px-8 h-full flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0">
 
-    {/* Right Side - Restaurant Info */}
     <div className="flex items-center gap-3 sm:gap-4">
-      {/* Menu Toggle Button */}
       <button 
         onClick={onToggleSidebar}
         className="p-2 hover:bg-[#F3F4F6] rounded-lg transition-colors"
@@ -75,7 +65,6 @@ export function DashboardHeader({
       </div>
     </div>
 
-    {/* Center - Status Toggle */}
     <div className="flex items-center gap-2 sm:gap-4 mt-2 sm:mt-0">
       <span className="text-xs sm:text-sm text-[#6B7280]">حالة المطعم</span>
       <button
@@ -92,21 +81,17 @@ export function DashboardHeader({
       </div>
     </div>
 
-  {/* Left Side - Date, Time & Notifications */}
 <div className="flex flex-wrap  items-center gap-2 sm:gap-6 mt-2 sm:mt-0 justify-end">
   
-  {/* Date & Time */}
   <div className="text-right flex-shrink-0">
     <div className="text-xs sm:text-xl font-bold text-[#1A1A1A]">{timeString}</div>
     <div className="text-[10px] sm:text-sm text-[#6B7280]">{dateString}</div>
   </div>
 
-  {/* Refresh */}
   <button onClick={onRefresh} className="p-1 left-2 sm:p-2 hover:bg-[#F3F4F6] rounded-lg transition-colors">
     <RefreshCw className="w-4 sm:w-5 h-4 sm:h-5 text-[#6B7280]" />
   </button>
 
-  {/* Chat Icon */}
   <button className="relative left-1 p-1 sm:p-2 hover:bg-[#F3F4F6] rounded-lg transition-colors">
     <MessageCircle className="w-4 sm:w-5 h-4 sm:h-5 text-[#6B7280]" />
     {unreadMessages > 0 && (
@@ -116,7 +101,6 @@ export function DashboardHeader({
     )}
   </button>
 
-  {/* Notification Bell */}
   <button className="relative left-2 p-1 sm:p-2 hover:bg-[#F3F4F6] rounded-lg transition-colors">
     <Bell className="w-4 sm:w-5 h-4 sm:h-5 text-[#6B7280]" />
     {notifications > 0 && (

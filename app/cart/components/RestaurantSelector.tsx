@@ -28,7 +28,6 @@ export function RestaurantSelector({
         </span>
       </div>
 
-      {/* Info Banner */}
       <div className="bg-[#FEF3E2] border border-[#FCD34D] rounded-xl p-3 mb-4 flex items-start gap-2">
         <AlertCircle className="w-5 h-5 text-[#E5A04D] flex-shrink-0 mt-0.5" />
         <div className="text-[13px] text-[#92400E]">
@@ -37,7 +36,6 @@ export function RestaurantSelector({
         </div>
       </div>
 
-      {/* Restaurant Options */}
       <div className="space-y-3">
         {restaurants.map((restaurant) => {
           const isSelected = selectedRestaurantId === restaurant.restaurantId;
@@ -56,19 +54,16 @@ export function RestaurantSelector({
               } ${!isOpen ? "opacity-60" : ""}`}
               disabled={!isOpen}
             >
-              {/* Selection Indicator */}
               <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-1 ${
                 isSelected ? "border-[#E5A04D] bg-[#E5A04D]" : "border-[#E5E7EB]"
               }`}>
                 {isSelected && <Check className="w-4 h-4 text-white" />}
               </div>
 
-              {/* Restaurant Logo */}
               <div className="w-12 h-12 rounded-xl border-2 border-[#E5E7EB] overflow-hidden bg-[#E5A04D] flex items-center justify-center flex-shrink-0">
                 <span className="text-white text-[18px] font-bold">{firstLetter}</span>
               </div>
 
-              {/* Restaurant Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-[15px] font-semibold text-[#1A1A1A] truncate">
@@ -86,7 +81,6 @@ export function RestaurantSelector({
                   <span className="truncate">{restaurant.restaurantLocation || 'غير محدد'}</span>
                 </div>
 
-                {/* Stats */}
                 <div className="flex items-center gap-4 text-[12px]">
                   <div className="flex items-center gap-1">
                     <Store className="w-3.5 h-3.5 text-[#6B7280]" />
@@ -102,7 +96,6 @@ export function RestaurantSelector({
                   )}
                 </div>
 
-                {/* Delivery Fee */}
                 {hasLocation && restaurant.calculatedDeliveryFee > 0 && (
                   <div className="mt-2 text-[12px] text-[#6B7280]">
                     رسوم التوصيل: <span className="font-semibold text-[#1A1A1A]">{restaurant.calculatedDeliveryFee.toFixed(2)} ج.م</span>
@@ -115,7 +108,6 @@ export function RestaurantSelector({
                 )}
               </div>
 
-              {/* Total Badge */}
               {isSelected && (
                 <div className="bg-[#E5A04D] text-white px-3 py-1.5 rounded-lg text-[13px] font-semibold flex-shrink-0">
                   {(restaurant.totalPrice + (restaurant.calculatedDeliveryFee || 0)).toFixed(2)} ج.م
