@@ -214,11 +214,6 @@ export default function CartPage() {
     
     if (orderSuccess.countdown <= 0) {
       router.push('/explore');
-  useEffect(() => {
-    if (!orderSuccess.show) return;
-    
-    if (orderSuccess.countdown <= 0) {
-      router.push('/explore');
       return;
     }
 
@@ -262,6 +257,14 @@ export default function CartPage() {
     return groupedCarts.find(r => r.restaurantId === selectedRestaurantId) || null;
   }, [groupedCarts, selectedRestaurantId]);
 
+  const cartSummary = useMemo((): CartSummary => {
+    if (selectedRestaurant) {
+      const subtotal = selectedRestaurant.totalPrice;
+      const totalItems = selectedRestaurant.totalItems;
+      return {
+        totalRestaurants: 1,
+        totalItems,
+        subtotal,
         totalDeliveryFees: selectedRestaurant.calculatedDeliveryFee || 0,
         grandTotal: selectedRestaurant.totalPrice + (selectedRestaurant.calculatedDeliveryFee || 0)
       };
@@ -278,19 +281,6 @@ export default function CartPage() {
   }, [groupedCarts, selectedRestaurant]);
 
   // Handle quantity change
-  const handleQuantityChange = async (restaurantId: number, dishId: number, newQuantity: number) => {
-    if (newQuantity < 1) return;
-
-    // Find current quantity for this dish
-    const restaurant = groupedCarts.find(r => r.restaurantId === restaurantId);
-    const currentDish = restaurant?.dishes.find(d => d.dishId === dishId);
-    const currentQuantity = currentDish?.quantity || 0;
-    const quantityDiff = newQuantity - currentQuantity;
-
-    try {
-      await api.put('/customer/update-dish-quantity-in-cart', {
-        dishId,
-        quantity: newQuantity
   const handleQuantityChange = async (restaurantId: number, dishId: number, newQuantity: number) => {
     if (newQuantity < 1) return;
 
@@ -409,6 +399,7 @@ export default function CartPage() {
     setPaymentImage(null);
   };
 
+
   // Validation
   const getCheckoutDisabledReason = (): string => {
     if (groupedCarts.length === 0) return 'السلة فارغة';
@@ -427,12 +418,11 @@ export default function CartPage() {
     if (restaurant) {
       if (restaurant.orderType === 'reservation') {
         if (!restaurant.reservationDate || !restaurant.reservationTime) {
-  const handleSelectRestaurant = (restaurantId: number) => {
-    setSelectedRestaurantId(restaurantId);
-    setPaymentImage(null);
-  };
-
-
+          return 'حدد وقت الحجز';
+        }
+      }
+    }
+    
     return '';
   };
 
@@ -463,34 +453,6 @@ export default function CartPage() {
           : null,
         lat: deliveryLocation!.lat,
         lng: deliveryLocation!.lng,
-        // إرسال ID المطعم المختار للباك اند
-        restaurantId: restaurantToOrder.restaurantId
-      };
-const handleCheckout = async () => {
-    const disabledReason = getCheckoutDisabledReason();
-    if (disabledReason) {
-      toast.error(disabledReason);
-      return;
-    }
-
-    if (!selectedRestaurant && groupedCarts.length > 1) {
-      toast.error('يرجى اختيار مطعم واحد للطلب');
-      return;
-    }
-
-    const restaurantToOrder = selectedRestaurant || groupedCarts[0];
-    setIsSubmitting(true);
-
-    try {(restaurantToOrder.restaurantId)
-      ) || createdOrders[0];
-
-      // Step 2: Upload payment proof
-      const formData = new FormData();
-      formData.append('orderId', ourOrder.orderId.toString());
-      formData.append('payment_method', paymentMethod!);
-      formData.append('images', paymentImage!);
-
-      const paymentResponse = await api.post('/customer/upload-payment-proof', formData, {
         restaurantId: restaurantToOrder.restaurantId
       };
 
@@ -510,16 +472,19 @@ const handleCheckout = async () => {
         o.restaurantId === restaurantToOrder.restaurantId || 
         o.restaurantId === String(restaurantToOrder.restaurantId)
       ) || createdOrders[0];
-rder:', err);
-      const axiosError = err as { response?: { data?: { error?: string; message?: string } } };
-      const errorMessage = axiosError.response?.data?.error || axiosError.response?.data?.message || 'حدث خطأ في إنشاء الطلب';
-      toast.error(errorMessage);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
-  // LoasetGroupedCarts(prev => prev.filter(r => r.restaurantId !== restaurantToOrder.restaurantId));
+      // Step 2: Upload payment proof
+      const formData = new FormData();
+      formData.append('orderId', ourOrder.orderId.toString());
+      formData.append('payment_method', paymentMethod!);
+      formData.append('images', paymentImage!);
+
+      const paymentResponse = await api.post('/customer/upload-payment-proof', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      if (paymentResponse.data.success !== false) {
+        setGroupedCarts(prev => prev.filter(r => r.restaurantId !== restaurantToOrder.restaurantId));
         setSelectedRestaurantId(null);
         setPaymentImage(null);
         setPaymentMethod(null);
@@ -541,39 +506,39 @@ rder:', err);
       setIsSubmitting(false);
     }
   };
-ition="top-center" richColors />
-      <div className="h-4"/>
-      
-      {/* Header */}
-      <CartHeader 
-        itemCount={summary.totalItems}
-        onClearCart={handleClearCart}
-        hasItems={groupedCarts.length > 0}
-      />
-      <div className="h-4"/>
 
-      {/* Notice Banner - Multiple Restaurants */}
-      {groupedCarts.length > 1 && <NoticeBanner />}
+  const handleOrderTypeChange = (restaurantId: number, orderType: 'instant' | 'reservation') => {
+    setGroupedCarts(prev => prev.map(r =>
+      r.restaurantId === restaurantId ? { ...r, orderType } : r
+    ));
+  };
 
-      {/* Restaurant Selector - Only show when multiple restaurants */}
-      <RestaurantSelector
+  const handleReservationDateChange = (restaurantId: number, date: string) => {
+    setGroupedCarts(prev => prev.map(r =>
+      r.restaurantId === restaurantId ? { ...r, reservationDate: date } : r
+    ));
+  };
+
+  const summary = cartSummary;
+  const displayRestaurants = selectedRestaurant ? [selectedRestaurant] : groupedCarts;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#F5F5F5] flex items-center justify-center">
+        <div className="text-[#E5A04D]">جاري التحميل...</div>
+      </div>
+    );
+  }
+
   if (groupedCarts.length === 0) {
     return <EmptyCart />;
   }
 
-      {/* Restaurant Cart Groups - Show only selected or all if single */}
-      <div className="px-5 pt-5">
-        {displayRestaurants.map((restaurant) => (
-          <RestaurantCartGroup
-            key={restaurant.restaurantId}
-            restaurant={restaurant}
-            orderNumber={groupedCarts.length > 1 ? groupedCarts.findIndex(r => r.restaurantId === restaurant.restaurantId) + 1 : 1}
-            onQuantityChange={handleQuantityChange}
-            onRemoveDish={handleRemoveDish}
-            onOrderTypeChange={handleOrderTypeChange}
-            onReservationDateChange={handleReservationDateChange}
-            onReservationTimeChange={handleReservationTimeChange}
-          />
+  return (
+    <div className="min-h-screen bg-[#F5F5F5] pb-32 dir-rtl" dir="rtl">
+      <Toaster position="top-center" richColors />
+      <div className="h-4"/>
+      
       <CartHeader 
         itemCount={summary.totalItems}
         onClearCart={handleClearCart}
@@ -590,8 +555,21 @@ ition="top-center" richColors />
         hasLocation={!!deliveryLocation}
       />
 
+      <div className="px-5 pt-5">
+        {displayRestaurants.map((restaurant) => (
+          <RestaurantCartGroup
+            key={restaurant.restaurantId}
+            restaurant={restaurant}
+            orderNumber={groupedCarts.length > 1 ? groupedCarts.findIndex(r => r.restaurantId === restaurant.restaurantId) + 1 : 1}
+            onQuantityChange={handleQuantityChange}
+            onRemoveDish={handleRemoveDish}
+            onOrderTypeChange={handleOrderTypeChange}
+            onReservationDateChange={handleReservationDateChange}
+            onReservationTimeChange={handleReservationTimeChange}
+          />
+        ))}
+      </div>
 
-      {/* Order Summary */}
       <DeliveryLocation
         location={deliveryLocation}
         onOpenLocationPicker={() => setIsLocationModalOpen(true)}
@@ -612,18 +590,17 @@ ition="top-center" richColors />
         summary={summary}
         restaurants={selectedRestaurant ? [selectedRestaurant] : groupedCarts}
       />
- */}
-      {orderSuccess.show && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-white rounded-[20px] p-8 mx-5 max-w-sm w-full text-center shadow-2xl animate-in zoom-in-95 duration-300">
-            {/* Success Icon */}
-            <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-5 shadow-lg">
-              <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            
-            {/* Title */}
+
+      <CheckoutButton
+        totalItems={summary.totalItems}
+        totalRestaurants={summary.totalRestaurants}
+        grandTotal={summary.grandTotal}
+        isDisabled={isCheckoutDisabled}
+        disabledReason={getCheckoutDisabledReason()}
+        isSubmitting={isSubmitting}
+        onCheckout={handleCheckout}
+      />
+
       <LocationPickerModal
         isOpen={isLocationModalOpen}
         onClose={() => setIsLocationModalOpen(false)}
@@ -668,12 +645,6 @@ ition="top-center" richColors />
           </div>
         </div>
       )}
-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-        }
-      `}</style>
     </div>
   );
 }
