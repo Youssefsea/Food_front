@@ -32,7 +32,7 @@ if (res.status === 201) {
 
 }
 catch(error){
-  if(error.response.data.error=="User already exists")
+  if((error as {response?: {data?: {error?: string}}}).response?.data?.error=="User already exists")
     {
      
       setErrorMsg("المستخدم موجود بالفعل. يرجى تسجيل الدخول.");

@@ -10,7 +10,7 @@ export interface OrderItem {
 }
 
 export interface Order {
-  payment_status: unknown;
+  payment_status?: 'pending' | 'confirmed' | 'rejected';
   id: number;
   total_amount: number;
   delivery_fee: number;

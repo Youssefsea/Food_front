@@ -25,7 +25,7 @@ export function OrderCard({ order, onStatusChange, onViewDetails, onCancel, onCh
 
   const subtotal = order.total_amount - (order.delivery_fee || 0);
 
-  const [paystatued, setPayStatued] = useState();
+  const [paystatued, setPayStatued] = useState<'pending' | 'confirmed' | 'rejected' | undefined>();
 
   useEffect(() => {
     setPayStatued(order.payment_status);
@@ -44,7 +44,7 @@ export function OrderCard({ order, onStatusChange, onViewDetails, onCancel, onCh
             #{order.id}
           </span>
 
-          {order.is_reservation != 0 && (
+          {order.is_reservation && (
             <span className="px-2 sm:px-2.5 md:px-3 py-1 sm:py-1.5 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-semibold bg-[#EDE9FE] text-[#8B5CF6] whitespace-nowrap">
               📅 حجز
             </span>

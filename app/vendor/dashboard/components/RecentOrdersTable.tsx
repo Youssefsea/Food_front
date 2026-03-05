@@ -8,7 +8,7 @@ type OrderStatus = 'pending' | 'paid' | 'cooking' | 'delivering' | 'completed' |
 type PaymentStatus = 'pending' | 'confirmed' | 'rejected';
 
 interface Order {
-  id: string;
+  id: number;
   customer_name: string;
   customer_phone: string;
   items: Array<{
@@ -18,6 +18,9 @@ interface Order {
   total_amount: number;
   status: OrderStatus;
   created_at: string;
+  is_reservation?: number;
+  reservation_date?: string;
+  reservation_time?: string;
 }
 
 interface RecentOrdersTableProps {
@@ -44,8 +47,8 @@ const statusOrder: OrderStatus[] = ['pending', 'cooking', 'delivering', 'complet
 
 export function RecentOrdersTable({ orders, onStatusChange }: RecentOrdersTableProps) {
   const [activeFilter, setActiveFilter] = useState<'all' | 'pending' | 'cooking' | 'completed'>('all');
-  const [updatingOrder, setUpdatingOrder] = useState<string | null>(null);
-  const [paymentStatuses, setPaymentStatuses] = useState<Record<string, PaymentStatus>>({});
+  const [updatingOrder, setUpdatingOrder] = useState<number | null>(null);
+  const [paymentStatuses, setPaymentStatuses] = useState<Record<number, PaymentStatus>>({});
   const [loadingPayments, setLoadingPayments] = useState(true);
 
   const filters = [
@@ -85,7 +88,7 @@ export function RecentOrdersTable({ orders, onStatusChange }: RecentOrdersTableP
     return order.status === activeFilter;
   });
 
-  const handleStatusChange = async (orderId: string, currentStatus: OrderStatus) => {
+  const handleStatusChange = async (orderId: number, currentStatus: OrderStatus) => {
     const currentIndex = statusOrder.indexOf(currentStatus);
     if (currentIndex === -1 || currentIndex >= statusOrder.length - 1) return;
     
@@ -123,7 +126,7 @@ export function RecentOrdersTable({ orders, onStatusChange }: RecentOrdersTableP
     return colors[index];
   };
 
-  const isHighPriority = (orderId: string, orderStatus: OrderStatus) => {
+  const isHighPriority = (orderId: number, orderStatus: OrderStatus) => {
     return paymentStatuses[orderId] === 'confirmed' && orderStatus === 'pending';
   };
 
@@ -331,11 +334,13 @@ export function RecentOrdersTable({ orders, onStatusChange }: RecentOrdersTableP
                       <div className="flex justify-between items-center mb-3">
                         <span className="text-sm text-[#6B7280]">تاريخ الحجز</span>
                         <span className="font-bold text-[#E5A04D]">
-                          {(new Date(order.reservation_date).getHours()) +
+                          {order.reservation_date ? (
+                            (new Date(order.reservation_date).getHours()) +
                             ':' +
                             new Date(order.reservation_date).getMinutes() +
                             ' ' +
-                            new Date(order.reservation_date).toLocaleDateString('ar-EG')}
+                            new Date(order.reservation_date).toLocaleDateString('ar-EG')
+                          ) : '—'}
 
                         </span>
                       </div>

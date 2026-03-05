@@ -20,7 +20,7 @@ interface DashboardData {
   pendingOrders: number;
   totalDishes: number;
   topDishes: Array<{
-    _id: string;
+    id: number;
     name: string;
     price: number;
     image?: string;
@@ -28,11 +28,12 @@ interface DashboardData {
     revenue?: number;
   }>;
   recentOrders: Array<{
-    id: string;
+    id: number;
     customer_name: string;
     customer_phone: string;
-    is_reservation: boolean;
-    reservation_time: string | null;
+    is_reservation: number;
+    reservation_time?: string;
+    reservation_date?: string;
     items: Array<{
       dish_name: string;
       quantity: number;

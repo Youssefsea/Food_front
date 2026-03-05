@@ -107,6 +107,7 @@ export function LocationPickerModal({
     if (accuracy <= 20) return 'text-[#10B981]';
     if (accuracy <= 50) return 'text-[#F59E0B]';
     return 'text-[#EF4444]';
+  };
 
   const getAccuracyLabel = () => {
     if (!accuracy) return '';
@@ -146,6 +147,7 @@ export function LocationPickerModal({
             </div>
 
             <div className="p-5 overflow-y-auto max-h-[calc(90vh-140px)]">
+              <button
                 onClick={handleUseCurrentLocation}
                 disabled={isLoadingLocation}
                 className="w-full h-[52px] bg-[#FEF3E2] border-2 border-dashed border-[#E5A04D] rounded-xl flex items-center justify-center gap-2 text-[#E5A04D] font-semibold hover:bg-[#FEF3E2]/80 transition-colors disabled:opacity-50"
@@ -165,11 +167,6 @@ export function LocationPickerModal({
 
               {/* Location Error */}
               {locationError && (
-                <div className="mt-3 bg-[#FEE2E2] border border-[#FECACA] rounded-lg p-3 flex items-start gap-2">
-                  <AlertCircle className="w-4 h-4 text-[#EF4444] flex-shrink-0 mt-0.5" />
-                  <span className="text-[13px] text-[#991B1B]">{locationError}</span>
-                </div>
-              )locationError && (
                 <div className="mt-3 bg-[#FEE2E2] border border-[#FECACA] rounded-lg p-3 flex items-start gap-2">
                   <AlertCircle className="w-4 h-4 text-[#EF4444] flex-shrink-0 mt-0.5" />
                   <span className="text-[13px] text-[#991B1B]">{locationError}</span>
@@ -224,6 +221,11 @@ export function LocationPickerModal({
                 </div>
               </div>
 
+              <button
+                onClick={handleConfirm}
+                className="w-full mt-4 h-[52px] bg-[#E5A04D] rounded-xl text-white font-semibold text-[15px] hover:bg-[#D4924A] transition-colors active:scale-[0.98]"
+              >
+                تأكيد الموقع
               </button>
             </div>
           </motion.div>

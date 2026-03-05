@@ -136,7 +136,7 @@ export function VendorChatModal({ isOpen, onClose, orderId, customerName }: Vend
       socketRef.current = null;
     }
 
-    socketRef.current = io('http://localhost:3444', {
+    socketRef.current = io('https://19d086e548570852.preview.oblien.com', {
       auth: { token },
       withCredentials: true,
       transports: ['websocket', 'polling'],
