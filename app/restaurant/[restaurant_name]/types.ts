@@ -29,6 +29,7 @@ export interface Dish {
   category: string;
   image: string;
   is_available: number;
+  is_featured?: number;
   isPopular?: boolean;
   rating?: number;
   reviewCount?: number;

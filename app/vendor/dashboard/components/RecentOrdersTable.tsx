@@ -18,6 +18,9 @@ interface Order {
   total_amount: number;
   status: OrderStatus;
   created_at: string;
+  is_reservation?: number;
+  reservation_date?: string;
+  reservation_time?: string;
 }
 
 interface RecentOrdersTableProps {
@@ -331,11 +334,13 @@ export function RecentOrdersTable({ orders, onStatusChange }: RecentOrdersTableP
                       <div className="flex justify-between items-center mb-3">
                         <span className="text-sm text-[#6B7280]">تاريخ الحجز</span>
                         <span className="font-bold text-[#E5A04D]">
-                          {(new Date(order.reservation_date).getHours()) +
+                          {order.reservation_date ? (
+                            (new Date(order.reservation_date).getHours()) +
                             ':' +
                             new Date(order.reservation_date).getMinutes() +
                             ' ' +
-                            new Date(order.reservation_date).toLocaleDateString('ar-EG')}
+                            new Date(order.reservation_date).toLocaleDateString('ar-EG')
+                          ) : '—'}
 
                         </span>
                       </div>

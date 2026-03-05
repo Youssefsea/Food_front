@@ -140,15 +140,6 @@ export function PaymentMethod({
                 <button
                   onClick={() => copyToClipboard(walletNumber)}
                   className="flex items-center gap-1.5 text-[#E5A04D] text-[13px] hover:bg-[#FEF3E2] px-3 py-1.5 rounded-lg transition-colors"
-            <div className="mt-3 bg-white rounded-lg p-3">
-              <div className="text-[12px] text-[#6B7280] mb-1">رقم المحفظة</div>
-              <div className="flex items-center justify-between">
-                <span className="text-[18px] font-bold text-[#1A1A1A] font-mono">
-                  {walletNumber}
-                </span>
-                <button
-                  onClick={() => copyToClipboard(walletNumber)}
-                  className="flex items-center gap-1.5 text-[#E5A04D] text-[13px] hover:bg-[#FEF3E2] px-3 py-1.5 rounded-lg transition-colors"
                 >
                   <Copy className="w-4 h-4" />
                   <span>{copiedNumber ? "تم النسخ!" : "نسخ"}</span>
@@ -158,4 +149,13 @@ export function PaymentMethod({
           </motion.div>
         )}
       </AnimatePresence>
+
+      <PaymentProofUpload
+        selectedImage={paymentImage}
+        onImageSelect={onImageSelect}
+        isDisabled={isDisabled}
+      />
+    </div>
+  );
+}
 

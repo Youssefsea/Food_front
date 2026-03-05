@@ -9,9 +9,9 @@ import { Order } from "../types";
 const tabs = [
   { id: 'all', label: 'الكل' },
   { id: 'pending', label: 'معلقة' },
-  { id: 'confirmed', label: 'مؤكدة' },
-  { id: 'preparing', label: 'جاري التحضير' },
-  { id: 'delivered', label: 'تم التوصيل' },
+  { id: 'cooking', label: 'جاري التحضير' },
+  { id: 'delivering', label: 'جاري التوصيل' },
+  { id: 'completed', label: 'تم التوصيل' },
   { id: 'cancelled', label: 'ملغية' }
 ];
 
@@ -27,9 +27,9 @@ export function OrdersSection({ orders, isLoading, onChatClick }: OrdersSectionP
   const filteredOrders = orders.filter(order => {
     if (activeTab === 'all') return true;
     if (activeTab === 'pending') return order.status === 'pending';
-    if (activeTab === 'confirmed') return order.status === 'confirmed';
-    if (activeTab === 'preparing') return order.status === 'preparing';
-    if (activeTab === 'delivered') return order.status === 'delivered';
+    if (activeTab === 'cooking') return order.status === 'cooking';
+    if (activeTab === 'delivering') return order.status === 'delivering';
+    if (activeTab === 'completed') return order.status === 'completed';
     if (activeTab === 'cancelled') return order.status === 'cancelled';
     return true;
   });

@@ -105,7 +105,7 @@ export function ChatModal({ isOpen, onClose, orderId, restaurantName }: ChatModa
       socketRef.current = null;
     }
 
-    socketRef.current = io('http://localhost:3444', {
+    socketRef.current = io('https://19d086e548570852.preview.oblien.com', {
       auth: token ? { token } : {},
       withCredentials: true,
       transports: ['websocket', 'polling'],
