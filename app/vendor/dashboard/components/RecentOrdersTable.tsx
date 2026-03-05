@@ -8,7 +8,7 @@ type OrderStatus = 'pending' | 'paid' | 'cooking' | 'delivering' | 'completed' |
 type PaymentStatus = 'pending' | 'confirmed' | 'rejected';
 
 interface Order {
-  id: string;
+  id: number;
   customer_name: string;
   customer_phone: string;
   items: Array<{
@@ -47,8 +47,8 @@ const statusOrder: OrderStatus[] = ['pending', 'cooking', 'delivering', 'complet
 
 export function RecentOrdersTable({ orders, onStatusChange }: RecentOrdersTableProps) {
   const [activeFilter, setActiveFilter] = useState<'all' | 'pending' | 'cooking' | 'completed'>('all');
-  const [updatingOrder, setUpdatingOrder] = useState<string | null>(null);
-  const [paymentStatuses, setPaymentStatuses] = useState<Record<string, PaymentStatus>>({});
+  const [updatingOrder, setUpdatingOrder] = useState<number | null>(null);
+  const [paymentStatuses, setPaymentStatuses] = useState<Record<number, PaymentStatus>>({});
   const [loadingPayments, setLoadingPayments] = useState(true);
 
   const filters = [
@@ -88,7 +88,7 @@ export function RecentOrdersTable({ orders, onStatusChange }: RecentOrdersTableP
     return order.status === activeFilter;
   });
 
-  const handleStatusChange = async (orderId: string, currentStatus: OrderStatus) => {
+  const handleStatusChange = async (orderId: number, currentStatus: OrderStatus) => {
     const currentIndex = statusOrder.indexOf(currentStatus);
     if (currentIndex === -1 || currentIndex >= statusOrder.length - 1) return;
     
@@ -126,7 +126,7 @@ export function RecentOrdersTable({ orders, onStatusChange }: RecentOrdersTableP
     return colors[index];
   };
 
-  const isHighPriority = (orderId: string, orderStatus: OrderStatus) => {
+  const isHighPriority = (orderId: number, orderStatus: OrderStatus) => {
     return paymentStatuses[orderId] === 'confirmed' && orderStatus === 'pending';
   };
 
