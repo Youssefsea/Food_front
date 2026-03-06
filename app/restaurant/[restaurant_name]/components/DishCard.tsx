@@ -30,7 +30,7 @@ export function DishCard({ dish, onAddToCart, onClick, cartQuantity = 0 }: DishC
   const quantity = cartQuantity;
 
   const imageUrl = dish.image?.split(',')[0]?.trim() || '/placeholder-dish.jpg';
-  const isAvailable = dish.is_available === true;
+  const isAvailable = dish.is_available;
   const handleAddClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!isAvailable) return;
