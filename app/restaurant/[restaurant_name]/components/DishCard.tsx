@@ -77,7 +77,7 @@ return (
             loading="lazy"
           />
 
-          {isAvailable===false && (
+          {!isAvailable && (
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
               <div className="bg-white/95 px-4 py-2 rounded-full shadow-lg">
                 <span className="text-[#1A1A1A] text-xs sm:text-sm font-bold">غير متوفر</span>
