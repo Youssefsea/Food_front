@@ -17,8 +17,9 @@ export default function SignUpPage() {
     }
   };
   return (
-    <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6">
-      <div className="bg-white rounded-2xl sm:rounded-3xl min-h-[calc(100vh-1.5rem)] sm:min-h-[calc(100vh-2rem)] md:min-h-[calc(100vh-3rem)] flex flex-col shadow-sm">
+    <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-5">
+
+      <div className="bg-white rounded-2xl sm:rounded-3xl min-h-[calc(100vh-1.5rem)] sm:min-h-[calc(100vh-2rem)] md:min-h-[calc(100vh-3rem)] flex flex-col  shadow-sm">
         <header className="flex items-center justify-between px-4 py-4">
           <Link href="/" className="p-2 rounded-full hover:bg-gray-100 transition-colors">
             <ChevronLeft className="w-6 h-6 text-gray-800" />
@@ -27,20 +28,24 @@ export default function SignUpPage() {
           <div className="w-10" />
         </header>
 
-        <main className="flex-1 px-4 sm:px-6 py-4 overflow-y-auto">
-        <div className="mb-6">
-          <h1 className="text-3xl font-light text-gray-800 mb-2">
-            مرحباً بك
-          </h1>
-          <p className="text-gray-500 text-sm">
-            اختر نوع حسابك للمتابعة.{" "}
-            <Link href="/login" className="text-[#E5A04D] hover:underline">
-              لديك حساب بالفعل؟
-            </Link>
-          </p>
-        </div>
+        <main className="px-4 sm:px-6 py-4 overflow-y-auto">
+   <div className="p-3 mb-6 space-y-6">
+  <h1 className="text-3xl font-light text-gray-950">
+    مرحباً بك
+  </h1>
+  <div className="h-2"/>
 
-        <div className="space-y-3 mb-6">
+  <p className="text-gray-500 text-sm">
+    اختر نوع حسابك للمتابعة.{" "}
+    <Link href="/login" className="text-[#E5A04D] hover:underline">
+      لديك حساب بالفعل؟
+    </Link>
+  </p>
+</div>
+  <div className="h-2.5"/>
+
+
+        <div className="space-y-4 mb-6">
          
           <button
             onClick={() => setSelectedType("customer")}
@@ -79,6 +84,7 @@ export default function SignUpPage() {
               )}
             </div>
           </button>
+  <div className="h-2"/>
 
         
           <button
@@ -120,23 +126,27 @@ export default function SignUpPage() {
           </button>
         </div>
 
+<div className="h-2"/>
      
         <div className="p-3 bg-gray-50 rounded-xl">
           <p className="text-gray-600 text-xs leading-relaxed">
             {selectedType === "vendor" ? (
               <>
-                <span className="font-semibold text-gray-800">ملاحظة للمطاعم:</span>{" "}
+                <span className="font-semibold text-gray-950">ملاحظة للمطاعم:</span>{" "}
                 سيتم مراجعة طلبك والتحقق من بياناتك قبل تفعيل حسابك. قد يستغرق ذلك 24-48 ساعة.
               </>
             ) : (
               <>
-                <span className="font-semibold text-gray-800">كيف يعمل؟</span>{" "}
+                <span className="font-semibold text-gray-950">كيف يعمل؟</span>{" "}
                 اختر نوع حسابك، أكمل بياناتك، وابدأ في حجز أو استقبال طلبات الوجبات المسبقة.
               </>
             )}
           </p>
         </div>
       </main>    
+
+  <div className="h-3"/>
+
       <div className="px-4 sm:px-6 py-4 pb-6">
         <button
           onClick={handleContinue}
