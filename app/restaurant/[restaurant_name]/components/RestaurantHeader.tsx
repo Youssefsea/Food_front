@@ -33,7 +33,7 @@ export function RestaurantHeader({ restaurant, coverImage }: RestaurantHeaderPro
   const [isHeaderScrolled, setIsHeaderScrolled] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
 
-  const isOpen = restaurant.is_open === 1;
+  const isOpen = restaurant.is_open;
 
   useEffect(() => {
     const handleScroll = () => {
