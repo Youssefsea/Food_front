@@ -30,7 +30,7 @@ export function DishCard({ dish, onAddToCart, onClick, cartQuantity = 0 }: DishC
   const quantity = cartQuantity;
 
   const imageUrl = dish.image?.split(',')[0]?.trim() || '/placeholder-dish.jpg';
-  const isAvailable = dish.is_available === 1;
+  const isAvailable = dish.is_available === true;
   const handleAddClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!isAvailable) return;
@@ -77,7 +77,7 @@ return (
             loading="lazy"
           />
 
-          {!isAvailable && (
+          {isAvailable===false && (
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
               <div className="bg-white/95 px-4 py-2 rounded-full shadow-lg">
                 <span className="text-[#1A1A1A] text-xs sm:text-sm font-bold">غير متوفر</span>
