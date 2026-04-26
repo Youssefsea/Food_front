@@ -2,7 +2,7 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'https://19d086e548570852.preview.oblien.com',
+  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'https://food-back-nod.vercel.app',
   withCredentials: true,
   timeout: 15000,
   headers: {
