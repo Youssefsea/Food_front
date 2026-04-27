@@ -35,7 +35,10 @@ export const getToken = (role?: TokenRole): string | null => {
 };
 
 export const setToken = (token: string, role?: TokenRole) => {
-  if (typeof window === "undefined" || !token) return;
+  if (typeof window === "undefined" || !token) {
+    console.warn("setToken called in server context or with empty token value");
+    return;
+  }
 
   Cookies.set("token", token);
   localStorage.setItem("token", token);

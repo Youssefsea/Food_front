@@ -19,8 +19,6 @@ export default function Home() {
   shadow-lg
   hover:opacity-100
   hover:shadow-xl
-  hover:scale-105
-h-10
   flex items-center justify-center
   transition-all
   duration-300

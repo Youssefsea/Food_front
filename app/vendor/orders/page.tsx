@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { RefreshCw, AlertCircle } from 'lucide-react';
 import api from '../../../axios';
 import { getToken, setToken } from '../../../lib/auth';
+import axios from 'axios';
 import { Order, OrderStatus, OrdersStats as StatsType } from './types';
 import {
   OrderCard,
@@ -33,12 +34,10 @@ export default function OrdersPage() {
   
   useEffect(() => {
     const syncVendorToken = () => {
-      const vendorToken = localStorage.getItem('vendorToken');
-      if (!vendorToken) {
-        const cookieToken = getToken('vendor');
-        if (cookieToken) {
-          setToken(cookieToken, 'vendor');
-        }
+      const token = getToken('vendor');
+      const storedVendorToken = localStorage.getItem('vendorToken');
+      if (token && token !== storedVendorToken) {
+        setToken(token, 'vendor');
       }
     };
     syncVendorToken();
@@ -56,7 +55,7 @@ export default function OrdersPage() {
       const response = await api.get('/restaurant/orders', { params, signal });
       setOrders(response.data.orders || []);
     } catch (err: unknown) {
-      if (typeof err === 'object' && err && 'code' in err && (err as { code?: string }).code === 'ERR_CANCELED') {
+      if (axios.isCancel(err)) {
         return;
       }
       setError('فشل في تحميل الطلبات. يرجى المحاولة مرة أخرى.');

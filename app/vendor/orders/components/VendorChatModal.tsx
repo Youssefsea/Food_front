@@ -24,7 +24,7 @@ interface VendorChatModalProps {
 }
 
 const getVendorToken = (): string | null => {
-  let token = getToken('vendor');
+  const token = getToken('vendor');
   if (token) {
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));

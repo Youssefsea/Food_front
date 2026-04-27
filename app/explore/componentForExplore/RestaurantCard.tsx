@@ -51,12 +51,12 @@ export const RestaurantCard = memo(function RestaurantCard({
 
   return (
     <Link href={`/restaurant/${restaurant_name ? encodeURIComponent(restaurant_name) : id}`} className="block">
-      <div className="bg-white rounded-2xl sm:rounded-3xl overflow-hidden shadow-md hover:shadow-xl active:shadow-md transition-all duration-200 sm:hover:-translate-y-1 active:scale-[0.98] sm:active:scale-100 cursor-pointer">
+      <div className="bg-white rounded-2xl sm:rounded-3xl overflow-hidden shadow-md hover:shadow-xl active:shadow-md transition-all duration-200 sm:hover:-translate-y-1 active:scale-[0.98] sm:active:scale-100">
         <div className="relative h-32 sm:h-36 md:h-40 overflow-hidden">
           {displayDishes.length >= 3 ? (
             <div className="flex h-full gap-0.5">
               {displayDishes.slice(0, 3).map((dish, index) => (
-                <div key={dish.id || index} className="flex-1 overflow-hidden">
+                <div key={dish.id || index} className="relative flex-1 overflow-hidden">
                   <Image
                     src={dish.image?.split(',')[0]?.trim() || '/placeholder-dish.jpg'}
                     alt={dish.name}

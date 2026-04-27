@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
 import api from "../../axios";
 import { Header } from "./componentForExplore/Header";
@@ -14,6 +14,7 @@ import axios from "axios";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 
 const LocationCustomer = dynamic(() => import("./LocationCustomer"), { ssr: false });
+const SEARCH_DEBOUNCE_MS = 300;
 
 interface Restaurant {
   id: number;
@@ -77,7 +78,7 @@ export default function ExplorePage() {
 
   const fetchRestaurantDishes = async (restaurantId: number, signal?: AbortSignal) => {
     try {
-      const res = await api.post(`/restaurant/all-dishes-for-restaurantE`, { restaurantId }, { signal });
+      const res = await api.post(`/restaurant/all-dishes-for-restaurant`, { restaurantId }, { signal });
       setRestaurantDishes(prev => ({
         ...prev,
         [restaurantId]: res.data.dishes || []
@@ -209,7 +210,7 @@ export default function ExplorePage() {
   }, [fetchAllRestaurants]);
 
   useEffect(() => {
-    const timeout = setTimeout(() => setDebouncedSearchQuery(searchQuery), 300);
+    const timeout = setTimeout(() => setDebouncedSearchQuery(searchQuery), SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(timeout);
   }, [searchQuery]);
 
@@ -337,7 +338,7 @@ export default function ExplorePage() {
             {isLoading ? (
               <LoadingSkeleton />
             ) : filteredRestaurants.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5 sm:gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
                 {filteredRestaurants.map((restaurant) => (
                   <RestaurantCardComponent
                     key={restaurant.id}
@@ -364,14 +365,12 @@ export default function ExplorePage() {
 
 
       {showPicker && (
-        <Suspense fallback={<LoadingSkeleton />}>
-          <LocationCustomer
-            lat={lat || 30.0444}
-            lng={lng || 31.2357}
-            onLocationChange={handleLocationChange}
-            onClose={() => setShowPicker(false)}
-          />
-        </Suspense>
+        <LocationCustomer
+          lat={lat || 30.0444}
+          lng={lng || 31.2357}
+          onLocationChange={handleLocationChange}
+          onClose={() => setShowPicker(false)}
+        />
       )}
 
       <style>{`
