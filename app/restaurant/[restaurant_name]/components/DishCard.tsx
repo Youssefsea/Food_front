@@ -2,6 +2,7 @@
 
 import { Plus, Minus, Clock } from 'lucide-react';
 import { useState } from 'react';
+import Image from 'next/image';
 
 interface Dish {
   id: number;
@@ -70,11 +71,12 @@ return (
     >
       <div className="flex flex-row gap-4 h-36 sm:h-40 md:h-44">
         <div className="relative w-36 sm:w-40 md:w-44 flex-shrink-0">
-          <img
+          <Image
             src={imageUrl}
             alt={dish.name}
+            fill
+            sizes="(max-width: 768px) 40vw, 20vw"
             className="w-full h-full object-cover"
-            loading="lazy"
           />
 
           {!isAvailable && (

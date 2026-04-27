@@ -1,6 +1,7 @@
 'use client';
 
-import { Search, Mic } from 'lucide-react';
+import { Search } from 'lucide-react';
+import { memo } from 'react';
 
 interface SearchBarProps {
   searchQuery: string;
@@ -9,12 +10,12 @@ interface SearchBarProps {
   showFiltersIndicator?: boolean;
 }
 
-export function SearchBar({ 
+export const SearchBar = memo(function SearchBar({ 
   searchQuery, 
   onSearchChange, 
 }: SearchBarProps) {
   return (
-    <div className="px-3 sm:px-4 md:px-5 py-2 sm:py-3 bg-white">
+    <div className="page-shell py-2 sm:py-3 bg-white">
       <div className="relative max-w-full sm:max-w-md md:max-w-lg mx-auto">
         <Search className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 w-4 sm:w-5 h-4 sm:h-5 text-[#9CA3AF]" />
         <input
@@ -28,4 +29,4 @@ export function SearchBar({
       </div>
     </div>
   );
-}
+});

@@ -94,7 +94,7 @@ export function EditDishModal({ isOpen, dish, onClose, onUpdate }: EditDishModal
         category: formData.category,
       });
       onClose();
-    } catch (error) {
+    } catch {
     } finally {
       setLoading(false);
     }

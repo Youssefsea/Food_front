@@ -1,8 +1,9 @@
 'use client';
 
-import { ChevronRight, Share2, Heart, Star, MapPin, Clock, DollarSign, Phone, Calendar } from 'lucide-react';
+import { ChevronRight, Share2, MapPin, Clock, Phone, Calendar } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 interface Restaurant {
   id: number;
@@ -29,7 +30,6 @@ interface RestaurantHeaderProps {
 
 export function RestaurantHeader({ restaurant, coverImage }: RestaurantHeaderProps) {
   const router = useRouter();
-  const [isFavorite, setIsFavorite] = useState(false);
   const [isHeaderScrolled, setIsHeaderScrolled] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
 
@@ -51,7 +51,7 @@ export function RestaurantHeader({ restaurant, coverImage }: RestaurantHeaderPro
           text: restaurant.description,
           url: window.location.href,
         });
-      } catch (error) {
+      } catch {
       }
     }
   };
@@ -65,9 +65,11 @@ export function RestaurantHeader({ restaurant, coverImage }: RestaurantHeaderPro
 return (
     <>
       <div className="relative h-50 sm:h-60 md:h-72 lg:h-80 overflow-visible">
-        <img
+        <Image
           src={coverImage || '/placeholder-restaurant.jpg'}
           alt={restaurant.restaurant_name}
+          fill
+          sizes="100vw"
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/10" />
@@ -115,9 +117,11 @@ return (
         <div className="absolute -top-18 sm:-top-10 md:-top-27 right-3 sm:right-5 md:right-5 z-20 flex items-end gap-1 sm:gap-3">
           <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-white rounded-xl sm:rounded-2xl md:rounded-3xl border-3 sm:border-4 border-white shadow-lg flex items-center justify-center overflow-hidden flex-shrink-0">
             {restaurant.logo ? (
-              <img
+              <Image
                 src={restaurant.logo}
                 alt={restaurant.restaurant_name}
+                fill
+                sizes="96px"
                 className="w-full h-full object-cover"
               />
             ) : (

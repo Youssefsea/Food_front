@@ -81,7 +81,7 @@ export default function RestaurantPage() {
           setCoverImage(firstImage);
         }
       }
-    } catch (err) {
+    } catch {
     }
   }, []);
   const fetchCart = useCallback(async () => {
@@ -94,7 +94,7 @@ export default function RestaurantPage() {
         cartMap[item.dishId] = item.quantity;
       });
       setCart(cartMap);
-    } catch (err) {
+    } catch {
     }
   }, []);
 
@@ -202,7 +202,7 @@ export default function RestaurantPage() {
           decrementCount(Math.abs(quantityDiff));
         }
       }
-    } catch (err) {
+    } catch {
       if (quantity === 0) {
         setCart(prev => {
           const newCart = { ...prev };
@@ -373,6 +373,7 @@ export default function RestaurantPage() {
       </div>
 
       <DishDetailModal
+        key={`${selectedDish?.id ?? "none"}-${isModalOpen ? "open" : "closed"}-${selectedDish ? cart[selectedDish.id] || 1 : 1}`}
         dish={selectedDish}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

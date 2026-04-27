@@ -197,7 +197,7 @@ export default function CartPage() {
           setSelectedRestaurantId(cartsList[0].restaurantId);
         }
       }
-    } catch (err) {
+    } catch {
       toast.error('حدث خطأ في تحميل السلة');
     } finally {
       setIsLoading(false);
@@ -320,7 +320,7 @@ export default function CartPage() {
       }
 
       toast.success('تم تحديث الكمية');
-    } catch (err) {
+    } catch {
       toast.error('حدث خطأ في تحديث الكمية');
     }
   };
@@ -358,7 +358,7 @@ export default function CartPage() {
       decrementCount(removedQuantity);
 
       toast.success('تم حذف الطبق من السلة');
-    } catch (err) {
+    } catch {
       toast.error('حدث خطأ في حذف الطبق');
     }
   };
@@ -381,7 +381,7 @@ export default function CartPage() {
       setCount(0);
       
       toast.success('تم إفراغ السلة');
-    } catch (err) {
+    } catch {
       toast.error('حدث خطأ في إفراغ السلة');
     }
   };

@@ -2,6 +2,7 @@
 
 import { X, MapPin, Phone, Mail, Clock } from 'lucide-react';
 import { Order, statusConfig } from '../types';
+import Image from 'next/image';
 
 interface OrderDetailsModalProps {
   order: Order | null;
@@ -133,9 +134,11 @@ export function OrderDetailsModal({ order, isOpen, onClose }: OrderDetailsModalP
                   >
                     <div className="flex items-center gap-3">
                       {item.dish_image ? (
-                        <img
+                        <Image
                           src={item.dish_image}
                           alt={item.dish_name}
+                          width={56}
+                          height={56}
                           className="w-14 h-14 rounded-lg object-cover"
                         />
                       ) : (

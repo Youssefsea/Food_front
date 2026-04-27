@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { Heart, MapPin, Star, Clock, DollarSign, Calendar, Truck } from 'lucide-react';
+import { MapPin, Calendar } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
+import { memo } from 'react';
 
 interface Dish {
   id: number;
@@ -30,16 +31,13 @@ interface RestaurantCardProps {
   tags?: string[];
 }
 
-export function RestaurantCard({
+export const RestaurantCard = memo(function RestaurantCard({
   id,
   restaurant_name,
   location,
-  can_deliver,
   can_reserve,
   isNearby,
   dishes = [],
-  description,
-  delivery_fees,
   isOpen = true,
   tags = [],
 }: RestaurantCardProps) {
@@ -50,27 +48,29 @@ export function RestaurantCard({
 
   return (
     <Link href={`/restaurant/${restaurant_name ? encodeURIComponent(restaurant_name) : id}`} className="block">
-      <div className="bg-white rounded-xl sm:rounded-2xl overflow-hidden shadow-sm hover:shadow-xl active:shadow-md transition-all duration-200 sm:hover:-translate-y-1 active:scale-[0.98] sm:active:scale-100 cursor-pointer">
+      <div className="bg-white rounded-2xl sm:rounded-3xl overflow-hidden shadow-md hover:shadow-xl active:shadow-md transition-all duration-200 sm:hover:-translate-y-1 active:scale-[0.98] sm:active:scale-100">
         <div className="relative h-32 sm:h-36 md:h-40 overflow-hidden">
           {displayDishes.length >= 3 ? (
             <div className="flex h-full gap-0.5">
               {displayDishes.slice(0, 3).map((dish, index) => (
-                <div key={dish.id || index} className="flex-1 overflow-hidden">
-                  <img
+                <div key={dish.id || index} className="relative flex-1 overflow-hidden">
+                  <Image
                     src={dish.image?.split(',')[0]?.trim() || '/placeholder-dish.jpg'}
                     alt={dish.name}
+                    fill
+                    sizes="(max-width: 768px) 33vw, 20vw"
                     className="w-full h-full object-cover"
-                    loading="lazy"
                   />
                 </div>
               ))}
             </div>
           ) : displayDishes.length > 0 ? (
-            <img
+            <Image
               src={displayDishes[0]?.image?.split(',')[0]?.trim() || '/placeholder-dish.jpg'}
               alt={displayName}
+              fill
+              sizes="(max-width: 768px) 100vw, 33vw"
               className="w-full h-full object-cover"
-              loading="lazy"
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-[#FEF3E2] to-[#FDE8C9] flex items-center justify-center">
@@ -163,11 +163,12 @@ export function RestaurantCard({
                 {displayDishes.map((dish) => (
                   <div key={dish.id} className="flex-shrink-0 w-20 sm:w-24">
                     <div className="relative h-16 sm:h-20 rounded-lg sm:rounded-xl overflow-hidden mb-1 sm:mb-1.5 shadow-sm">
-                      <img
+                      <Image
                         src={dish.image?.split(',')[0]?.trim() || '/placeholder-dish.jpg'}
                         alt={dish.name}
+                        fill
+                        sizes="96px"
                         className="w-full h-full object-cover"
-                        loading="lazy"
                       />
                     </div>
                     <p className="text-[10px] sm:text-xs font-medium text-[#1A1A1A] truncate mb-0.5">
@@ -193,4 +194,4 @@ export function RestaurantCard({
       </div>
     </Link>
   );
-}
+});

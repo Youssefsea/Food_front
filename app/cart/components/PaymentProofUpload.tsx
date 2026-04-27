@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Upload, X, Image as ImageIcon, Check } from "lucide-react";
+import Image from "next/image";
 
 interface PaymentProofUploadProps {
   selectedImage: File | null;
@@ -147,9 +148,12 @@ export function PaymentProofUpload({
             <div className="p-3">
               <div className="relative w-full h-[180px] rounded-lg overflow-hidden bg-[#F3F4F6]">
                 {previewUrl && (
-                  <img
+                  <Image
                     src={previewUrl}
                     alt="Payment proof"
+                    fill
+                    unoptimized
+                    sizes="(max-width: 768px) 100vw, 50vw"
                     className="w-full h-full object-contain"
                   />
                 )}

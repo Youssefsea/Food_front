@@ -38,7 +38,7 @@ export async function reverseGeocode(lat: number, lng: number): Promise<string> 
     geocodeCache.set(cacheKey, locationName);
     
     return locationName;
-  } catch (error) {
+  } catch {
     return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
   }
 }
@@ -70,7 +70,7 @@ export async function forwardGeocode(address: string): Promise<{ lat: number; ln
     }
 
     return null;
-  } catch (error) {
+  } catch {
     return null;
   }
 }

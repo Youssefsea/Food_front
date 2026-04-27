@@ -30,7 +30,7 @@ export function DeleteConfirmationModal({
     try {
       await onConfirm(dish.id);
       onClose();
-    } catch (error) {
+    } catch {
     } finally {
       setLoading(false);
     }

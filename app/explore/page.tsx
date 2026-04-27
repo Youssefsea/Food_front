@@ -11,8 +11,10 @@ import { RestaurantCard as RestaurantCardComponent } from "./componentForExplore
 import { LoadingSkeleton } from "./componentForExplore/LoadingSkeleton";
 import { EmptyState } from "./componentForExplore/EmptyState";
 import axios from "axios";
+import { ErrorBoundary } from "../components/ErrorBoundary";
 
 const LocationCustomer = dynamic(() => import("./LocationCustomer"), { ssr: false });
+const SEARCH_DEBOUNCE_MS = 300;
 
 interface Restaurant {
   id: number;
@@ -48,6 +50,7 @@ export default function ExplorePage() {
   const [restaurantDishes, setRestaurantDishes] = useState<{ [key: number]: Dish[] }>({});
   
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [nearbyOnly, setNearbyOnly] = useState(false);
   const [deliveryOnly, setDeliveryOnly] = useState(false);
   const [bookingOnly, setBookingOnly] = useState(false);
@@ -55,40 +58,42 @@ export default function ExplorePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [city, setCity] = useState<string | null>(null);
 
-  const fetchAllRestaurants = useCallback(async () => {
+  const fetchAllRestaurants = useCallback(async (signal?: AbortSignal) => {
     try {
       setIsLoading(true);
-      const res = await api.get("/restaurant/all");
+      const res = await api.get("/restaurant/all", { signal });
       const restaurants = res.data.restaurants || [];
       setAllRestaurants(restaurants);
       
     
       restaurants.forEach((restaurant: Restaurant) => {
-        fetchRestaurantDishes(restaurant.id);
+        fetchRestaurantDishes(restaurant.id, signal);
       });
-    } catch (error) {
+    } catch (error: unknown) {
+      if (axios.isCancel(error)) return;
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const fetchRestaurantDishes = async (restaurantId: number) => {
+  const fetchRestaurantDishes = async (restaurantId: number, signal?: AbortSignal) => {
     try {
-      const res = await api.post(`/restaurant/all-dishes-for-restaurantE`,  {restaurantId:restaurantId} );
+      const res = await api.post(`/restaurant/all-dishes-for-restaurant`, { restaurantId }, { signal });
       setRestaurantDishes(prev => ({
         ...prev,
         [restaurantId]: res.data.dishes || []
       }));
-    } catch (error) {
+    } catch (error: unknown) {
+      if (axios.isCancel(error)) return;
     }
   };
 
-  const fetchNearbyRestaurants = useCallback(async (latitude: number, longitude: number) => {
+  const fetchNearbyRestaurants = useCallback(async (latitude: number, longitude: number, signal?: AbortSignal) => {
     try {
       const res = await api.post("/customer/nearest-restaurants", { 
         lng: longitude,
         lat: latitude
-      });
+      }, { signal });
       
       if (res.data.nearby_restaurants && res.data.nearby_restaurants.length > 0) {
         const nearbyIds = new Set<number>(
@@ -100,7 +105,8 @@ export default function ExplorePage() {
         setNearbyRestaurantIds(new Set<number>());
         setNearbyOnly(false);
       }
-    } catch (error) {
+    } catch (error: unknown) {
+      if (axios.isCancel(error)) return;
       setNearbyRestaurantIds(new Set<number>());
       setNearbyOnly(false);
     }
@@ -108,7 +114,9 @@ export default function ExplorePage() {
 
   const getNameLocationOfCus = async (latitude: number, longitude: number) => {
     try {
+      const controller = new AbortController();
       const res = await axios.get("https://nominatim.openstreetmap.org/reverse", {
+        signal: controller.signal,
         params: {
           lat: latitude,
           lon: longitude,
@@ -119,7 +127,7 @@ export default function ExplorePage() {
 
       const city = res.data?.address?.city || res.data?.address?.town || null;
       return city;
-    } catch (err) {
+    } catch {
       return null;
     }
   };
@@ -165,8 +173,8 @@ export default function ExplorePage() {
   const filteredRestaurants = useMemo(() => {
     let filtered = [...allRestaurants];
 
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
+    if (debouncedSearchQuery) {
+      const query = debouncedSearchQuery.toLowerCase();
       filtered = filtered.filter(restaurant =>
         restaurant.restaurant_name?.toLowerCase().includes(query)
       );
@@ -185,7 +193,7 @@ export default function ExplorePage() {
     }
 
     return filtered;
-  }, [searchQuery, nearbyOnly, deliveryOnly, bookingOnly, allRestaurants, nearbyRestaurantIds]);
+  }, [debouncedSearchQuery, nearbyOnly, deliveryOnly, bookingOnly, allRestaurants, nearbyRestaurantIds]);
 
   const clearAllFilters = useCallback(() => {
     setSearchQuery("");
@@ -196,8 +204,15 @@ export default function ExplorePage() {
   }, []);
 
   useEffect(() => {
-    fetchAllRestaurants();
+    const controller = new AbortController();
+    fetchAllRestaurants(controller.signal);
+    return () => controller.abort();
   }, [fetchAllRestaurants]);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => setDebouncedSearchQuery(searchQuery), SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timeout);
+  }, [searchQuery]);
 
   const activeFiltersCount = useMemo(() => 
     [nearbyOnly, deliveryOnly, bookingOnly].filter(Boolean).length,
@@ -305,8 +320,8 @@ export default function ExplorePage() {
 <div className="h-2"/>
 
 
-      <main className="py-4 sm:py-5 md:py-6 pb-24 sm:pb-10">
-        <div className="px-3 sm:px-4 md:px-5">
+      <main className="py-4 sm:py-5 md:py-6 pb-24 sm:pb-10 page-shell">
+        <div>
           <div className="mb-4 sm:mb-5">
             <h2 className="text-base sm:text-lg md:text-xl font-semibold text-[#1A1A1A] flex items-center gap-1.5 sm:gap-2 mb-1">
               <span className="text-lg sm:text-xl">📍</span>
@@ -319,27 +334,29 @@ export default function ExplorePage() {
 <div className="h-2"/>
 
 
-          {isLoading ? (
-            <LoadingSkeleton />
-          ) : filteredRestaurants.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-4">
-              {filteredRestaurants.map((restaurant) => (
-                <RestaurantCardComponent
-                  key={restaurant.id}
-                  {...restaurant}
-                  dishes={restaurantDishes[restaurant.id] || []}
-                  isNearby={nearbyRestaurantIds.has(restaurant.id)}
-                  delivery_fees={restaurant.delivery_fees}
-                />
-              ))}
-            </div>
-          ) : (
-            <EmptyState 
-              message="لا توجد مطاعم"
-              onClearFilters={clearAllFilters}
-              hasActiveFilters={activeFiltersCount > 0}
-            />
-          )}
+          <ErrorBoundary>
+            {isLoading ? (
+              <LoadingSkeleton />
+            ) : filteredRestaurants.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
+                {filteredRestaurants.map((restaurant) => (
+                  <RestaurantCardComponent
+                    key={restaurant.id}
+                    {...restaurant}
+                    dishes={restaurantDishes[restaurant.id] || []}
+                    isNearby={nearbyRestaurantIds.has(restaurant.id)}
+                    delivery_fees={restaurant.delivery_fees}
+                  />
+                ))}
+              </div>
+            ) : (
+              <EmptyState 
+                message="لا توجد مطاعم"
+                onClearFilters={clearAllFilters}
+                hasActiveFilters={activeFiltersCount > 0}
+              />
+            )}
+          </ErrorBoundary>
         </div>
       </main>
 <div className="h-10"/>

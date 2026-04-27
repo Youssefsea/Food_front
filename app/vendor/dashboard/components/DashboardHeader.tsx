@@ -2,7 +2,6 @@
 
 import { Store, RefreshCw, Bell, MessageCircle, Menu } from 'lucide-react';
 import api from '../../../../axios';
-import { useState } from 'react';
 interface DashboardHeaderProps {
   restaurantName: string;
   isOpen: boolean;
@@ -37,9 +36,9 @@ export function DashboardHeader({
 
   const handleToggleStatus = async () => {
     try {
-      const res = await api.get('/restaurant/is-open');
+      await api.get('/restaurant/is-open');
       onToggleStatus();
-    } catch (error) {
+    } catch {
     }
   };
 
@@ -118,5 +117,4 @@ export function DashboardHeader({
 
   );
 }
-
 

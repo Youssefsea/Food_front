@@ -4,7 +4,7 @@ import { X, Send, ArrowLeft, WifiOff } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
 import api from "../../../../axios";
-import Cookies from "js-cookie";
+import { getToken } from "../../../../lib/auth";
 
 interface ChatMessage {
   id: number;
@@ -24,17 +24,7 @@ interface VendorChatModalProps {
 }
 
 const getVendorToken = (): string | null => {
-  let token = localStorage.getItem('vendorToken');
-  if (token) {
-    return token;
-  }
-
-  token = Cookies.get('vendorToken') || null;
-  if (token) {
-    return token;
-  }
-
-  token = localStorage.getItem('token') || Cookies.get('token') || null;
+  const token = getToken('vendor');
   if (token) {
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));

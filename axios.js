@@ -1,5 +1,5 @@
 import axios from 'axios';
-import Cookies from 'js-cookie';
+import { clearToken, getToken } from './lib/auth';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'https://food-back-nod.vercel.app',
@@ -14,21 +14,16 @@ const getActiveToken = () => {
   if (typeof window === 'undefined') return null;
 
   const pathname = window.location.pathname || '';
-  const customerToken = localStorage.getItem('customerToken');
-  const vendorToken = localStorage.getItem('vendorToken');
-  const adminToken = localStorage.getItem('adminToken');
-  const token = localStorage.getItem('token');
-  const cookieToken = Cookies.get('token');
 
   if (pathname.startsWith('/vendor')) {
-    return vendorToken || token || cookieToken || customerToken;
+    return getToken('vendor') || getToken('customer');
   }
 
   if (pathname.startsWith('/admin')) {
-    return adminToken || token || cookieToken;
+    return getToken('admin');
   }
 
-  return customerToken || token || cookieToken || vendorToken || adminToken;
+  return getToken('customer') || getToken('vendor') || getToken('admin') || getToken();
 };
 
 const isPublicPath = (pathname) => {
@@ -60,13 +55,7 @@ api.interceptors.response.use(
       const currentPath = window.location.pathname || '/';
 
       if (!isPublicPath(currentPath)) {
-        localStorage.removeItem('customerToken');
-        localStorage.removeItem('vendorToken');
-        localStorage.removeItem('adminToken');
-        localStorage.removeItem('token');
-        localStorage.removeItem('userRole');
-        Cookies.remove('token');
-        Cookies.remove('userRole');
+        clearToken();
         window.location.href = '/login';
       }
     }

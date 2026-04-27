@@ -2,6 +2,7 @@
 
 import { X, Upload, XCircle } from 'lucide-react';
 import { useState, useRef } from 'react';
+import Image from 'next/image';
 
 interface AddDishModalProps {
   isOpen: boolean;
@@ -116,7 +117,7 @@ export function AddDishModal({ isOpen, onClose, onAdd }: AddDishModalProps) {
       setImages([]);
       setPreviews([]);
       onClose();
-    } catch (error) {
+    } catch {
     } finally {
       setLoading(false);
     }
@@ -192,9 +193,12 @@ export function AddDishModal({ isOpen, onClose, onAdd }: AddDishModalProps) {
                   <div className="flex gap-2 mt-3 flex-wrap">
                     {previews.map((preview, index) => (
                       <div key={index} className="relative group">
-                        <img
+                        <Image
                           src={preview}
                           alt={`Preview ${index + 1}`}
+                          width={80}
+                          height={80}
+                          unoptimized
                           className="w-20 h-20 object-cover rounded-lg"
                         />
                         <button
