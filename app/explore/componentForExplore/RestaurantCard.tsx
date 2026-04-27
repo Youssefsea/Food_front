@@ -35,12 +35,9 @@ export const RestaurantCard = memo(function RestaurantCard({
   id,
   restaurant_name,
   location,
-  can_deliver,
   can_reserve,
   isNearby,
   dishes = [],
-  description,
-  delivery_fees,
   isOpen = true,
   tags = [],
 }: RestaurantCardProps) {

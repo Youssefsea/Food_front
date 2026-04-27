@@ -117,7 +117,7 @@ export function AddDishModal({ isOpen, onClose, onAdd }: AddDishModalProps) {
       setImages([]);
       setPreviews([]);
       onClose();
-    } catch (error) {
+    } catch {
     } finally {
       setLoading(false);
     }

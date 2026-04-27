@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Clock, MapPin, Phone, MoreVertical, Eye, X, ChevronDown, MessageCircle } from 'lucide-react';
 import { Order, OrderStatus, statusConfig } from '../types';
 import Image from 'next/image';
@@ -26,11 +26,7 @@ export function OrderCard({ order, onStatusChange, onViewDetails, onCancel, onCh
 
   const subtotal = order.total_amount - (order.delivery_fee || 0);
 
-  const [paystatued, setPayStatued] = useState<'pending' | 'confirmed' | 'rejected' | undefined>();
-
-  useEffect(() => {
-    setPayStatued(order.payment_status);
-  }, [order.payment_status]);
+  const paystatued = order.payment_status;
 
   return (
     <div

@@ -30,7 +30,6 @@ interface RestaurantHeaderProps {
 
 export function RestaurantHeader({ restaurant, coverImage }: RestaurantHeaderProps) {
   const router = useRouter();
-  const [isFavorite, setIsFavorite] = useState(false);
   const [isHeaderScrolled, setIsHeaderScrolled] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
 
@@ -52,7 +51,7 @@ export function RestaurantHeader({ restaurant, coverImage }: RestaurantHeaderPro
           text: restaurant.description,
           url: window.location.href,
         });
-      } catch (error) {
+      } catch {
       }
     }
   };

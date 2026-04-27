@@ -8,7 +8,6 @@ import { ProfileCard } from "./components/ProfileCard";
 import { WalletCard } from "./components/WalletCard";
 import { OrdersSection } from "./components/OrdersSection";
 import { ChatModal } from "./components/ChatModal";
-import { BottomNavigation } from "../explore/componentForExplore/BottomNavigation";
 import { UserProfile, Order, OrderRowFromAPI } from "./types";
 
 export default function ProfilePage() {
@@ -30,7 +29,7 @@ export default function ProfilePage() {
       if (response.data?.user) {
         setUser(response.data.user);
       }
-    } catch (error) {
+    } catch {
     }
   }, []);
 
@@ -41,7 +40,7 @@ export default function ProfilePage() {
       if (response.data?.balance !== undefined) {
         setWalletBalance(response.data.balance);
       }
-    } catch (error) {
+    } catch {
     }
   }, []);
 
@@ -90,7 +89,7 @@ export default function ProfilePage() {
       });
 
       setOrders(Array.from(ordersMap.values()));
-    } catch (error) {
+    } catch {
       setOrders([]);
     } finally {
       setIsOrdersLoading(false);

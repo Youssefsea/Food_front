@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Utensils, Plus, Grid3x3, List, Search, ChevronDown, FileText, CheckCircle, XCircle, Tag } from 'lucide-react';
+import { Utensils, Plus, Search, ChevronDown, FileText, CheckCircle, XCircle, Tag } from 'lucide-react';
 import api from '../../../axios';
 import { DishCard, AddDishModal, EditDishModal, DeleteConfirmationModal, Toast } from './components';
 
@@ -16,13 +16,11 @@ interface Dish {
   is_available: boolean;
 }
 
-type ViewMode = 'grid' | 'list';
 type AvailabilityFilter = 'all' | 'available' | 'unavailable';
 type SortOption = 'newest' | 'name-asc' | 'price-asc' | 'price-desc';
 
 export default function DishesPage() {
   const [dishes, setDishes] = useState<Dish[]>([]);
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [availabilityFilter, setAvailabilityFilter] = useState<AvailabilityFilter>('all');
@@ -41,7 +39,7 @@ export default function DishesPage() {
       const response = await api.post('/restaurant/all-dishes-for-restaurantV');
       const dishesData = response.data.dishes || response.data || [];
       setDishes(dishesData);
-    } catch (error) {
+    } catch {
       showToast('error', 'حدث خطأ في تحميل الأطباق');
     } finally {
       setIsLoading(false);
@@ -133,9 +131,8 @@ export default function DishesPage() {
 
       showToast('success', 'تم إضافة الطبق بنجاح ✓');
       fetchDishes();
-    } catch (error) {
+    } catch {
       showToast('error', 'حدث خطأ في إضافة الطبق');
-      throw error;
     }
   };
 
@@ -154,9 +151,8 @@ export default function DishesPage() {
 
       showToast('success', 'تم تحديث الطبق بنجاح ✓');
       fetchDishes();
-    } catch (error) {
+    } catch {
       showToast('error', 'حدث خطأ في تحديث الطبق');
-      throw error;
     }
   };
 
@@ -168,9 +164,8 @@ export default function DishesPage() {
 
       showToast('success', 'تم حذف الطبق بنجاح ✓');
       fetchDishes();
-    } catch (error) {
+    } catch {
       showToast('error', 'حدث خطأ في حذف الطبق');
-      throw error;
     }
   };
 
@@ -191,7 +186,7 @@ export default function DishesPage() {
         'success',
         isAvailable ? 'الطبق متاح الآن ✓' : 'الطبق غير متاح حالياً'
       );
-    } catch (error) {
+    } catch {
       showToast('error', 'حدث خطأ في تحديث حالة التوفر');
     }
   };

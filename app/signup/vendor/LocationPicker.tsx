@@ -86,7 +86,7 @@ export default function LocationPicker({
           setCurrentLat(latitude);
           setCurrentLng(longitude);
         },
-        (error) => {
+        () => {
           alert("تعذر الوصول إلى موقعك الحالي. يرجى التحقق من إعدادات المتصفح.");
         }
       );

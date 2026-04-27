@@ -1,7 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import { Upload, CheckCircle } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 
 interface RestaurantData {
   name?: string;

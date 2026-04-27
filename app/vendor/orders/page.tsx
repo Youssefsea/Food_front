@@ -111,7 +111,7 @@ export default function OrdersPage() {
       );
 
       showToast('success', 'تم تحديث حالة الطلب بنجاح');
-    } catch (err) {
+    } catch {
       showToast('error', 'فشل في تحديث حالة الطلب');
     }
   };
@@ -132,7 +132,7 @@ export default function OrdersPage() {
       );
 
       showToast('success', 'تم إلغاء الطلب');
-    } catch (err) {
+    } catch {
       showToast('error', 'فشل في إلغاء الطلب');
     }
   };

@@ -127,7 +127,7 @@ export default function ExplorePage() {
 
       const city = res.data?.address?.city || res.data?.address?.town || null;
       return city;
-    } catch (err) {
+    } catch {
       return null;
     }
   };

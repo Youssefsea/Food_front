@@ -82,14 +82,14 @@ export default function VendorDashboard() {
               if (res.data.paymentStatus === 'confirmed') {
                 count++;
               }
-            } catch (error) {
+            } catch {
             }
           }
         })
       );
 
       setPendingPaidOrders(count);
-    } catch (error) {
+    } catch {
       setPendingPaidOrders(0);
     }
   }, []);

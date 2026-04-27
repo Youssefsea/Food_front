@@ -1,7 +1,7 @@
 'use client';
 
 import { Pencil, Trash2, Clock } from 'lucide-react';
-import { useState,useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 
 interface Dish {
@@ -38,7 +38,7 @@ const categoryColors: Record<string, { bg: string; text: string }> = {
 export function DishCard({ dish, onEdit, onDelete, onToggleAvailability }: DishCardProps) {
   const [isToggling, setIsToggling] = useState(false);
   
-  const images = dish.image ? dish.image.split(',') : [];
+  const images = useMemo(() => (dish.image ? dish.image.split(',') : []), [dish.image]);
   const categoryStyle = categoryColors[dish.category] || categoryColors['أطباق رئيسية'];
 const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
@@ -175,5 +175,4 @@ useEffect(() => {
     </div>
   );
 }
-
 

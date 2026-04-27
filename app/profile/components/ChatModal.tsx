@@ -117,12 +117,12 @@ export function ChatModal({ isOpen, onClose, orderId, restaurantName }: ChatModa
       socketRef.current?.emit('joinRoom', roomId);
     });
 
-    socketRef.current.on('connect_error', (_err) => {
+    socketRef.current.on('connect_error', () => {
       setIsConnected(false);
       setError('فشل في الاتصال بالخادم');
     });
 
-    socketRef.current.on('joinedRoom', (_data) => {
+    socketRef.current.on('joinedRoom', () => {
     });
 
     socketRef.current.on('previousMessages', (msgs: ChatMessage[]) => {
@@ -137,7 +137,7 @@ export function ChatModal({ isOpen, onClose, orderId, restaurantName }: ChatModa
       setError(error.message);
     });
 
-    socketRef.current.on('disconnect', (_reason) => {
+    socketRef.current.on('disconnect', () => {
       setIsConnected(false);
     });
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, Eye, EyeOff, Check, Clock, MapPin, ChevronRight, ChevronsRight, Locate, Map } from "lucide-react";
+import { ChevronLeft, Eye, EyeOff, Check, MapPin, Locate, Map } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
@@ -40,8 +40,6 @@ export default function VendorSignUpPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [locationName, setLocationName] = useState("");
-
-  const [showManualCoords, setShowManualCoords] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
 
@@ -73,7 +71,7 @@ export default function VendorSignUpPage() {
         );
         const data = await res.json();
         setLocationName(data.display_name);
-      } catch (err) {
+      } catch {
         setLocationName("تعذر تحديد الموقع");
       }
     };
@@ -106,7 +104,7 @@ export default function VendorSignUpPage() {
           }));
           setIsLocating(false);
         },
-        (error) => {
+        () => {
           alert("تعذر الوصول إلى موقعك الحالي. يرجى التحقق من إعدادات المتصفح.");
           setIsLocating(false);
         }
@@ -126,9 +124,9 @@ export default function VendorSignUpPage() {
     if (step > 1) setStep(step - 1);
   };
 
-  const generateCirclePolygon = (lat: number, lng: number, radiusKm: number) => {
+  const generateCirclePolygon = (lat: number, lng: number, radiusKm: number): [number, number][] => {
   const points = 64;
-  const coords = [];
+  const coords: [number, number][] = [];
   const earthRadius = 6371;
 
   for (let i = 0; i <= points; i++) {
@@ -149,13 +147,31 @@ export default function VendorSignUpPage() {
 
 
 
-  const signUpForVendor = async (data:any) => {
+  interface VendorSignupPayload {
+    name: string;
+    email: string;
+    password: string;
+    phone: string;
+    description: string;
+    location: string;
+    req_latitude: number;
+    req_longitude: number;
+    allowed_radius_km: number;
+    open_time: string;
+    close_time: string;
+    area_name: string;
+    can_deliver: boolean;
+    can_reserve: boolean;
+    delivery_area: [number, number][];
+  }
+
+  const signUpForVendor = async (data: VendorSignupPayload) => {
     try {
       const res = await api.post("/restaurant/signup", data);
-      if (res.status == 201) {
+      if (res.status === 201) {
       }
     }
-    catch (error) {
+    catch {
     }
   }
 
@@ -199,7 +215,7 @@ export default function VendorSignUpPage() {
      
       }, 2000);
 
-    } catch (error) {
+    } catch {
       setIsLoading(false);
     }
   };
