@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
 import api from "../../../axios";
 import { ChatMessage } from "../types";
-import Cookies from "js-cookie";
+import { getToken } from "../../../lib/auth";
 
 interface ChatModalProps {
   isOpen: boolean;
@@ -17,7 +17,7 @@ interface ChatModalProps {
 // Helper to get current user ID from JWT token
 const getCurrentUserId = (tokenKey: string): number | null => {
   try {
-    const token = localStorage.getItem(tokenKey);
+    const token = getToken(tokenKey === "customerToken" ? "customer" : undefined);
     if (!token) return null;
     const payload = JSON.parse(atob(token.split('.')[1]));
     return payload.id ?? null;
@@ -94,11 +94,7 @@ export function ChatModal({ isOpen, onClose, orderId, restaurantName }: ChatModa
       return;
     }
 
-    let token = localStorage.getItem('customerToken') || undefined;
-    
-    if (!token) {
-      token = Cookies.get('customerToken') || undefined;
-    }
+    const token = getToken('customer') || undefined;
     
     if (socketRef.current) {
       socketRef.current.disconnect();

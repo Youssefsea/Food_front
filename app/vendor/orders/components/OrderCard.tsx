@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Clock, MapPin, Phone, MoreVertical, Eye, X, ChevronDown, MessageCircle } from 'lucide-react';
 import { Order, OrderStatus, statusConfig } from '../types';
+import Image from 'next/image';
 
 interface OrderCardProps {
   order: Order;
@@ -164,9 +165,11 @@ export function OrderCard({ order, onStatusChange, onViewDetails, onCancel, onCh
               >
                 <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                   {item.dish_image ? (
-                    <img
+                    <Image
                       src={item.dish_image}
                       alt={item.dish_name}
+                      width={44}
+                      height={44}
                       className="w-9 h-9 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-lg object-cover flex-shrink-0"
                     />
                   ) : (

@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Loader2, RefreshCw, AlertCircle } from 'lucide-react';
+import { RefreshCw, AlertCircle } from 'lucide-react';
 import api from '../../../axios';
-import Cookies from 'js-cookie';
+import { getToken, setToken } from '../../../lib/auth';
 import { Order, OrderStatus, OrdersStats as StatsType } from './types';
 import {
   OrderCard,
@@ -32,21 +32,19 @@ export default function OrdersPage() {
   const [selectedCustomerName, setSelectedCustomerName] = useState("");
   
   useEffect(() => {
-    const syncVendorToken = async () => {
+    const syncVendorToken = () => {
       const vendorToken = localStorage.getItem('vendorToken');
       if (!vendorToken) {
-        const cookieToken = Cookies.get('token');
+        const cookieToken = getToken('vendor');
         if (cookieToken) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('customerToken');
-          localStorage.setItem('vendorToken', cookieToken);
+          setToken(cookieToken, 'vendor');
         }
       }
     };
     syncVendorToken();
   }, []);
 
-  const fetchOrders = useCallback(async (showRefreshing = false) => {
+  const fetchOrders = useCallback(async (showRefreshing = false, signal?: AbortSignal) => {
     try {
       if (showRefreshing) setIsRefreshing(true);
       else setIsLoading(true);
@@ -55,9 +53,12 @@ export default function OrdersPage() {
 
       const params: { limit?: number } = { limit: 100 };
 
-      const response = await api.get('/restaurant/orders', { params });
+      const response = await api.get('/restaurant/orders', { params, signal });
       setOrders(response.data.orders || []);
-    } catch (err) {
+    } catch (err: unknown) {
+      if (typeof err === 'object' && err && 'code' in err && (err as { code?: string }).code === 'ERR_CANCELED') {
+        return;
+      }
       setError('فشل في تحميل الطلبات. يرجى المحاولة مرة أخرى.');
     } finally {
       setIsLoading(false);
@@ -67,7 +68,9 @@ export default function OrdersPage() {
 
   // Initial fetch
   useEffect(() => {
-    fetchOrders();
+    const controller = new AbortController();
+    fetchOrders(false, controller.signal);
+    return () => controller.abort();
   }, [fetchOrders]);
 
   const stats: StatsType = useMemo(() => {
@@ -164,17 +167,21 @@ export default function OrdersPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 text-[#E5A04D] animate-spin mx-auto mb-4" />
-          <p className="text-[#6B7280]">جاري تحميل الطلبات...</p>
+      <div className="min-h-screen bg-[#F8FAFC] py-8 page-shell">
+        <div className="max-w-[1400px] mx-auto space-y-4 animate-pulse">
+          <div className="h-10 w-56 bg-white rounded-xl" />
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div key={index} className="h-52 rounded-2xl bg-white shadow-sm" />
+            ))}
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] py-8 px-4 md:px-8" dir="rtl">
+    <div className="min-h-screen bg-[#F8FAFC] py-8 page-shell" dir="rtl">
       <div className="max-w-[1400px] mx-auto">
         <div className="flex items-center justify-between mb-6 gap-3">
           <OrdersHeader activeOrdersCount={activeOrdersCount} />

@@ -1,7 +1,8 @@
 'use client';
 
-import { X, Star, Clock, Minus, Plus, Flame } from 'lucide-react';
+import { X, Clock, Minus, Plus } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 
 interface Dish {
   id: number;
@@ -95,9 +96,11 @@ export function DishDetailModal({
 
         <div className="h-2" />
         <div className="relative h-56 sm:h-64 md:h-72 bg-[#F3F4F6]">
-          <img
+          <Image
             src={images[currentImageIndex]?.trim() || '/placeholder-dish.jpg'}
             alt={dish.name}
+            fill
+            sizes="(max-width: 768px) 100vw, 40vw"
             className="w-full h-full object-cover"
           />
 

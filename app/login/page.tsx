@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import api from "../../axios";
 import { useRouter } from "next/navigation";
+import { clearToken, setToken } from "../../lib/auth";
 
 
 export default function LoginPage() {
@@ -29,9 +30,8 @@ export default function LoginPage() {
     
       if (res.status === 200) {
         if (res.data?.user?.token) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('vendorToken');
-          localStorage.setItem('customerToken', res.data.user.token);
+          clearToken();
+          setToken(res.data.user.token, 'customer');
         }
         return true;
       }
@@ -48,9 +48,8 @@ export default function LoginPage() {
       const res = await api.post('/restaurant/login', { ...formData });
       if (res.status === 200) {
         if (res.data?.restaurant?.token) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('customerToken');
-          localStorage.setItem('vendorToken', res.data.restaurant.token);
+          clearToken();
+          setToken(res.data.restaurant.token, 'vendor');
         }
         return true;
       }
@@ -108,7 +107,7 @@ let successForVendor = false;
 
 
   return (
-    <div className="min-h-screen bg-white p-3 sm:p-4 md:p-6" style={{ margin: '10px' }}>
+    <div className="min-h-screen bg-white page-shell py-3 sm:py-4 md:py-6">
       <div className="bg-white rounded-2xl sm:rounded-3xl min-h-[calc(100vh-1.5rem)] sm:min-h-[calc(100vh-2rem)] md:min-h-[calc(100vh-3rem)] flex flex-col shadow-sm">
         <header className="flex items-center justify-between px-4 py-4">
           <Link href="/" className="p-2 rounded-full hover:bg-gray-100 transition-colors">
