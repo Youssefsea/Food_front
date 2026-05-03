@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
 import { Upload, X, Image as ImageIcon, Check } from "lucide-react";
 
 interface PaymentProofUploadProps {
@@ -31,6 +32,7 @@ export function PaymentProofUpload({
         return;
       }
 
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
       onImageSelect(file);
@@ -42,6 +44,12 @@ export function PaymentProofUpload({
       onImageSelect(null);
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -80,10 +88,19 @@ export function PaymentProofUpload({
         ref={fileInputRef}
         type="file"
         accept="image/*"
-        className="hidden"
+        className="sr-only"
         onChange={(e) => handleFileSelect(e.target.files?.[0] || null)}
         disabled={isDisabled}
       />
+      {!selectedImage && (
+        <button
+          type="button"
+          onClick={() => !isDisabled && fileInputRef.current?.click()}
+          className="w-full h-12 rounded-xl border border-[#E5E7EB] bg-white text-sm font-medium mt-2"
+        >
+          اختيار صورة من الهاتف
+        </button>
+      )}
 
       <AnimatePresence mode="wait">
         {!selectedImage ? (
@@ -147,10 +164,12 @@ export function PaymentProofUpload({
             <div className="p-3">
               <div className="relative w-full h-[180px] rounded-lg overflow-hidden bg-[#F3F4F6]">
                 {previewUrl && (
-                  <img
+                  <Image
                     src={previewUrl}
                     alt="Payment proof"
-                    className="w-full h-full object-contain"
+                    fill
+                    sizes="(max-width: 768px) 100vw, 400px"
+                    className="object-contain"
                   />
                 )}
               </div>

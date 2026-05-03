@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { X, MapPin, Phone, Mail, Clock } from 'lucide-react';
 import { Order, statusConfig } from '../types';
 
@@ -24,9 +25,9 @@ export function OrderDetailsModal({ order, isOpen, onClose }: OrderDetailsModalP
       />
 
       {/* Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-7">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-6">
         <div
-          className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col"
+          className="bg-white rounded-none sm:rounded-2xl shadow-2xl w-full h-full sm:h-auto sm:max-w-lg md:max-w-2xl max-h-screen sm:max-h-[90vh] overflow-hidden flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -133,10 +134,12 @@ export function OrderDetailsModal({ order, isOpen, onClose }: OrderDetailsModalP
                   >
                     <div className="flex items-center gap-3">
                       {item.dish_image ? (
-                        <img
+                        <Image
                           src={item.dish_image}
                           alt={item.dish_name}
-                          className="w-14 h-14 rounded-lg object-cover"
+                          width={56}
+                          height={56}
+                          className="rounded-lg object-cover"
                         />
                       ) : (
                         <div className="w-14 h-14 rounded-lg bg-[#E5E7EB] flex items-center justify-center text-2xl">

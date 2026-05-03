@@ -1,166 +1,179 @@
 "use client";
 
-import { ChevronLeft, User, Store } from "lucide-react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { User, Store, ChevronRight, ChevronLeft } from "lucide-react";
+import { Button } from "@/components/ui";
+import { cn } from "@/lib/utils";
+import { getUserRole, isAuthenticated } from "@/lib/api";
+
+type AccountType = "customer" | "vendor" | null;
+
+const accountTypes = [
+  {
+    type: "customer" as const,
+    icon: User,
+    title: "زبون",
+    description: "اطلب أكلك المفضل من أفضل المطاعم القريبة منك",
+    features: ["تصفح المطاعم", "اطلب واتوصل", "تابع طلبك"],
+    gradient: "from-[#FF6B35] to-[#E63946]",
+    bgLight: "bg-orange-50",
+  },
+  {
+    type: "vendor" as const,
+    icon: Store,
+    title: "مطعم / بائع",
+    description: "سجّل مطعمك واستقبل طلبات من آلاف العملاء",
+    features: ["لوحة تحكم", "إدارة الأطباق", "تتبع الطلبات"],
+    gradient: "from-[#E63946] to-[#C62828]",
+    bgLight: "bg-red-50",
+  },
+];
 
 export default function SignUpPage() {
   const router = useRouter();
-  const [selectedType, setSelectedType] = useState<"customer" | "vendor" | null>(null);
+  const [selectedType, setSelectedType] = useState<AccountType>(null);
+
+  useEffect(() => {
+    if (!isAuthenticated()) return;
+    const role = getUserRole();
+    if (role === 'customer') router.replace('/customer/home');
+    else if (role === 'restaurant') router.replace('/restaurant/dashboard');
+    else if (role === 'admin') router.replace('/admin/payments');
+  }, [router]);
 
   const handleContinue = () => {
-    if (selectedType === "customer") {
-      router.push("/signup/customer");
-    } else if (selectedType === "vendor") {
-      router.push("/signup/vendor");
-    }
+    if (selectedType === "customer") router.push("/signup/customer");
+    else if (selectedType === "vendor") router.push("/signup/vendor");
   };
+
   return (
-    <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-5">
+    <div className="min-h-screen bg-[var(--bg-primary)]" dir="rtl">
+      {/* Top gradient */}
+      <div className="h-2 gradient-primary" />
 
-      <div className="bg-white rounded-2xl sm:rounded-3xl min-h-[calc(100vh-1.5rem)] sm:min-h-[calc(100vh-2rem)] md:min-h-[calc(100vh-3rem)] flex flex-col  shadow-sm">
-        <header className="flex items-center justify-between px-4 py-4">
-          <Link href="/" className="p-2 rounded-full hover:bg-gray-100 transition-colors">
-            <ChevronLeft className="w-6 h-6 text-gray-800" />
-          </Link>
-          <span className="text-gray-800 font-medium text-lg">إنشاء حساب</span>
-          <div className="w-10" />
-        </header>
+      {/* Header */}
+      <header className="flex items-center justify-between px-4 py-4 max-w-lg mx-auto">
+        <Link href="/" className="p-2 rounded-full hover:bg-gray-100 transition-colors">
+          <ChevronLeft className="w-5 h-5 text-[var(--text-primary)]" />
+        </Link>
+        <span className="text-[var(--text-primary)] font-bold text-base">إنشاء حساب</span>
+        <div className="w-9" />
+      </header>
 
-        <main className="px-4 sm:px-6 py-4 overflow-y-auto">
-   <div className="p-3 mb-6 space-y-6">
-  <h1 className="text-3xl font-light text-gray-950">
-    مرحباً بك
-  </h1>
-  <div className="h-2"/>
-
-  <p className="text-gray-500 text-sm">
-    اختر نوع حسابك للمتابعة.{" "}
-    <Link href="/login" className="text-[#E5A04D] hover:underline">
-      لديك حساب بالفعل؟
-    </Link>
-  </p>
-</div>
-  <div className="h-2.5"/>
-
-
-        <div className="space-y-4 mb-6">
-         
-          <button
-            onClick={() => setSelectedType("customer")}
-            className={`w-full p-4 rounded-2xl border-2 transition-all duration-200 flex items-center gap-3 ${
-              selectedType === "customer"
-                ? "border-[#E5A04D] bg-orange-50"
-                : "border-gray-200 hover:border-gray-300 bg-white"
-            }`}
-          >
-            <div
-              className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 transition-colors ${
-                selectedType === "customer"
-                  ? "bg-[#E5A04D] text-white"
-                  : "bg-gray-100 text-gray-500"
-              }`}
-            >
-              <User className="w-6 h-6" />
-            </div>
-            <div className="text-right flex-1">
-              <h3 className="text-base font-semibold text-gray-800">زبون</h3>
-              <p className="text-gray-500 text-xs">
-                احجز وجباتك مسبقاً من المطاعم المفضلة
-              </p>
-            </div>
-            <div
-              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
-                selectedType === "customer"
-                  ? "bg-[#E5A04D] border-[#E5A04D]"
-                  : "border-gray-300 bg-white"
-              }`}
-            >
-              {selectedType === "customer" && (
-                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                </svg>
-              )}
-            </div>
-          </button>
-  <div className="h-2"/>
-
-        
-          <button
-            onClick={() => setSelectedType("vendor")}
-            className={`w-full p-4 rounded-2xl border-2 transition-all duration-200 flex items-center gap-3 ${
-              selectedType === "vendor"
-                ? "border-[#E5A04D] bg-orange-50"
-                : "border-gray-200 hover:border-gray-300 bg-white"
-            }`}
-          >
-            <div
-              className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 transition-colors ${
-                selectedType === "vendor"
-                  ? "bg-[#E5A04D] text-white"
-                  : "bg-gray-100 text-gray-500"
-              }`}
-            >
-              <Store className="w-6 h-6" />
-            </div>
-            <div className="text-right flex-1">
-              <h3 className="text-base font-semibold text-gray-800">مطعم / بائع</h3>
-              <p className="text-gray-500 text-xs">
-                سجّل مطعمك واستقبل حجوزات الوجبات
-              </p>
-            </div>
-            <div
-              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
-                selectedType === "vendor"
-                  ? "bg-[#E5A04D] border-[#E5A04D]"
-                  : "border-gray-300 bg-white"
-              }`}
-            >
-              {selectedType === "vendor" && (
-                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                </svg>
-              )}
-            </div>
-          </button>
+      <main className="px-5 pb-8 max-w-lg mx-auto">
+        {/* Title */}
+        <div className="mb-8 animate-fadeIn">
+          <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-2">مرحباً بك في أكلي 🍕</h1>
+          <p className="text-sm text-[var(--text-secondary)]">
+            اختر نوع حسابك للمتابعة.{" "}
+            <Link href="/login" className="text-[var(--color-primary)] font-semibold hover:underline">
+              لديك حساب بالفعل؟
+            </Link>
+          </p>
         </div>
 
-<div className="h-2"/>
-     
-        <div className="p-3 bg-gray-50 rounded-xl">
-          <p className="text-gray-600 text-xs leading-relaxed">
+        {/* Account Type Cards */}
+        <div className="space-y-4 mb-8">
+          {accountTypes.map((account) => {
+            const Icon = account.icon;
+            const isSelected = selectedType === account.type;
+
+            return (
+              <button
+                key={account.type}
+                onClick={() => setSelectedType(account.type)}
+                className={cn(
+                  "w-full p-5 rounded-2xl border-2 transition-all duration-300 text-right group",
+                  isSelected
+                    ? "border-[var(--color-primary)] bg-white shadow-lg shadow-orange-500/10"
+                    : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-md"
+                )}
+              >
+                <div className="flex items-start gap-4">
+                  <div
+                    className={cn(
+                      "w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all duration-300",
+                      isSelected
+                        ? `bg-gradient-to-br ${account.gradient} text-white shadow-md`
+                        : `${account.bgLight} text-[var(--text-muted)] group-hover:text-[var(--text-secondary)]`
+                    )}
+                  >
+                    <Icon className="w-6 h-6" />
+                  </div>
+
+                  <div className="flex-1">
+                    <h3 className="text-base font-bold text-[var(--text-primary)] mb-1">{account.title}</h3>
+                    <p className="text-xs text-[var(--text-secondary)] mb-3 leading-relaxed">{account.description}</p>
+
+                    {/* Feature tags */}
+                    <div className="flex flex-wrap gap-1.5">
+                      {account.features.map((feature) => (
+                        <span
+                          key={feature}
+                          className={cn(
+                            "px-2 py-0.5 rounded-full text-[10px] font-medium transition-colors",
+                            isSelected
+                              ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
+                              : "bg-gray-100 text-[var(--text-muted)]"
+                          )}
+                        >
+                          {feature}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Radio */}
+                  <div
+                    className={cn(
+                      "w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-1 transition-all",
+                      isSelected ? "bg-[var(--color-primary)] border-[var(--color-primary)]" : "border-gray-300"
+                    )}
+                  >
+                    {isSelected && (
+                      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Info Box */}
+        <div className="bg-[var(--bg-card-muted)] border border-[var(--border-soft)] rounded-xl p-4 mb-8 animate-fadeIn">
+          <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
             {selectedType === "vendor" ? (
               <>
-                <span className="font-semibold text-gray-950">ملاحظة للمطاعم:</span>{" "}
+                <span className="font-bold text-[var(--text-primary)]">ملاحظة للمطاعم:</span>{" "}
                 سيتم مراجعة طلبك والتحقق من بياناتك قبل تفعيل حسابك. قد يستغرق ذلك 24-48 ساعة.
               </>
             ) : (
               <>
-                <span className="font-semibold text-gray-950">كيف يعمل؟</span>{" "}
-                اختر نوع حسابك، أكمل بياناتك، وابدأ في حجز أو استقبال طلبات الوجبات المسبقة.
+                <span className="font-bold text-[var(--text-primary)]">كيف يعمل؟</span>{" "}
+                اختر نوع حسابك، أكمل بياناتك، وابدأ في طلب أو استقبال طلبات الوجبات.
               </>
             )}
           </p>
         </div>
-      </main>    
 
-  <div className="h-3"/>
-
-      <div className="px-4 sm:px-6 py-4 pb-6">
-        <button
-          onClick={handleContinue}
+        {/* Continue Button */}
+        <Button
+          variant="primary"
+          size="lg"
+          fullWidth
           disabled={!selectedType}
-          className={`w-full py-4 rounded-full text-2xl text-white font-semibold transition-all duration-200 ${
-            selectedType
-              ? "bg-[#E5A04D] hover:bg-[#D4903D]  active:scale-[0.98]"
-              : "bg-gray-300 cursor-not-allowed"
-          }`}
+          onClick={handleContinue}
+          className={cn(!selectedType && "!opacity-40")}
         >
-          متابعة
-        </button>
-      </div>
-      </div>
+          <span>متابعة</span>
+          <ChevronRight className="w-4 h-4 rotate-180" />
+        </Button>
+      </main>
     </div>
   );
 }

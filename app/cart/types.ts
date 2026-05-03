@@ -1,3 +1,12 @@
+export interface LocationData {
+  lat: number;
+  lng: number;
+  address: string;
+  accuracy?: number;
+}
+
+export type PaymentMethod = 'vodafone_cash' | 'instapay' | 'cash' | 'bank_transfer' | null;
+
 export interface CartDish {
   dishId: number;
   dishName: string;
@@ -8,28 +17,6 @@ export interface CartDish {
   subtotal: number;
 }
 
-export interface RestaurantCart {
-  restaurantId: number;
-  restaurantName: string;
-  restaurantLocation: string;
-  restaurantLogo: string;
-  restaurantLat: number | null;
-  restaurantLng: number | null;
-  is_open: number;
-  can_reserve: boolean;
-  can_delivery: boolean;
-  delivery_fees: number;
-  calculatedDeliveryFee: number;
-  distanceKm: number;
-  dishes: CartDish[];
-  totalPrice: number;
-  totalItems: number;
-  orderType: 'instant' | 'reservation';
-  reservationDate: string;
-  reservationTime: string;
-  isSelected: boolean;
-}
-
 export interface CartSummary {
   totalRestaurants: number;
   totalItems: number;
@@ -38,40 +25,32 @@ export interface CartSummary {
   grandTotal: number;
 }
 
-export interface SelectedRestaurantSummary {
+export interface RestaurantCart {
   restaurantId: number;
   restaurantName: string;
-  subtotal: number;
-  deliveryFee: number;
-  grandTotal: number;
+  restaurantLocation: string;
+  restaurantLogo: string;
+  restaurantLat: number | null;
+  restaurantLng: number | null;
+  is_open: number; // Assuming 1 for open, 0 for closed
+  can_reserve: boolean;
+  can_delivery: boolean;
+  delivery_fees: number;
+  calculatedDeliveryFee: number;
+  distanceKm: number;
+  dishes: {
+    dishId: number;
+    dishName: string;
+    description: string;
+    image: string;
+    price: number;
+    quantity: number;
+    subtotal: number;
+  }[];
+  totalPrice: number;
   totalItems: number;
-}
-
-export interface CartData {
-  groupedByRestaurant: RestaurantCart[];
-  summary: CartSummary;
-}
-
-export interface LocationData {
-  lat: number;
-  lng: number;
-  address: string;
-  accuracy?: number; // GPS accuracy in meters
-}
-
-export type PaymentMethod = 'vodafone_cash' | 'instapay' | null;
-
-export interface CreatedOrder {
-  orderId: number;
-  restaurantId: number;
-  restaurantName: string;
-  status: string;
-  totalAmount: number;
-  deliveryFee: number;
-}
-
-export interface PaymentProofData {
-  orderId: number;
-  paymentMethod: PaymentMethod;
-  imageFile: File | null;
+  orderType: 'instant' | 'reservation';
+  reservationDate: string;
+  reservationTime: string;
+  isSelected: boolean;
 }

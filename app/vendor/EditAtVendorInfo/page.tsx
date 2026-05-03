@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import api from '../../../axios';
+import api from '@/lib/api';
 import {
   RestaurantInfoTab,
   LocationPricingTab,
@@ -224,7 +224,7 @@ export default function EditRestaurantSettings() {
           <div className="h-16 flex items-center justify-between">
             {/* Back Button */}
             <button
-              onClick={() => router.push('/vendor/dashboard')}
+              onClick={() => router.push('/restaurant/dashboard')}
               className="flex items-center gap-2 text-[#6B7280] hover:text-[#1A1A1A] transition-colors"
             >
               <ArrowRight className="w-5 h-5" />

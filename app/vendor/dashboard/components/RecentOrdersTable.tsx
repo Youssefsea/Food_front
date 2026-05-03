@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
-import api from '../../../../axios';
+import api from '@/lib/api';
 
 type OrderStatus = 'pending' | 'paid' | 'cooking' | 'delivering' | 'completed' | 'cancelled';
 type PaymentStatus = 'pending' | 'confirmed' | 'rejected';
@@ -161,7 +161,7 @@ export function RecentOrdersTable({ orders, onStatusChange }: RecentOrdersTableP
           </div>
         ) : (
           <div className="overflow-hidden">
-            <div className="hidden lg:block overflow-x-auto">
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full border-collapse">
                 <thead className="bg-[#F8FAFC]">
                   <tr>
@@ -281,7 +281,7 @@ export function RecentOrdersTable({ orders, onStatusChange }: RecentOrdersTableP
               </table>
             </div>
 
-            <div className="block lg:hidden space-y-4 p-4">
+            <div className="block md:hidden space-y-4 p-4">
               {filteredOrders.slice(0, 10).map((order) => {
                 const orderStatusInfo = orderStatusConfig[order.status];
                 const paymentStatus = paymentStatuses[order.id] || 'pending';

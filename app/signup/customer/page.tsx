@@ -1,32 +1,36 @@
 "use client";
 
-import { ChevronLeft, Eye, EyeOff, Check, Mail } from "lucide-react";
+import { ChevronRight, Mail } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
-import api from "../../../axios";
+import { useEffect, useState } from "react";
+import api, { getUserRole, isAuthenticated } from "@/lib/api";
 import { useRouter } from "next/navigation";
+import Input from "@/components/ui/Input";
+import Button from "@/components/ui/Button";
+
 export default function CustomerSignUpPage() {
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    password: "",
-    role: "customer",
+    name: "", email: "", phone: "", password: "", role: "customer",
   });
   const [otp, setOtp] = useState("");
   const [step, setStep] = useState<1 | 2>(1);
   const router = useRouter();
-  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-  const [SignUpMsg, setSignUpMsg] = useState("");
+  const [signUpMsg, setSignUpMsg] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<"name" | "email" | "phone" | "password" | "otp", string>>>({});
+
+  useEffect(() => {
+    if (!isAuthenticated()) return;
+    const role = getUserRole();
+    if (role === "customer") router.replace("/customer/home");
+    else if (role === "restaurant") router.replace("/restaurant/dashboard");
+    else if (role === "admin") router.replace("/admin/payments");
+  }, [router]);
 
   const sendOtp = async () => {
     try {
-      const res = await api.post("/send-otp", {
-        email: formData.email,
-        phone: formData.phone,
-      });
+      const res = await api.post("/send-otp", { email: formData.email, phone: formData.phone });
       if (res.status === 200) return true;
     } catch (error) {
       const err = error as { response?: { data?: { error?: string } } };
@@ -39,7 +43,7 @@ export default function CustomerSignUpPage() {
     }
   };
 
-  const SignupForCustomer = async () => {
+  const signupForCustomer = async () => {
     try {
       const res = await api.post("/customer/signup", { ...formData, otp });
       if (res.status === 201) {
@@ -48,9 +52,7 @@ export default function CustomerSignUpPage() {
       }
     } catch (error) {
       const err = error as { response?: { data?: { error?: string } } };
-      if (err.response?.data?.error === "User already exists") {
-        setErrorMsg("المستخدم موجود بالفعل. يرجى تسجيل الدخول.");
-      } else if (err.response?.data?.error === "Invalid or expired OTP") {
+      if (err.response?.data?.error === "Invalid or expired OTP") {
         setErrorMsg("رمز التحقق غير صحيح أو منتهي الصلاحية.");
       } else {
         setErrorMsg("فشل تسجيل الاشتراك. يرجى التحقق من بياناتك.");
@@ -60,23 +62,24 @@ export default function CustomerSignUpPage() {
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFieldErrors((prev) => ({ ...prev, [e.target.name]: undefined }));
   };
 
-  const isValidEmail = (email: string) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  };
-
-  const isValidPhone = (phone: string) => {
-    return /^[0-9]{10,}$/.test(phone.replace(/\s/g, ""));
+  const validateStepOne = () => {
+    const nextErrors: typeof fieldErrors = {};
+    if (formData.name.trim().length < 3) nextErrors.name = "الاسم يجب أن يكون 3 أحرف على الأقل";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) nextErrors.email = "البريد الإلكتروني غير صالح";
+    if (!/^0\d{10,}$/.test(formData.phone.replace(/\s/g, ""))) nextErrors.phone = "رقم الهاتف غير صالح";
+    if (formData.password.length < 6) nextErrors.password = "كلمة المرور يجب أن تكون 6 أحرف على الأقل";
+    setFieldErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
   };
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
+    if (!validateStepOne()) return;
     setIsLoading(true);
     const success = await sendOtp();
     setIsLoading(false);
@@ -86,225 +89,164 @@ export default function CustomerSignUpPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
+    if (otp.length !== 6) {
+      setFieldErrors((prev) => ({ ...prev, otp: "أدخل رمز التحقق المكون من 6 أرقام" }));
+      return;
+    }
     setIsLoading(true);
-    const bool = await SignupForCustomer();
-    if (bool === 1) {
-      setTimeout(() => {
-        setIsLoading(false);
-        router.push("/login");
-      }, 2000);
+    const result = await signupForCustomer();
+    if (result === 1) {
+      setTimeout(() => { setIsLoading(false); router.push("/login"); }, 2000);
     } else {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6">
-      <div className="bg-white rounded-2xl sm:rounded-3xl min-h-[calc(100vh-1.5rem)] sm:min-h-[calc(100vh-2rem)] md:min-h-[calc(100vh-3rem)] flex flex-col shadow-sm">
-        <header className="flex items-center justify-between px-4 py-4">
-          {step === 2 ? (
-            <button
-              onClick={() => { setStep(1); setErrorMsg(""); }}
-              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-            >
-              <ChevronLeft className="w-6 h-6 text-gray-800" />
-            </button>
-          ) : (
-            <Link href="/signup" className="p-2 rounded-full hover:bg-gray-100 transition-colors">
-              <ChevronLeft className="w-6 h-6 text-gray-800" />
-            </Link>
-          )}
-          <span className="text-gray-800 font-medium text-lg">تسجيل زبون</span>
-          <div className="w-10" />
-        </header>
+    <div className="min-h-screen bg-background flex flex-col" dir="rtl">
+      <div className="h-2 bg-gradient-to-r from-primary to-secondary" />
 
-        <main className="flex-1 px-4 sm:px-6 py-4 overflow-y-auto">
+      {/* Header */}
+      <header className="flex items-center justify-between px-4 py-4 max-w-lg mx-auto w-full">
+        {step === 2 ? (
+          <button onClick={() => { setStep(1); setErrorMsg(""); }}
+            className="p-2 rounded-full hover:bg-primary/10 transition-colors">
+            <span className="inline-flex items-center gap-1 text-sm font-semibold text-dark">
+              <ChevronRight className="w-4 h-4" />
+              رجوع
+            </span>
+          </button>
+        ) : (
+          <Link href="/signup" className="p-2 rounded-full hover:bg-primary/10 transition-colors">
+            <ChevronRight className="w-5 h-5 text-dark" />
+          </Link>
+        )}
+        <span className="text-dark font-bold text-base">تسجيل زبون</span>
+        <div className="w-10" />
+      </header>
+
+      <main className="flex-1 px-4 py-4 max-w-lg mx-auto w-full">
+        <div className="bg-surface rounded-card shadow-card p-6">
+          <p className="text-xs sm:text-sm text-muted text-right mb-4">
+            {step === 1 ? "الخطوة 1 من 2" : "الخطوة 2 من 2"}
+          </p>
           {step === 1 ? (
             <>
-              <h1 className="text-3xl font-light text-gray-800 mb-2">إنشاء حساب</h1>
-              <p className="text-gray-500 text-sm">
+              <h1 className="text-2xl font-bold text-dark mb-1">إنشاء حساب</h1>
+              <p className="text-sm text-muted mb-6">
                 أدخل بياناتك للتسجيل كزبون.{" "}
-                <Link href="/login" className="text-[#E5A04D]">لديك حساب؟</Link>
+                <Link href="/login" className="text-primary font-semibold">لديك حساب؟</Link>
               </p>
 
-              <form onSubmit={handleSendOtp} style={{ marginTop: "2rem" }}>
-                <div style={{ marginBottom: "2rem" }}>
-                  <label style={{ display: "block", marginBottom: "0.75rem", fontSize: "0.75rem", color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                    الاسم الكامل
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      placeholder=""
-                      className="w-full py-3 border-b border-gray-200 focus:border-[#E5A04D] text-gray-800 text-lg transition-colors"
-                    />
-                    {formData.name.length >= 3 && (
-                      <Check className="absolute left-0 top-1/2 -translate-y-1/2 w-5 h-5 text-[#E5A04D]" />
-                    )}
-                  </div>
-                </div>
+              <form onSubmit={handleSendOtp} className="space-y-4">
+                <Input label="الاسم الكامل" type="text" name="name"
+                  value={formData.name} onChange={handleChange}
+                  placeholder="أحمد محمد" required error={fieldErrors.name}
+                  className="bg-transparent outline-none" />
 
-                <div style={{ marginBottom: "2rem" }}>
-                  <label style={{ display: "block", marginBottom: "0.75rem", fontSize: "0.75rem", color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                    البريد الإلكتروني
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      placeholder=""
-                      className="w-full py-3 border-b border-gray-200 focus:border-[#E5A04D] text-gray-800 text-lg transition-colors"
-                    />
-                    {isValidEmail(formData.email) && (
-                      <Check className="absolute left-0 top-1/2 -translate-y-1/2 w-5 h-5 text-[#E5A04D]" />
-                    )}
-                  </div>
-                </div>
+                <Input label="البريد الإلكتروني" type="email" name="email"
+                  value={formData.email} onChange={handleChange}
+                  placeholder="example@email.com" required error={fieldErrors.email}
+                  className="bg-transparent outline-none" />
 
-                <div style={{ marginBottom: "2rem" }}>
-                  <label style={{ display: "block", marginBottom: "0.75rem", fontSize: "0.75rem", color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                    رقم الهاتف
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      placeholder=""
-                      className="w-full py-3 border-b border-gray-200 focus:border-[#E5A04D] text-gray-800 text-lg transition-colors"
-                    />
-                    {isValidPhone(formData.phone) && (
-                      <Check className="absolute left-0 top-1/2 -translate-y-1/2 w-5 h-5 text-[#E5A04D]" />
-                    )}
-                  </div>
-                </div>
+                <Input label="رقم الهاتف" type="tel" name="phone"
+                  value={formData.phone} onChange={handleChange}
+                  placeholder="01012345678" required error={fieldErrors.phone}
+                  className="bg-transparent outline-none" />
 
-                <div style={{ marginBottom: "3rem" }}>
-                  <label style={{ display: "block", marginBottom: "0.75rem", fontSize: "0.75rem", color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                    كلمة المرور
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      name="password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      placeholder="••••••"
-                      className="w-full py-3 border-b border-gray-200 focus:border-[#E5A04D] text-gray-800 text-lg transition-colors"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute left-8 top-1/2 -translate-y-1/2 text-gray-400"
-                    >
-                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
-                    {formData.password.length >= 6 && (
-                      <Check className="absolute left-0 top-1/2 -translate-y-1/2 w-5 h-5 text-[#E5A04D]" />
-                    )}
-                  </div>
-                </div>
+                <Input label="كلمة المرور" type="password" name="password"
+                  value={formData.password} onChange={handleChange}
+                  placeholder="••••••••" required error={fieldErrors.password}
+                  className="bg-transparent outline-none" />
 
-                <div style={{ marginBottom: "1rem" }}>
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full py-4 rounded-full bg-[#E5A04D] text-[20px] hover:bg-[#D4903D] text-white font-semibold transition-colors disabled:opacity-70"
-                  >
-                    {isLoading ? "جاري الإرسال..." : "إرسال رمز التحقق"}
-                  </button>
-                  {errorMsg && (
-                    <p className="text-red-500 text-sm mt-2 text-center">{errorMsg}</p>
-                  )}
-                </div>
+                {errorMsg && (
+                  <p className="text-sm text-secondary text-center bg-secondary/10 rounded-input px-3 py-2">
+                    {errorMsg}
+                  </p>
+                )}
 
-                <p className="text-center text-gray-500 text-xs pb-4">
+                <Button type="submit" variant="primary" size="lg" fullWidth isLoading={isLoading}>
+                  إرسال رمز التحقق
+                </Button>
+
+                <p className="text-center text-muted text-xs">
                   بالتسجيل أنت توافق على{" "}
-                  <Link href="/terms" className="text-gray-700 underline">الشروط والأحكام</Link>{" "}
-                  و{" "}
-                  <Link href="/privacy" className="text-gray-700 underline">سياسة الخصوصية</Link>
+                  <Link href="/terms" className="text-dark underline">الشروط والأحكام</Link>
                 </p>
               </form>
             </>
           ) : (
             <>
-              <div className="flex flex-col items-center mt-6 mb-8">
-                <div className="w-16 h-16 rounded-full bg-orange-50 flex items-center justify-center mb-4">
-                  <Mail className="w-8 h-8 text-[#E5A04D]" />
+              <div className="flex flex-col items-center mb-6">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                  <Mail className="w-8 h-8 text-primary" />
                 </div>
-                <h1 className="text-3xl font-light text-gray-800 mb-2">التحقق من البريد</h1>
-                <p className="text-gray-500 text-sm text-center">
+                <h1 className="text-xl font-bold text-dark mb-1">التحقق من البريد</h1>
+                <p className="text-sm text-muted text-center">
                   تم إرسال رمز مكون من 6 أرقام إلى
                   <br />
-                  <span className="font-medium text-gray-700">{formData.email}</span>
+                  <span className="font-semibold text-dark">{formData.email}</span>
                 </p>
               </div>
 
-              <form onSubmit={handleSubmit} style={{ marginTop: "1rem" }}>
-                <div style={{ marginBottom: "3rem" }}>
-                  <label style={{ display: "block", marginBottom: "0.75rem", fontSize: "0.75rem", color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-muted mb-2 text-right">
                     رمز التحقق
                   </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={6}
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                      placeholder="••••••"
-                      className="w-full py-3 border-b border-gray-200 focus:border-[#E5A04D] text-gray-800 text-2xl tracking-[0.5em] transition-colors text-center"
-                    />
-                    {otp.length === 6 && (
-                      <Check className="absolute left-0 top-1/2 -translate-y-1/2 w-5 h-5 text-[#E5A04D]" />
-                    )}
+                  <div className="flex justify-center gap-2" dir="ltr">
+                    {Array.from({ length: 6 }).map((_, index) => (
+                      <input
+                        key={index}
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={1}
+                        value={otp[index] || ""}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, "");
+                          const next = otp.split("");
+                          next[index] = value;
+                          const merged = next.join("").slice(0, 6);
+                          setOtp(merged);
+                          setFieldErrors((prev) => ({ ...prev, otp: undefined }));
+                        }}
+                        className="w-10 h-12 rounded-input border border-muted/30 bg-transparent text-dark text-center text-2xl focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+                      />
+                    ))}
                   </div>
+                  {fieldErrors.otp && <p className="text-xs text-secondary mt-2 text-right">{fieldErrors.otp}</p>}
                 </div>
 
-                <div style={{ marginBottom: "1rem" }}>
-                  <button
-                    type="submit"
-                    disabled={isLoading || otp.length !== 6}
-                    className="w-full py-4 rounded-full bg-[#E5A04D] text-[20px] hover:bg-[#D4903D] text-white font-semibold transition-colors disabled:opacity-70"
-                  >
-                    {isLoading ? "جاري التسجيل..." : "تسجيل"}
-                  </button>
-                  {errorMsg && (
-                    <p className="text-red-500 text-sm mt-2 text-center">{errorMsg}</p>
-                  )}
-                  {SignUpMsg && (
-                    <p className="text-green-500 text-sm mt-2 text-center">{SignUpMsg}</p>
-                  )}
-                </div>
+                {errorMsg && (
+                  <p className="text-sm text-secondary text-center bg-secondary/10 rounded-input px-3 py-2">
+                    {errorMsg}
+                  </p>
+                )}
+                {signUpMsg && (
+                  <p className="text-sm text-accent text-center bg-accent/10 rounded-input px-3 py-2">
+                    {signUpMsg}
+                  </p>
+                )}
 
-                <p className="text-center text-gray-500 text-sm">
+                <Button type="submit" variant="primary" size="lg" fullWidth
+                  isLoading={isLoading} disabled={otp.length !== 6}>
+                  تسجيل
+                </Button>
+
+                <p className="text-center text-muted text-sm">
                   لم يصلك الرمز؟{" "}
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      setErrorMsg("");
-                      setOtp("");
-                      setIsLoading(true);
-                      await sendOtp();
-                      setIsLoading(false);
-                    }}
-                    disabled={isLoading}
-                    className="text-[#E5A04D] font-medium disabled:opacity-50"
-                  >
+                  <button type="button" onClick={async () => {
+                    setErrorMsg(""); setOtp(""); setIsLoading(true);
+                    await sendOtp(); setIsLoading(false);
+                  }} disabled={isLoading} className="text-primary font-semibold disabled:opacity-50">
                     إعادة الإرسال
                   </button>
                 </p>
               </form>
             </>
           )}
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }

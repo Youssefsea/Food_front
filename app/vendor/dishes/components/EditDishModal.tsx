@@ -112,9 +112,9 @@ export function EditDishModal({ isOpen, dish, onClose, onUpdate }: EditDishModal
         onClick={handleClose}
       />
 
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4">
         <div
-          className="bg-white rounded-2xl w-full max-w-140 max-h-[90vh] flex flex-col"
+          className="bg-white rounded-none sm:rounded-2xl w-full h-full sm:h-auto sm:max-w-140 max-h-screen sm:max-h-[90vh] flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-center justify-between p-6 border-b border-[#E5E7EB]">

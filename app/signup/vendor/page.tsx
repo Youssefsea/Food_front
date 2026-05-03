@@ -1,17 +1,17 @@
 "use client";
 
-import { ChevronLeft, Eye, EyeOff, Check, Clock, MapPin, ChevronRight, ChevronsRight, Locate, Map } from "lucide-react";
+import { ChevronRight, Eye, EyeOff, Check, MapPin, Locate, Map } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import api from "../../../axios";
+import api, { getUserRole, isAuthenticated } from "@/lib/api";
 
 import { useRouter } from "next/navigation";
 
 // Dynamically import LocationPicker to avoid SSR issues with Leaflet
 const LocationPicker = dynamic(() => import("./LocationPicker"), {
   ssr: false,
-  loading: () => <div className="h-[400px] w-full bg-gray-100 animate-pulse rounded-xl" />,
+  loading: () => <div className="h-[250px] md:h-[400px] w-full bg-gray-100 animate-pulse rounded-xl" />,
 });
 
 export default function VendorSignUpPage() {
@@ -44,6 +44,15 @@ export default function VendorSignUpPage() {
   const [showManualCoords, setShowManualCoords] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  useEffect(() => {
+    if (!isAuthenticated()) return;
+    const role = getUserRole();
+    if (role === 'customer') router.replace('/customer/home');
+    else if (role === 'restaurant') router.replace('/restaurant/dashboard');
+    else if (role === 'admin') router.replace('/admin/payments');
+  }, [router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -93,6 +102,7 @@ export default function VendorSignUpPage() {
   };
 
   const handleGetCurrentLocation = () => {
+    setErrorMsg("");
     setIsLocating(true);
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
@@ -106,19 +116,39 @@ export default function VendorSignUpPage() {
           }));
           setIsLocating(false);
         },
-        (error) => {
-          alert("تعذر الوصول إلى موقعك الحالي. يرجى التحقق من إعدادات المتصفح.");
+        () => {
+          setErrorMsg("تعذر الوصول إلى موقعك الحالي. يرجى التحقق من إعدادات المتصفح.");
           setIsLocating(false);
         }
       );
     } else {
-      alert("المتصفح لا يدعم تحديد الموقع.");
+      setErrorMsg("المتصفح لا يدعم تحديد الموقع.");
       setIsLocating(false);
     }
   };
 
+  const validateCurrentStep = () => {
+    if (step === 1) {
+      return (
+        formData.name.trim().length >= 3 &&
+        isValidEmail(formData.email) &&
+        isValidPhone(formData.phone) &&
+        formData.password.length >= 6
+      );
+    }
+    if (step === 2) {
+      return !!formData.area_name.trim() && !!locationName.trim();
+    }
+    return true;
+  };
+
   const nextStep = (e?: React.FormEvent) => {
     e?.preventDefault();
+    if (!validateCurrentStep()) {
+      setErrorMsg("يرجى استكمال بيانات هذه الخطوة أولاً.");
+      return;
+    }
+    setErrorMsg("");
     if (step < totalSteps) setStep(step + 1);
   };
 
@@ -149,7 +179,7 @@ export default function VendorSignUpPage() {
 
 
 
-  const signUpForVendor = async (data:any) => {
+  const signUpForVendor = async (data: Record<string, unknown>) => {
     try {
       const res = await api.post("/restaurant/signup", data);
       if (res.status == 201) {
@@ -353,7 +383,7 @@ export default function VendorSignUpPage() {
   // Step 3: Operations
   const renderStep3 = () => (
     <div className="space-y-10 animate-in fade-in slide-in-from-right-4 duration-300">
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         <div className="space-y-3">
           <label className="text-xs text-gray-400 uppercase tracking-wide">وقت الفتح</label>
           <input
@@ -428,7 +458,7 @@ export default function VendorSignUpPage() {
 
         <header className="flex items-center justify-between px-6 py-5 border-b border-gray-50">
           <Link href={step === 1 ? "/signup" : "#"} onClick={step > 1 ? prevStep : undefined} className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors">
-            <ChevronLeft className="w-5 h-5 text-gray-800" />
+            <ChevronRight className="w-5 h-5 text-gray-800" />
           </Link>
           <div className="flex flex-col items-center">
             <span className="text-gray-800 font-semibold text-lg">
@@ -443,6 +473,13 @@ export default function VendorSignUpPage() {
                   className={`h-1 rounded-full transition-all duration-300 ${s <= step ? 'w-6 bg-[#E5A04D]' : 'w-2 bg-gray-200'}`}
                 />
               ))}
+            </div>
+            <div className="mt-2 flex items-center gap-2 text-[11px] sm:text-xs text-gray-500">
+              <span className={step === 1 ? "text-[#E5A04D] font-semibold" : ""}>المعلومات الأساسية</span>
+              <span>•</span>
+              <span className={step === 2 ? "text-[#E5A04D] font-semibold" : ""}>الموقع</span>
+              <span>•</span>
+              <span className={step === 3 ? "text-[#E5A04D] font-semibold" : ""}>إعدادات التوصيل</span>
             </div>
           </div>
           <div className="w-9" />
@@ -464,6 +501,11 @@ export default function VendorSignUpPage() {
             {step === 1 && renderStep1()}
             {step === 2 && renderStep2()}
             {step === 3 && renderStep3()}
+            {errorMsg && (
+              <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded-xl text-right">
+                {errorMsg}
+              </p>
+            )}
 
             <div className="pt-4 flex gap-3">
               {step < totalSteps ? (
@@ -473,7 +515,7 @@ export default function VendorSignUpPage() {
                   className="flex-1 py-4 rounded-xl bg-[#E5A04D] hover:bg-[#D4903D] text-white font-bold text-base transition-all active:scale-[0.98] flex items-center justify-center gap-2 shadow-lg shadow-orange-100"
                 >
                   <span>التالي</span>
-                  <ChevronLeft className="w-5 h-5 rotate-180" />
+                  <ChevronRight className="w-5 h-5" />
                 </button>
               ) : (
                 <button

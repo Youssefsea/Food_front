@@ -1,14 +1,16 @@
 'use client';
 
 import { LayoutDashboard, ShoppingBag, Calendar, MessageCircle, Utensils, Settings, X } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 interface NavItem {
   id: string;
   label: string;
   icon: React.ElementType;
+  href: string;
   badge?: number;
   badgeColor?: string;
-  active?: boolean;
 }
 
 interface SidebarProps {
@@ -20,13 +22,14 @@ interface SidebarProps {
 }
 
 export function Sidebar({ pendingOrders, unreadMessages, todayReservations, isVisible, onClose }: SidebarProps) {
+  const pathname = usePathname();
   const navItems: NavItem[] = [
-    { id: 'dashboard', label: 'لوحة التحكم', icon: LayoutDashboard, active: true },
-    { id: 'orders', label: 'الطلبات', icon: ShoppingBag, badge: pendingOrders, badgeColor: '#F59E0B' },
-    { id: 'reservations', label: 'الحجوزات', icon: Calendar, badge: todayReservations, badgeColor: '#8B5CF6' },
-    { id: 'chat', label: 'المحادثات', icon: MessageCircle, badge: unreadMessages, badgeColor: '#EF4444' },
-    { id: 'menu', label: 'قائمة الأطباق', icon: Utensils },
-    { id: 'settings', label: 'الإعدادات', icon: Settings },
+    { id: 'dashboard', label: 'لوحة التحكم', icon: LayoutDashboard, href: '/restaurant/dashboard' },
+    { id: 'orders', label: 'الطلبات', icon: ShoppingBag, href: '/restaurant/orders', badge: pendingOrders, badgeColor: '#F59E0B' },
+    { id: 'reservations', label: 'الحجوزات', icon: Calendar, href: '/restaurant/orders', badge: todayReservations, badgeColor: '#8B5CF6' },
+    { id: 'chat', label: 'المحادثات', icon: MessageCircle, href: '/restaurant/orders', badge: unreadMessages, badgeColor: '#EF4444' },
+    { id: 'menu', label: 'قائمة الأطباق', icon: Utensils, href: '/restaurant/menu' },
+    { id: 'settings', label: 'الإعدادات', icon: Settings, href: '/vendor/EditAtVendorInfo' },
   ];
 
   return (
@@ -57,12 +60,15 @@ export function Sidebar({ pendingOrders, unreadMessages, todayReservations, isVi
         <nav className="px-4 space-y-2">
           {navItems.map((item) => {
             const Icon = item.icon;
+            const isActive = pathname.startsWith(item.href);
             return (
-              <button
+              <Link
                 key={item.id}
+                href={item.href}
+                onClick={onClose}
                 className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all ${
-                  item.active
-                    ? 'bg-[#E5A04D] text-white shadow-md'
+                  isActive
+                    ? 'bg-[var(--color-primary)] text-white shadow-md'
                     : 'text-[#6B7280] hover:bg-[#F3F4F6]'
                 }`}
               >
@@ -78,7 +84,7 @@ export function Sidebar({ pendingOrders, unreadMessages, todayReservations, isVi
                     {item.badge}
                   </span>
                 )}
-              </button>
+              </Link>
             );
           })}
         </nav>

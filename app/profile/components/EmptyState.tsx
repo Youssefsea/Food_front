@@ -27,7 +27,7 @@ export function EmptyState() {
         ابدأ باستكشاف المطاعم وقم بطلبك الأول
       </p>
       <button 
-        onClick={() => router.push('/explore')}
+        onClick={() => router.push('/customer/home')}
         className="px-6 py-3 rounded-lg transition-all active:scale-[0.98] min-h-[44px]"
         style={{ 
           backgroundColor: '#E5A04D',

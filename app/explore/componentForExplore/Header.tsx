@@ -1,8 +1,8 @@
 'use client';
 
-import { MapPin, ChevronDown, User, ShoppingCart } from 'lucide-react';
+import { MapPin, User, ShoppingCart } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import api from '../../../axios';
+import api from '@/lib/api';
 interface HeaderProps {
   city: string | null;
   cartCount?: number;
@@ -11,20 +11,23 @@ interface HeaderProps {
 export function Header({ city  }: HeaderProps) {
 const [cartCount, setCartCount] = useState(0);
 
-const fetchCartCount = async () => {
-  try {
-    const res=await api.get('/Customer/Cartcount');
-    if (res.data?.count !== undefined) {
-      setCartCount(res.data.count);
-    }
-  } catch {
-    setCartCount(0);
-  }
-};
-
 useEffect(() => {
-  fetchCartCount();
-} , []);
+  let active = true;
+  const fetchCartCount = async () => {
+    try {
+      const res = await api.get('/Customer/Cartcount');
+      if (active && res.data?.count !== undefined) {
+        setCartCount(res.data.count);
+      }
+    } catch {
+      if (active) setCartCount(0);
+    }
+  };
+  void fetchCartCount();
+  return () => {
+    active = false;
+  };
+}, []);
   return (
     <header className="fixed top-2 left-1 right-1 bg-white z-50 shadow-sm safe-area-top">
       <div className="px-3 sm:px-4 md:px-6 py-2.5 sm:py-3">

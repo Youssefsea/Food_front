@@ -3,7 +3,7 @@
 import { X, Send, ArrowLeft, WifiOff } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
-import api from "../../../axios";
+import api, { API_BASE_URL } from "@/lib/api";
 import { ChatMessage } from "../types";
 import Cookies from "js-cookie";
 
@@ -105,7 +105,7 @@ export function ChatModal({ isOpen, onClose, orderId, restaurantName }: ChatModa
       socketRef.current = null;
     }
 
-    socketRef.current = io('https://19d086e548570852.preview.oblien.com', {
+    socketRef.current = io(API_BASE_URL, {
       auth: token ? { token } : {},
       withCredentials: true,
       transports: ['websocket', 'polling'],

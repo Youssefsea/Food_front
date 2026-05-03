@@ -2,54 +2,63 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { Toaster } from "sonner";
-import api from "../../axios";
+import api from "@/lib/api";
 import { ProfileHeader } from "./components/ProfileHeader";
 import { ProfileCard } from "./components/ProfileCard";
 import { WalletCard } from "./components/WalletCard";
 import { OrdersSection } from "./components/OrdersSection";
 import { ChatModal } from "./components/ChatModal";
-import { BottomNavigation } from "../explore/componentForExplore/BottomNavigation";
 import { UserProfile, Order, OrderRowFromAPI } from "./types";
+import { ProtectedRoute } from "../context/AuthContext";
 
 export default function ProfilePage() {
+  const [mounted, setMounted] = useState(false);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [walletBalance, setWalletBalance] = useState(0);
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isOrdersLoading, setIsOrdersLoading] = useState(true);
-  
+
   // Chat state
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [selectedRestaurantName, setSelectedRestaurantName] = useState("");
 
+  // Mount guard - fix for first-visit data loading bug
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Fetch user profile
-  const fetchProfile = useCallback(async () => {
+  const fetchProfile = useCallback(async (signal?: AbortSignal) => {
+    if (!mounted) return;
     try {
-      const response = await api.get('/customer/profile');
+      const response = await api.get('/customer/profile', { signal });
       if (response.data?.user) {
         setUser(response.data.user);
       }
     } catch (error) {
     }
-  }, []);
+  }, [mounted]);
 
   // Fetch wallet balance
-  const fetchWalletBalance = useCallback(async () => {
+  const fetchWalletBalance = useCallback(async (signal?: AbortSignal) => {
+    if (!mounted) return;
     try {
-      const response = await api.get('/Customer/getBalanceAtWallet');
+      const response = await api.get('/Customer/getBalanceAtWallet', { signal });
       if (response.data?.balance !== undefined) {
         setWalletBalance(response.data.balance);
       }
-    } catch (error) {
+    } catch (_error) {
     }
-  }, []);
+  }, [mounted]);
 
   // Fetch orders from backend
-  const fetchOrders = useCallback(async () => {
+  const fetchOrders = useCallback(async (signal?: AbortSignal) => {
+    if (!mounted) return;
     setIsOrdersLoading(true);
     try {
-      const ordersRes = await api.get('/customer/orders');
+      const ordersRes = await api.get('/customer/orders', { signal });
       const ordersRows: OrderRowFromAPI[] = ordersRes.data.orders || [];
       
       // Group rows by order ID since each dish is a separate row
@@ -90,27 +99,30 @@ export default function ProfilePage() {
       });
 
       setOrders(Array.from(ordersMap.values()));
-    } catch (error) {
+    } catch (_error) {
       setOrders([]);
     } finally {
       setIsOrdersLoading(false);
     }
-  }, []);
+  }, [mounted]);
 
   // Initial data fetch
   useEffect(() => {
+    if (!mounted) return;
+    const controller = new AbortController();
     const loadData = async () => {
       setIsLoading(true);
       await Promise.all([
-        fetchProfile(),
-        fetchWalletBalance(),
-        fetchOrders()
+        fetchProfile(controller.signal),
+        fetchWalletBalance(controller.signal),
+        fetchOrders(controller.signal)
       ]);
       setIsLoading(false);
     };
 
     loadData();
-  }, [fetchProfile, fetchWalletBalance, fetchOrders]);
+    return () => controller.abort();
+  }, [fetchProfile, fetchWalletBalance, fetchOrders, mounted]);
 
   // Handle profile update
   const handleProfileUpdate = async (name: string, phone: string) => {
@@ -133,7 +145,8 @@ export default function ProfilePage() {
   };
 
   return (
-    <div 
+    <ProtectedRoute role="customer">
+      <div 
       className="min-h-screen"
       style={{ 
         backgroundColor: '#FFFFFF',
@@ -165,39 +178,6 @@ export default function ProfilePage() {
         />
       </main>
 
-      <style>{`
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-        }
-        .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-        
-        /* Support for safe areas */
-        @supports (padding: env(safe-area-inset-top)) {
-          body {
-            padding-top: env(safe-area-inset-top);
-          }
-        }
-        
-        /* Smooth scrolling */
-        html {
-          scroll-behavior: smooth;
-          -webkit-overflow-scrolling: touch;
-        }
-        
-        /* Active/touch feedback */
-        button:active {
-          transform: scale(0.98);
-        }
-        
-        /* CSS variable for bottom nav */
-        :root {
-          --bottom-nav-height: 72px;
-        }
-      `}</style>
-
       {selectedOrderId && (
         <ChatModal
           isOpen={isChatOpen}
@@ -221,6 +201,7 @@ export default function ProfilePage() {
           },
         }}
       />
-    </div>
+      </div>
+    </ProtectedRoute>
   );
 }

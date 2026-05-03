@@ -1,7 +1,7 @@
 'use client';
 
 import { Store, RefreshCw, Bell, MessageCircle, Menu } from 'lucide-react';
-import api from '../../../../axios';
+import api from '@/lib/api';
 import { useState } from 'react';
 interface DashboardHeaderProps {
   restaurantName: string;
@@ -50,7 +50,7 @@ export function DashboardHeader({
     <div className="flex items-center gap-3 sm:gap-4">
       <button 
         onClick={onToggleSidebar}
-        className="p-2 hover:bg-[#F3F4F6] rounded-lg transition-colors"
+        className="p-2 hover:bg-[#F3F4F6] rounded-lg transition-colors lg:hidden"
       >
         <Menu className="w-6 h-6 text-[#6B7280]" />
       </button>

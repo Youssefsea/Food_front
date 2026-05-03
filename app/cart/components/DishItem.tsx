@@ -1,6 +1,7 @@
 'use client';
 
 import { Minus, Plus, Trash2 } from "lucide-react";
+import Image from "next/image";
 import { CartDish } from "../types";
 
 interface DishItemProps {
@@ -16,11 +17,13 @@ export function DishItem({ dish, isLast, onQuantityChange, onRemove }: DishItemP
 
   return (
     <div className={`p-4 flex gap-3.5 ${!isLast ? 'border-b border-[#F3F4F6]' : ''}`}>
-      <div className="w-[70px] h-[70px] rounded-[10px] overflow-hidden flex-shrink-0 bg-gray-100">
-        <img 
-          src={imageUrl} 
+      <div className="w-[70px] h-[70px] rounded-[10px] overflow-hidden flex-shrink-0 bg-gray-100 relative">
+        <Image
+          src={imageUrl}
           alt={dish.dishName}
-          className="w-full h-full object-cover"
+          fill
+          sizes="70px"
+          className="object-cover"
         />
       </div>
 

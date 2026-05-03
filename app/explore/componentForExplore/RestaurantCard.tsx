@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { Heart, MapPin, Star, Clock, DollarSign, Calendar, Truck } from 'lucide-react';
+import { MapPin, Calendar } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface Dish {
   id: number;
@@ -56,20 +56,24 @@ export function RestaurantCard({
             <div className="flex h-full gap-0.5">
               {displayDishes.slice(0, 3).map((dish, index) => (
                 <div key={dish.id || index} className="flex-1 overflow-hidden">
-                  <img
+                  <Image
                     src={dish.image?.split(',')[0]?.trim() || '/placeholder-dish.jpg'}
                     alt={dish.name}
-                    className="w-full h-full object-cover"
+                    fill
+                    sizes="(max-width: 768px) 33vw, 20vw"
+                    className="object-cover"
                     loading="lazy"
                   />
                 </div>
               ))}
             </div>
           ) : displayDishes.length > 0 ? (
-            <img
+            <Image
               src={displayDishes[0]?.image?.split(',')[0]?.trim() || '/placeholder-dish.jpg'}
               alt={displayName}
-              className="w-full h-full object-cover"
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="object-cover"
               loading="lazy"
             />
           ) : (
@@ -163,10 +167,12 @@ export function RestaurantCard({
                 {displayDishes.map((dish) => (
                   <div key={dish.id} className="flex-shrink-0 w-20 sm:w-24">
                     <div className="relative h-16 sm:h-20 rounded-lg sm:rounded-xl overflow-hidden mb-1 sm:mb-1.5 shadow-sm">
-                      <img
+                      <Image
                         src={dish.image?.split(',')[0]?.trim() || '/placeholder-dish.jpg'}
                         alt={dish.name}
-                        className="w-full h-full object-cover"
+                        fill
+                        sizes="80px"
+                        className="object-cover"
                         loading="lazy"
                       />
                     </div>
@@ -180,16 +186,6 @@ export function RestaurantCard({
             </div>
           )}
         </div>
-
-        <style>{`
-          .hide-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-          }
-          .hide-scrollbar::-webkit-scrollbar {
-            display: none;
-          }
-        `}</style>
       </div>
     </Link>
   );

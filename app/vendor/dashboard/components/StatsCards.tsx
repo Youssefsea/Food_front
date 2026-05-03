@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { Wallet, ShoppingBag, Clock, Utensils } from 'lucide-react';
 
 interface StatsCardsProps {
@@ -10,7 +11,7 @@ interface StatsCardsProps {
   reservedOrders: number;
 }
 
-export function StatsCards({ todayRevenue, todayOrders, pendingOrders, totalDishes, reservedOrders }: StatsCardsProps) {
+export const StatsCards = memo(function StatsCards({ todayRevenue, todayOrders, pendingOrders, totalDishes, reservedOrders }: StatsCardsProps) {
   const stats = [
     {
       id: 1,
@@ -56,13 +57,13 @@ export function StatsCards({ todayRevenue, todayOrders, pendingOrders, totalDish
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
       {stats.map((stat) => {
         const Icon = stat.icon;
         return (
           <div
             key={stat.id}
-            className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all hover:-translate-y-1 cursor-pointer border border-transparent hover:border-[#E5A04D]"
+            className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm hover:shadow-lg transition-all hover:-translate-y-1 cursor-pointer border border-transparent hover:border-[#E5A04D]"
           >
             <div className="flex items-start justify-between mb-4">
               <div
@@ -92,4 +93,4 @@ export function StatsCards({ todayRevenue, todayOrders, pendingOrders, totalDish
       })}
     </div>
   );
-}
+});

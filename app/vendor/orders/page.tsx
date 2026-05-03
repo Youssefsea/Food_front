@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Loader2, RefreshCw, AlertCircle } from 'lucide-react';
-import api from '../../../axios';
+import api from '@/lib/api';
 import Cookies from 'js-cookie';
 import { Order, OrderStatus, OrdersStats as StatsType } from './types';
 import {
@@ -13,8 +13,10 @@ import {
   EmptyOrdersState,
   VendorChatModal,
 } from './components';
+import { ProtectedRoute } from '@/app/context/AuthContext';
 
 export default function OrdersPage() {
+  const [mounted, setMounted] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,10 +45,11 @@ export default function OrdersPage() {
         }
       }
     };
-    syncVendorToken();
+    void syncVendorToken();
   }, []);
 
-  const fetchOrders = useCallback(async (showRefreshing = false) => {
+  const fetchOrders = useCallback(async (showRefreshing = false, signal?: AbortSignal) => {
+    if (!mounted) return;
     try {
       if (showRefreshing) setIsRefreshing(true);
       else setIsLoading(true);
@@ -55,7 +58,7 @@ export default function OrdersPage() {
 
       const params: { limit?: number } = { limit: 100 };
 
-      const response = await api.get('/restaurant/orders', { params });
+      const response = await api.get('/restaurant/orders', { params, signal });
       setOrders(response.data.orders || []);
     } catch (err) {
       setError('فشل في تحميل الطلبات. يرجى المحاولة مرة أخرى.');
@@ -63,12 +66,20 @@ export default function OrdersPage() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
+  }, [mounted]);
+
+  // Mount guard - fix for first-visit data loading bug
+  useEffect(() => {
+    setMounted(true);
   }, []);
 
   // Initial fetch
   useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders]);
+    if (!mounted) return;
+    const controller = new AbortController();
+    fetchOrders(false, controller.signal);
+    return () => controller.abort();
+  }, [fetchOrders, mounted]);
 
   const stats: StatsType = useMemo(() => {
     return {
@@ -174,7 +185,8 @@ export default function OrdersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] py-8 px-4 md:px-8" dir="rtl">
+    <ProtectedRoute role="vendor">
+      <div className="min-h-screen bg-[#F8FAFC] py-6 sm:py-8 px-4 md:px-8" dir="rtl">
       <div className="max-w-[1400px] mx-auto">
         <div className="flex items-center justify-between mb-6 gap-3">
           <OrdersHeader activeOrdersCount={activeOrdersCount} />
@@ -217,16 +229,16 @@ export default function OrdersPage() {
         ) : (
           <div className="space-y-5">
             {filteredOrders.map((order) => (
-              <><OrderCard
-                key={order.id}
-                order={order}
-                onStatusChange={handleStatusChange}
-                onViewDetails={handleViewDetails}
-                onCancel={handleCancelOrder}
-                onChatClick={handleChatClick}
-              />
-              <div className="h-5"/>
-              </>
+              <div key={order.id}>
+                <OrderCard
+                  order={order}
+                  onStatusChange={handleStatusChange}
+                  onViewDetails={handleViewDetails}
+                  onCancel={handleCancelOrder}
+                  onChatClick={handleChatClick}
+                />
+                <div className="h-5"/>
+              </div>
             ))}
           </div>
         )}
@@ -263,32 +275,7 @@ export default function OrdersPage() {
         </div>
       )}
 
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap');
-        
-        body {
-          font-family: 'Cairo', sans-serif;
-        }
-
-        @keyframes slide-up {
-          from {
-            transform: translateY(100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateY(0);
-            opacity: 1;
-          }
-        }
-
-        .animate-slide-up {
-          animation: slide-up 0.3s ease-out;
-        }
-
-        button:active {
-          transform: scale(0.98);
-        }
-      `}</style>
-    </div>
+      </div>
+    </ProtectedRoute>
   );
 }

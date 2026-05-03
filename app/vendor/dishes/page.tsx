@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Utensils, Plus, Grid3x3, List, Search, ChevronDown, FileText, CheckCircle, XCircle, Tag } from 'lucide-react';
-import api from '../../../axios';
+import { Utensils, Plus, Search, ChevronDown, FileText, CheckCircle, XCircle, Tag } from 'lucide-react';
+import api from '@/lib/api';
 import { DishCard, AddDishModal, EditDishModal, DeleteConfirmationModal, Toast } from './components';
+import { ProtectedRoute } from '@/app/context/AuthContext';
 
 interface Dish {
   id: number;
@@ -16,13 +17,12 @@ interface Dish {
   is_available: boolean;
 }
 
-type ViewMode = 'grid' | 'list';
 type AvailabilityFilter = 'all' | 'available' | 'unavailable';
 type SortOption = 'newest' | 'name-asc' | 'price-asc' | 'price-desc';
 
 export default function DishesPage() {
+  const [mounted, setMounted] = useState(false);
   const [dishes, setDishes] = useState<Dish[]>([]);
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [availabilityFilter, setAvailabilityFilter] = useState<AvailabilityFilter>('all');
@@ -34,11 +34,12 @@ export default function DishesPage() {
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchDishes = useCallback(async () => {
+  const fetchDishes = useCallback(async (signal?: AbortSignal) => {
+    if (!mounted) return;
     setIsLoading(true);
     try {
-       
-      const response = await api.post('/restaurant/all-dishes-for-restaurantV');
+
+      const response = await api.post('/restaurant/all-dishes-for-restaurantV', undefined, { signal });
       const dishesData = response.data.dishes || response.data || [];
       setDishes(dishesData);
     } catch (error) {
@@ -46,11 +47,19 @@ export default function DishesPage() {
     } finally {
       setIsLoading(false);
     }
+  }, [mounted]);
+
+  // Mount guard - fix for first-visit data loading bug
+  useEffect(() => {
+    setMounted(true);
   }, []);
 
   useEffect(() => {
-    fetchDishes();
-  }, [fetchDishes]);
+    if (!mounted) return;
+    const controller = new AbortController();
+    fetchDishes(controller.signal);
+    return () => controller.abort();
+  }, [fetchDishes, mounted]);
 
   const categories = useMemo(() => {
     return ['الكل', ...Array.from(new Set(dishes.map((d) => d.category)))];
@@ -174,15 +183,15 @@ export default function DishesPage() {
     }
   };
 
-  const handleToggleAvailability = async (dishId: number, isAvailable: boolean) => {
+  const handleToggleAvailability = useCallback(async (dishId: number, isAvailable: boolean) => {
     try {
       await api.put('/restaurant/change-dish-availability', {
         dishId,
         is_available: isAvailable,
       });
 
-      setDishes(
-        dishes.map((dish) =>
+      setDishes((prev) =>
+        prev.map((dish) =>
           dish.id === dishId ? { ...dish, is_available: isAvailable } : dish
         )
       );
@@ -194,11 +203,12 @@ export default function DishesPage() {
     } catch (error) {
       showToast('error', 'حدث خطأ في تحديث حالة التوفر');
     }
-  };
+  }, []);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] py-8 px-8" dir="rtl">
-      <div className="max-w-350 mx-auto">
+    <ProtectedRoute role="vendor">
+      <div className="min-h-screen bg-[#F8FAFC] py-6 px-4 md:px-6 lg:px-8" dir="rtl">
+      <div className="max-w-[1400px] mx-auto">
         <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-[#E5A04D] rounded-full flex items-center justify-center">
@@ -228,7 +238,7 @@ export default function DishesPage() {
          <div className="h-[30px]" />
 
         <div className="bg-white rounded-xl p-4 mb-6 flex items-center gap-4 flex-wrap">
-          <div className="relative flex-1 min-w-70">
+          <div className="relative flex-1 min-w-[220px]">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF]" />
             <input
               type="text"
@@ -254,7 +264,7 @@ export default function DishesPage() {
             <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF] pointer-events-none" />
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <button
               onClick={() => setAvailabilityFilter('all')}
               className={`px-4 py-2 rounded-2xl  text-sm font-medium transition-colors ${
@@ -373,7 +383,7 @@ export default function DishesPage() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
             {filteredDishes.map((dish) => (
                
               <DishCard
@@ -430,43 +440,7 @@ export default function DishesPage() {
         />
       )}
 
-      <style>{`
-        .no-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-        .no-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-        
-        button, a, input {
-          transition: all 0.2s ease;
-        }
-        
-        button:active {
-          transform: scale(0.98);
-        }
-
-        @keyframes shimmer {
-          0% {
-            background-position: -1000px 0;
-          }
-          100% {
-            background-position: 1000px 0;
-          }
-        }
-
-        .animate-pulse {
-          animation: shimmer 2s infinite;
-          background: linear-gradient(
-            to right,
-            #f3f4f6 0%,
-            #e5e7eb 50%,
-            #f3f4f6 100%
-          );
-          background-size: 2000px 100%;
-        }
-      `}</style>
-    </div>
+      </div>
+    </ProtectedRoute>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Eye, EyeOff, ChevronDown, CheckCircle, Loader2, Lock, AlertCircle } from 'lucide-react';
-import api from '../../../../axios';
+import api from '@/lib/api';
 
 interface AccountData {
   email?: string;

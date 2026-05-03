@@ -25,8 +25,8 @@ interface OrdersStatsProps {
 
 export function OrdersStats({ stats, selectedStatus, onStatusSelect }: OrdersStatsProps) {
   return (
-    <div className="bg-white rounded-[14px] p-6 shadow-sm mb-6">
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-10">
+    <div className="bg-white rounded-[14px] p-4 sm:p-6 shadow-sm mb-6">
+      <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-1">
         {statCards.map((stat) => {
           const count = stats[stat.id as keyof StatsType] || 0;
           const isSelected = selectedStatus === stat.id;
@@ -35,7 +35,7 @@ export function OrdersStats({ stats, selectedStatus, onStatusSelect }: OrdersSta
             <button
               key={stat.id}
               onClick={() => onStatusSelect(isSelected ? null : stat.id)}
-              className={`p-4 rounded-xl border-2 transition-all cursor-pointer ${
+              className={`p-4 rounded-xl border-2 transition-all cursor-pointer min-w-[140px] flex-shrink-0 ${
                 isSelected
                   ? 'shadow-md'
                   : 'border-transparent hover:border-gray-200'

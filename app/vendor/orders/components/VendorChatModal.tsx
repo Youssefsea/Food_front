@@ -2,9 +2,8 @@
 
 import { X, Send, ArrowLeft, WifiOff } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
-import { io, Socket } from "socket.io-client";
-import api from "../../../../axios";
-import Cookies from "js-cookie";
+import Pusher from 'pusher-js';
+import api from "@/lib/api";
 
 interface ChatMessage {
   id: number;
@@ -23,34 +22,6 @@ interface VendorChatModalProps {
   customerName: string;
 }
 
-const getVendorToken = (): string | null => {
-  let token = localStorage.getItem('vendorToken');
-  if (token) {
-    return token;
-  }
-
-  token = Cookies.get('vendorToken') || null;
-  if (token) {
-    return token;
-  }
-
-  token = localStorage.getItem('token') || Cookies.get('token') || null;
-  if (token) {
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      if (payload.role === 'restaurant') {
-        return token;
-      } else {
-        return null;
-      }
-    } catch {
-      return null;
-    }
-  }
-
-  return null;
-};
-
 export function VendorChatModal({ isOpen, onClose, orderId, customerName }: VendorChatModalProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
@@ -61,44 +32,46 @@ export function VendorChatModal({ isOpen, onClose, orderId, customerName }: Vend
   const [isConnected, setIsConnected] = useState(false);
   const [noRoomExists, setNoRoomExists] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const socketRef = useRef<Socket | null>(null);
+  const pusherRef = useRef<Pusher | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // استخرج currentUserId من الـ token
   useEffect(() => {
-    const token = getVendorToken();
-    if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        setCurrentUserId(payload.id ?? null);
-      } catch {
-        setCurrentUserId(null);
+    try {
+      const userData = localStorage.getItem('userData');
+      if (userData) {
+        const user = JSON.parse(userData);
+        setCurrentUserId(user.id ?? null);
       }
+    } catch {
+      setCurrentUserId(null);
     }
   }, []);
 
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  }, []);
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, scrollToBottom]);
 
+  // جيب بيانات الغرفة والرسائل
   const fetchChatRoom = useCallback(async () => {
     if (!orderId) return;
-    
+
     setIsLoading(true);
     setError(null);
     setNoRoomExists(false);
-    
+
     try {
       const roomRes = await api.get(`/restaurant/chat-room/order/${orderId}`);
       const room = roomRes.data.room;
-      
+
       if (room) {
         setRoomId(room.id);
-        
         const messagesRes = await api.get(`/restaurant/chat-messages/${room.id}`);
         setMessages(messagesRes.data.messages || []);
       } else {
@@ -120,82 +93,57 @@ export function VendorChatModal({ isOpen, onClose, orderId, customerName }: Vend
   }, [orderId]);
 
   useEffect(() => {
-    if (!isOpen || !roomId) {
-      return;
+    if (isOpen) {
+      fetchChatRoom();
     }
+  }, [isOpen, fetchChatRoom]);
 
-    const token = getVendorToken();
-    
-    if (!token) {
-      setError('لم يتم العثور على بيانات تسجيل الدخول. يرجى تسجيل الدخول مرة أخرى.');
-      return;
-    }
+  // Pusher — real-time
+  useEffect(() => {
+    if (!isOpen || !roomId) return;
 
-    if (socketRef.current) {
-      socketRef.current.disconnect();
-      socketRef.current = null;
-    }
-
-    socketRef.current = io('https://19d086e548570852.preview.oblien.com', {
-      auth: { token },
-      withCredentials: true,
-      transports: ['websocket', 'polling'],
-      forceNew: true,
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000
+    const pusher = new Pusher('39ade55f3979c3c6e71b', {
+      cluster: 'eu',
     });
 
-    socketRef.current.on('connect', () => {
+    pusherRef.current = pusher;
+
+    const channel = pusher.subscribe(`room-${roomId}`);
+
+    channel.bind('pusher:subscription_succeeded', () => {
       setIsConnected(true);
-      setError(null);
-      socketRef.current?.emit('joinRoom', roomId);
     });
 
-    socketRef.current.on('connect_error', (err) => {
+    channel.bind('pusher:subscription_error', () => {
       setIsConnected(false);
-      if (err.message.includes('Authentication')) {
-        setError('فشل في المصادقة. يرجى تسجيل الدخول مرة أخرى.');
-      } else {
-        setError('فشل في الاتصال بالخادم');
-      }
     });
 
-    socketRef.current.on('joinedRoom', () => {
+    channel.bind('new-message', (message: ChatMessage) => {
+      setMessages((prev) => {
+        const exists = prev.some((m) => m.id === message.id);
+        if (exists) return prev;
+        return [...prev, message];
+      });
+      setTimeout(scrollToBottom, 100);
     });
 
-    socketRef.current.on('previousMessages', (msgs: ChatMessage[]) => {
-      setMessages(msgs);
-    });
-
-    socketRef.current.on('newMessage', (msg: ChatMessage) => {
-      setMessages(prev => [...prev, msg]);
-    });
-
-    socketRef.current.on('error', (error: { message: string }) => {
-      setError(error.message);
-    });
-
-    socketRef.current.on('disconnect', () => {
+    pusher.connection.bind('connected', () => setIsConnected(true));
+    pusher.connection.bind('disconnected', () => setIsConnected(false));
+    pusher.connection.bind('error', () => {
       setIsConnected(false);
     });
 
     return () => {
-      if (roomId && socketRef.current) {
-        socketRef.current.emit('leaveRoom', roomId);
-      }
-      socketRef.current?.disconnect();
-      socketRef.current = null;
+      pusher.unsubscribe(`room-${roomId}`);
+      pusher.disconnect();
+      pusherRef.current = null;
       setIsConnected(false);
     };
-  }, [isOpen, roomId]);
+  }, [isOpen, roomId, scrollToBottom]);
 
+  // reset لما الـ modal يتقفل
   useEffect(() => {
     if (!isOpen) {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-        socketRef.current = null;
-      }
       setRoomId(null);
       setMessages([]);
       setError(null);
@@ -204,35 +152,17 @@ export function VendorChatModal({ isOpen, onClose, orderId, customerName }: Vend
     }
   }, [isOpen]);
 
-  useEffect(() => {
-    if (isOpen) {
-      fetchChatRoom();
-    }
-  }, [isOpen, fetchChatRoom]);
-
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || isSending) return;
-
-    if (!roomId) {
-      setError('غرفة المحادثة غير متوفرة');
-      return;
-    }
-
-    if (!socketRef.current?.connected) {
-      setError('غير متصل بالخادم، يرجى الانتظار...');
-      return;
-    }
+    const message = newMessage.trim();
+    if (!message || isSending || !roomId) return;
 
     setIsSending(true);
-    
+    setNewMessage('');
+
     try {
-      socketRef.current.emit('sendMessage', {
-        roomId,
-        message: newMessage.trim()
-      });
-      setNewMessage("");
+      await api.post(`/room/${roomId}/message`, { message });
     } catch {
-      setError('فشل في إرسال الرسالة');
+      setNewMessage(message);
     } finally {
       setIsSending(false);
       inputRef.current?.focus();
@@ -248,10 +178,9 @@ export function VendorChatModal({ isOpen, onClose, orderId, customerName }: Vend
 
   const formatTime = (dateString: string) => {
     try {
-      const date = new Date(dateString);
-      return date.toLocaleTimeString('ar-EG', { 
-        hour: '2-digit', 
-        minute: '2-digit'
+      return new Date(dateString).toLocaleTimeString('ar-EG', {
+        hour: '2-digit',
+        minute: '2-digit',
       });
     } catch {
       return '';
@@ -261,24 +190,24 @@ export function VendorChatModal({ isOpen, onClose, orderId, customerName }: Vend
   if (!isOpen) return null;
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-50 flex flex-col bg-white"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <header 
+      {/* Header */}
+      <header
         className="sticky top-0 z-10 bg-white shadow-sm flex items-center gap-3 px-4"
         style={{ height: '56px', borderBottom: '1px solid #E5E7EB' }}
       >
-        <button 
+        <button
           onClick={onClose}
           className="flex items-center justify-center min-w-11 min-h-11 -ml-2 rounded-full active:bg-gray-100 transition-colors"
-          aria-label="Close chat"
         >
           <ArrowLeft className="w-6 h-6" style={{ color: '#1A1A1A' }} />
         </button>
-        
+
         <div className="flex items-center gap-3 flex-1">
-          <div 
+          <div
             className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
             style={{ backgroundColor: '#E5A04D' }}
           >
@@ -287,19 +216,14 @@ export function VendorChatModal({ isOpen, onClose, orderId, customerName }: Vend
             </span>
           </div>
           <div className="flex-1 min-w-0">
-            <h2 
-              className="truncate"
-              style={{ fontSize: '1rem', fontWeight: 600, color: '#1A1A1A' }}
-            >
+            <h2 className="truncate" style={{ fontSize: '1rem', fontWeight: 600, color: '#1A1A1A' }}>
               {customerName}
             </h2>
             <div className="flex items-center gap-2">
-              <span style={{ fontSize: '0.75rem', color: '#9CA3AF' }}>
-                طلب #{orderId}
-              </span>
+              <span style={{ fontSize: '0.75rem', color: '#9CA3AF' }}>طلب #{orderId}</span>
               {roomId && (
                 <div className="flex items-center gap-1">
-                  <div 
+                  <div
                     className="w-2 h-2 rounded-full"
                     style={{ backgroundColor: isConnected ? '#10B981' : '#EF4444' }}
                   />
@@ -312,23 +236,20 @@ export function VendorChatModal({ isOpen, onClose, orderId, customerName }: Vend
           </div>
         </div>
 
-        <button 
+        <button
           onClick={onClose}
           className="flex items-center justify-center min-w-11 min-h-11 -mr-2 rounded-full active:bg-gray-100 transition-colors"
-          aria-label="Close"
         >
           <X className="w-6 h-6" style={{ color: '#6B7280' }} />
         </button>
       </header>
 
-      <div 
-        className="flex-1 overflow-y-auto p-4"
-        style={{ backgroundColor: '#F9FAFB' }}
-      >
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-4" style={{ backgroundColor: '#F9FAFB' }}>
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
             <div className="flex flex-col items-center gap-3">
-              <div 
+              <div
                 className="w-10 h-10 rounded-full border-4 border-t-transparent animate-spin"
                 style={{ borderColor: '#E5A04D', borderTopColor: 'transparent' }}
               />
@@ -339,7 +260,7 @@ export function VendorChatModal({ isOpen, onClose, orderId, customerName }: Vend
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
               <p style={{ fontSize: '0.875rem', color: '#EF4444', marginBottom: '8px' }}>{error}</p>
-              <button 
+              <button
                 onClick={fetchChatRoom}
                 className="px-4 py-2 rounded-lg"
                 style={{ backgroundColor: '#E5A04D', color: 'white', fontWeight: 500 }}
@@ -351,7 +272,7 @@ export function VendorChatModal({ isOpen, onClose, orderId, customerName }: Vend
         ) : noRoomExists ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
-              <div 
+              <div
                 className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3"
                 style={{ backgroundColor: '#FEE2E2' }}
               >
@@ -368,7 +289,7 @@ export function VendorChatModal({ isOpen, onClose, orderId, customerName }: Vend
         ) : messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
-              <div 
+              <div
                 className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3"
                 style={{ backgroundColor: '#FEF3E2' }}
               >
@@ -390,7 +311,6 @@ export function VendorChatModal({ isOpen, onClose, orderId, customerName }: Vend
               const nextMsg = index < messages.length - 1 ? messages[index + 1] : null;
               const sameSenderAsPrev = prevMsg && Number(prevMsg.sender_id) === Number(msg.sender_id);
               const sameSenderAsNext = nextMsg && Number(nextMsg.sender_id) === Number(msg.sender_id);
-
               const showName = !isMe && !sameSenderAsPrev;
               const topMargin = sameSenderAsPrev ? '2px' : '12px';
               const borderRadius = isMe
@@ -413,16 +333,11 @@ export function VendorChatModal({ isOpen, onClose, orderId, customerName }: Vend
                     }}
                   >
                     {showName && (
-                      <p
-                        className="mb-0.5"
-                        style={{ fontSize: '0.75rem', fontWeight: 600, color: '#E5A04D' }}
-                      >
+                      <p className="mb-0.5" style={{ fontSize: '0.75rem', fontWeight: 600, color: '#E5A04D' }}>
                         {msg.sender_name || customerName}
                       </p>
                     )}
-                    <p style={{ fontSize: '0.9rem', lineHeight: 1.5 }}>
-                      {msg.message}
-                    </p>
+                    <p style={{ fontSize: '0.9rem', lineHeight: 1.5 }}>{msg.message}</p>
                     <p
                       className="mt-0.5"
                       style={{
@@ -442,16 +357,17 @@ export function VendorChatModal({ isOpen, onClose, orderId, customerName }: Vend
         )}
       </div>
 
-      <div 
+      {/* Input */}
+      <div
         className="sticky bottom-0 bg-white border-t px-4 py-3"
         style={{ borderColor: '#E5E7EB' }}
       >
         {!isConnected && roomId && !isLoading && (
-          <div 
+          <div
             className="flex items-center justify-center gap-2 mb-2 py-2 rounded-lg"
             style={{ backgroundColor: '#FEF3C7' }}
           >
-            <div 
+            <div
               className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin"
               style={{ borderColor: '#F59E0B', borderTopColor: 'transparent' }}
             />
@@ -471,7 +387,7 @@ export function VendorChatModal({ isOpen, onClose, orderId, customerName }: Vend
               backgroundColor: '#F3F4F6',
               border: 'none',
               fontSize: '0.875rem',
-              color: '#1A1A1A'
+              color: '#1A1A1A',
             }}
             dir="rtl"
             disabled={isLoading || !!error || noRoomExists || !isConnected}
@@ -482,12 +398,11 @@ export function VendorChatModal({ isOpen, onClose, orderId, customerName }: Vend
             className="flex items-center justify-center min-w-12 min-h-12 rounded-full transition-all active:scale-95"
             style={{
               backgroundColor: newMessage.trim() && !isSending && isConnected ? '#E5A04D' : '#E5E7EB',
-              color: newMessage.trim() && !isSending && isConnected ? 'white' : '#9CA3AF'
+              color: newMessage.trim() && !isSending && isConnected ? 'white' : '#9CA3AF',
             }}
-            aria-label="Send message"
           >
             {isSending ? (
-              <div 
+              <div
                 className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin"
                 style={{ borderColor: 'white', borderTopColor: 'transparent' }}
               />

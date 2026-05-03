@@ -1,9 +1,11 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Toaster, toast } from 'sonner';
-import api from '../../axios';
+import api from '@/lib/api';
 import {
   CartHeader,
   NoticeBanner,
@@ -18,7 +20,8 @@ import {
 } from './components';
 import { RestaurantCart, LocationData, PaymentMethod as PaymentMethodType, CartSummary } from './types';
 import { useCart } from '../context/CartContext';
-
+import { SkeletonCard } from '@/components/ui/Skeleton';
+import { calculateDistance } from '@/lib/utils';
 interface CartItemResponse {
   dishId: number;
   name: string;
@@ -63,22 +66,11 @@ interface GroupedRestaurantResponse {
   totalItems: number;
 }
 
-function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a = 
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLng / 2) * Math.sin(dLng / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
-
 export default function CartPage() {
   const router = useRouter();
   const { incrementCount, decrementCount, setCount } = useCart();
 
+  const [mounted, setMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [groupedCarts, setGroupedCarts] = useState<RestaurantCart[]>([]);
   const [deliveryLocation, setDeliveryLocation] = useState<LocationData | null>(null);
@@ -94,10 +86,10 @@ export default function CartPage() {
     countdown: number;
   }>({ show: false, orderId: null, countdown: 5 });
 
-  const fetchCart = useCallback(async () => {
+  const fetchCart = useCallback(async (signal?: AbortSignal) => {
     try {
       setIsLoading(true);
-      const res = await api.get('/customer/view-cart');
+      const res = await api.get('/customer/view-cart', { signal });
       const data = res.data;
       
       const restaurants = data.groupedByRestaurant || [];
@@ -204,9 +196,18 @@ export default function CartPage() {
     }
   }, []);
 
+  // Mount guard - fix for first-visit data loading bug
   useEffect(() => {
-    fetchCart();
-  }, [fetchCart]);
+    setMounted(true);
+  }, []);
+
+  // Fetch cart only after mounted
+  useEffect(() => {
+    if (!mounted) return;
+    const controller = new AbortController();
+    fetchCart(controller.signal);
+    return () => controller.abort();
+  }, [fetchCart, mounted]);
 
   // Countdown effect for order success
   useEffect(() => {
@@ -281,7 +282,7 @@ export default function CartPage() {
   }, [groupedCarts, selectedRestaurant]);
 
   // Handle quantity change
-  const handleQuantityChange = async (restaurantId: number, dishId: number, newQuantity: number) => {
+  const handleQuantityChange = useCallback(async (restaurantId: number, dishId: number, newQuantity: number) => {
     if (newQuantity < 1) return;
 
     const restaurant = groupedCarts.find(r => r.restaurantId === restaurantId);
@@ -320,12 +321,12 @@ export default function CartPage() {
       }
 
       toast.success('تم تحديث الكمية');
-    } catch (err) {
+    } catch (_err) {
       toast.error('حدث خطأ في تحديث الكمية');
     }
-  };
+  }, [decrementCount, groupedCarts, incrementCount]);
 
-  const handleRemoveDish = async (restaurantId: number, dishId: number) => {
+  const handleRemoveDish = useCallback(async (restaurantId: number, dishId: number) => {
     const restaurant = groupedCarts.find(r => r.restaurantId === restaurantId);
     const removedDish = restaurant?.dishes.find(d => d.dishId === dishId);
     const removedQuantity = removedDish?.quantity || 0;
@@ -358,12 +359,12 @@ export default function CartPage() {
       decrementCount(removedQuantity);
 
       toast.success('تم حذف الطبق من السلة');
-    } catch (err) {
+    } catch (_err) {
       toast.error('حدث خطأ في حذف الطبق');
     }
-  };
+  }, [decrementCount, groupedCarts, selectedRestaurantId]);
 
-  const handleClearCart = async () => {
+  const handleClearCart = useCallback(async () => {
     if (!confirm('هل أنت متأكد من إفراغ السلة بالكامل؟')) return;
 
     try {
@@ -381,10 +382,10 @@ export default function CartPage() {
       setCount(0);
       
       toast.success('تم إفراغ السلة');
-    } catch (err) {
+    } catch (_err) {
       toast.error('حدث خطأ في إفراغ السلة');
     }
-  };
+  }, [groupedCarts, setCount]);
 
   const handleReservationTimeChange = (restaurantId: number, time: string) => {
     setGroupedCarts(prev => prev.map(r => 
@@ -404,25 +405,28 @@ export default function CartPage() {
   const getCheckoutDisabledReason = (): string => {
     if (groupedCarts.length === 0) return 'السلة فارغة';
     if (!deliveryLocation) return 'حدد عنوان التوصيل';
-    
+
     // Must select a restaurant when multiple exist
     if (groupedCarts.length > 1 && !selectedRestaurantId) {
       return 'اختر مطعم للطلب';
     }
-    
-    if (!paymentMethod) return 'اختر طريقة الدفع';
-    if (!paymentImage) return 'ارفع صورة إثبات الدفع';
-    
-    // Check reservation requirements for selected restaurant
+
+    // Check requirements based on order type
     const restaurant = selectedRestaurant || groupedCarts[0];
     if (restaurant) {
-      if (restaurant.orderType === 'reservation') {
+      const isReservation = restaurant.orderType === 'reservation';
+
+      // Reservation orders require payment proof
+      if (isReservation) {
+        if (!paymentMethod) return 'اختر طريقة الدفع';
+        if (!paymentImage) return 'ارفع صورة إثبات الدفع';
         if (!restaurant.reservationDate || !restaurant.reservationTime) {
           return 'حدد وقت الحجز';
         }
       }
+      // Delivery orders use cash on delivery - no proof needed
     }
-    
+
     return '';
   };
 
@@ -473,30 +477,37 @@ export default function CartPage() {
         o.restaurantId === String(restaurantToOrder.restaurantId)
       ) || createdOrders[0];
 
-      // Step 2: Upload payment proof
-      const formData = new FormData();
-      formData.append('orderId', ourOrder.orderId.toString());
-      formData.append('payment_method', paymentMethod!);
-      formData.append('images', paymentImage!);
+      // Step 2: Upload payment proof ONLY for reservation orders
+      const isReservationOrder = restaurantToOrder.orderType === 'reservation';
+      
+      if (isReservationOrder && paymentMethod && paymentImage) {
+        const formData = new FormData();
+        formData.append('orderId', ourOrder.orderId.toString());
+        formData.append('payment_method', paymentMethod);
+        formData.append('images', paymentImage);
 
-      const paymentResponse = await api.post('/customer/upload-payment-proof', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-
-      if (paymentResponse.data.success !== false) {
-        setGroupedCarts(prev => prev.filter(r => r.restaurantId !== restaurantToOrder.restaurantId));
-        setSelectedRestaurantId(null);
-        setPaymentImage(null);
-        setPaymentMethod(null);
-        
-        setOrderSuccess({
-          show: true,
-          orderId: ourOrder.orderId,
-          countdown: 5
+        const paymentResponse = await api.post('/customer/upload-payment-proof', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
         });
-      } else {
-        toast.error(paymentResponse.data.message || 'فشل في رفع إثبات الدفع');
+
+        if (paymentResponse.data.success === false) {
+          toast.error(paymentResponse.data.message || 'فشل في رفع إثبات الدفع');
+          setIsSubmitting(false);
+          return;
+        }
       }
+
+      // Clear cart and show success
+      setGroupedCarts(prev => prev.filter(r => r.restaurantId !== restaurantToOrder.restaurantId));
+      setSelectedRestaurantId(null);
+      setPaymentImage(null);
+      setPaymentMethod(null);
+      
+      setOrderSuccess({
+        show: true,
+        orderId: ourOrder.orderId,
+        countdown: 5
+      });
 
     } catch (err) {
       const axiosError = err as { response?: { data?: { error?: string; message?: string } } };
@@ -524,8 +535,10 @@ export default function CartPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#F5F5F5] flex items-center justify-center">
-        <div className="text-[#E5A04D]">جاري التحميل...</div>
+      <div className="min-h-screen bg-[#F5F5F5] p-4 space-y-3" dir="rtl">
+        <SkeletonCard />
+        <SkeletonCard />
+        <SkeletonCard />
       </div>
     );
   }
@@ -555,7 +568,7 @@ export default function CartPage() {
         hasLocation={!!deliveryLocation}
       />
 
-      <div className="px-5 pt-5">
+      <div className="px-4 sm:px-5 pt-5">
         {displayRestaurants.map((restaurant) => (
           <RestaurantCartGroup
             key={restaurant.restaurantId}
@@ -583,6 +596,7 @@ export default function CartPage() {
           paymentImage={paymentImage}
           onImageSelect={setPaymentImage}
           isDisabled={isSubmitting}
+          orderType={selectedRestaurant?.orderType || 'instant'}
         />
       )}
 
@@ -593,7 +607,7 @@ export default function CartPage() {
 
       <CheckoutButton
         totalItems={summary.totalItems}
-        totalRestaurants={summary.totalRestaurants}
+        _totalRestaurants={summary.totalRestaurants}
         grandTotal={summary.grandTotal}
         isDisabled={isCheckoutDisabled}
         disabledReason={getCheckoutDisabledReason()}

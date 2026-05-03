@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import Image from 'next/image';
 import { Clock, MapPin, Phone, MoreVertical, Eye, X, ChevronDown, MessageCircle } from 'lucide-react';
 import { Order, OrderStatus, statusConfig } from '../types';
 
@@ -25,17 +26,13 @@ export function OrderCard({ order, onStatusChange, onViewDetails, onCancel, onCh
 
   const subtotal = order.total_amount - (order.delivery_fee || 0);
 
-  const [paystatued, setPayStatued] = useState<'pending' | 'confirmed' | 'rejected' | undefined>();
-
-  useEffect(() => {
-    setPayStatued(order.payment_status);
-  }, [order.payment_status]);
+  const payStatus = order.payment_status;
 
   return (
     <div
       className="bg-white rounded-xl sm:rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 relative mx-2 sm:mx-4 my-2 sm:my-3 overflow-hidden"
       style={{
-        borderRight: paystatued ? '3px solid #3B82F6' : 'none',
+        borderRight: payStatus ? '3px solid #3B82F6' : 'none',
       }}
     >
       <div className="flex items-center justify-between px-3 sm:px-4 md:px-5 py-3 sm:py-4 border-b border-[#F3F4F6] gap-2 sm:gap-3">
@@ -138,11 +135,11 @@ export function OrderCard({ order, onStatusChange, onViewDetails, onCancel, onCh
             </div>
           </div>
 
-          {paystatued === 'confirmed' ? (
+          {payStatus === 'confirmed' ? (
             <div className="bg-[#D1FAE5] text-[#10B981] px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium text-center">
               ✓ تم الدفع
             </div>
-          ) : paystatued === 'pending' ? (
+          ) : payStatus === 'pending' ? (
             <div className="bg-[#FEF3C7] text-[#F59E0B] px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium text-center">
               ⏳ في انتظار الدفع
             </div>
@@ -164,10 +161,12 @@ export function OrderCard({ order, onStatusChange, onViewDetails, onCancel, onCh
               >
                 <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                   {item.dish_image ? (
-                    <img
+                    <Image
                       src={item.dish_image}
                       alt={item.dish_name}
-                      className="w-9 h-9 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-lg object-cover flex-shrink-0"
+                      width={44}
+                      height={44}
+                      className="rounded-lg object-cover flex-shrink-0"
                     />
                   ) : (
                     <div className="w-9 h-9 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-lg bg-[#F3F4F6] flex items-center justify-center text-base sm:text-lg flex-shrink-0">

@@ -23,7 +23,7 @@ export function CheckoutButton({
 }: CheckoutButtonProps) {
   return (
     <div 
-      className="fixed left-0 right-0 bg-white px-5 py-4 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] z-50 rounded-t-[20px] fixed-above-bottom-nav"
+      className="fixed left-0 right-0 bottom-[var(--bottom-nav-total-height)] md:bottom-0 bg-white px-4 sm:px-5 py-4 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] z-50 rounded-t-[20px]"
     >
       <div className="flex items-center justify-between mb-3">
         <span className="text-[13px] text-[#6B7280]">

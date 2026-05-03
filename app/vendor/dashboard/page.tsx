@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import api from '../../../axios';
+import api from '@/lib/api';
 import {
   Sidebar,
   DashboardHeader,
@@ -11,6 +11,8 @@ import {
   QuickActionsPanel,
   NotificationToast,
 } from './components';
+import { ProtectedRoute } from '@/app/context/AuthContext';
+import VendorSidebar from '@/components/layout/VendorSidebar';
 
 interface DashboardData {
   restaurantName: string;
@@ -46,6 +48,7 @@ interface DashboardData {
 }
 
 export default function VendorDashboard() {
+  const [mounted, setMounted] = useState(false);
   const [dashboardData, setDashboardData] = useState<DashboardData>({
     restaurantName: '',
     isOpen: true,
@@ -70,41 +73,25 @@ export default function VendorDashboard() {
       setPendingPaidOrders(0);
       return;
     }
+    const paidButPendingWork = orders.filter((order) =>
+      order.status === 'pending'
+    ).length;
 
-    try {
-      let count = 0;
-      
-      await Promise.all(
-        orders.map(async (order) => {
-          if (order.status === 'pending') {
-            try {
-              const res = await api.post('/restaurant/payment-status', { orderId: order.id });
-              if (res.data.paymentStatus === 'confirmed') {
-                count++;
-              }
-            } catch (error) {
-            }
-          }
-        })
-      );
-
-      setPendingPaidOrders(count);
-    } catch (error) {
-      setPendingPaidOrders(0);
-    }
+    setPendingPaidOrders(paidButPendingWork);
   }, []);
 
-  const fetchDashboardData = useCallback(async () => {
+  const fetchDashboardData = useCallback(async (signal?: AbortSignal) => {
+    if (!mounted) return;
     try {
       setLoading(true);
       setError(null);
 
-      const dashboardRes = await api.get('/restaurant/dashboard');
-      const ordersRes = await api.get('/restaurant/orders');
+      const dashboardRes = await api.get('/restaurant/dashboard', { signal });
+      const ordersRes = await api.get('/restaurant/orders', { signal });
 
       const stats = dashboardRes.data;
       const orders = ordersRes.data.orders || [];
-const resStatus = await api.get('/restaurant/profile-status');
+      const resStatus = await api.get('/restaurant/profile', { signal });
 
       setDashboardData({
         restaurantName: stats.restaurant.name || 'مطعمي',
@@ -127,11 +114,19 @@ const resStatus = await api.get('/restaurant/profile-status');
     } finally {
       setLoading(false);
     }
-  }, [fetchPendingPaidOrdersCount]);
+  }, [fetchPendingPaidOrdersCount, mounted]);
+
+  // Mount guard - fix for first-visit data loading bug
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
-    fetchDashboardData();
-  }, [fetchDashboardData]);
+    if (!mounted) return;
+    const controller = new AbortController();
+    fetchDashboardData(controller.signal);
+    return () => controller.abort();
+  }, [fetchDashboardData, mounted]);
 
   const handleToggleStatus = () => {
     setDashboardData((prev) => ({ ...prev, isOpen: !prev.isOpen }));
@@ -154,7 +149,7 @@ const resStatus = await api.get('/restaurant/profile-status');
         <div className="text-center bg-white p-8 rounded-2xl shadow-sm">
           <p className="text-[#EF4444] mb-4">{error}</p>
           <button
-            onClick={fetchDashboardData}
+            onClick={() => fetchDashboardData()}
             className="px-6 py-2 bg-[#E5A04D] text-white rounded-xl hover:bg-[#D4903D] transition-colors"
           >
             إعادة المحاولة
@@ -165,7 +160,10 @@ const resStatus = await api.get('/restaurant/profile-status');
   }
 
   return (
-    <div className="min-h-screen top-5 right-2 left-2 bottom-3 bg-[#F8FAFC]" dir="rtl">
+    <ProtectedRoute role="vendor">
+      <div className="min-h-screen bg-[#F8FAFC] lg:flex" dir="rtl">
+      <VendorSidebar restaurantName={dashboardData.restaurantName || 'مطعمي'} />
+      <div className="flex-1">
       <Sidebar
         pendingOrders={dashboardData.pendingOrders}
         unreadMessages={0}
@@ -183,11 +181,11 @@ const resStatus = await api.get('/restaurant/profile-status');
         onRefresh={fetchDashboardData}
         onToggleSidebar={toggleSidebar}
       />
-      <div className="h-25" />
+      <div className="h-20" />
 
       <NotificationToast pendingPaidOrders={pendingPaidOrders} />
 
-      <main className="mr-70 pt-20 px-8 py-8 space-y-8">
+      <main className="pt-24 px-4 md:px-6 lg:px-8 max-w-[1440px] mx-auto space-y-6">
         <StatsCards
           todayRevenue={dashboardData.todayRevenue}
           todayOrders={dashboardData.todayOrders}
@@ -196,36 +194,19 @@ const resStatus = await api.get('/restaurant/profile-status');
           reservedOrders={dashboardData.recentOrders.filter(order => order.is_reservation).length}
      
         />
-        <div className="h-20" />
-
         <TopSellingDishes dishes={dashboardData.topDishes} />
-        <div className="h-20" />
 
         <RecentOrdersTable
           orders={dashboardData.recentOrders}
           onStatusChange={fetchDashboardData}
         />
-        <div className="h-10" />
 
         <QuickActionsPanel />
       </main>
-      <div className="h-10" />
+      <div className="h-6" />
 
-      <style jsx global>{`
-        .no-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-        .no-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-        
-        @media (max-width: 1024px) {
-          main {
-            margin-right: 0 !important;
-          }
-        }
-      `}</style>
-    </div>
+      </div>
+      </div>
+    </ProtectedRoute>
   );
 }

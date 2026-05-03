@@ -15,7 +15,7 @@ export function QuickActionsPanel() {
       description: 'اجراءات السريعة لإدارة الأطباق',
       buttonText: ' الى الأطباق',
       buttonStyle: 'solid' as const,
-      onClick: () => router.push('/vendor/dishes'),
+      onClick: () => router.push('/restaurant/menu'),
     },
     {
       id: 2,
@@ -35,7 +35,7 @@ export function QuickActionsPanel() {
       description: 'تصفح وإدارة جميع الطلبات',
       buttonText: 'عرض',
       buttonStyle: 'outlined-primary' as const,
-      onClick: () => router.push('/vendor/orders'),
+      onClick: () => router.push('/restaurant/orders'),
     },
   ];
 

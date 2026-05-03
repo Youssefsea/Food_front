@@ -1,6 +1,8 @@
 'use client';
 
-import { X, Star, Clock, Minus, Plus, Flame } from 'lucide-react';
+import { X, Clock, Minus, Plus } from 'lucide-react';
+import Image from 'next/image';
+// eslint-disable-next-line react-hooks/exhaustive-deps
 import { useState, useEffect } from 'react';
 
 interface Dish {
@@ -49,6 +51,7 @@ export function DishDetailModal({
     };
   }, [isOpen]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     setQuantity(initialQuantity);
     setNotes('');
@@ -95,10 +98,12 @@ export function DishDetailModal({
 
         <div className="h-2" />
         <div className="relative h-56 sm:h-64 md:h-72 bg-[#F3F4F6]">
-          <img
+          <Image
             src={images[currentImageIndex]?.trim() || '/placeholder-dish.jpg'}
             alt={dish.name}
-            className="w-full h-full object-cover"
+            fill
+            sizes="(max-width: 768px) 100vw, 512px"
+            className="object-cover"
           />
 
           {images.length > 1 && (

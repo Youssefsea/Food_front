@@ -1,7 +1,7 @@
 'use client';
 
 import { Pencil, Trash2, Clock } from 'lucide-react';
-import { useState,useEffect } from 'react';
+import { memo, useEffect, useState } from 'react';
 import Image from 'next/image';
 
 interface Dish {
@@ -35,22 +35,22 @@ const categoryColors: Record<string, { bg: string; text: string }> = {
   'شوربات': { bg: '#FEF3C7', text: '#D97706' },
 };
 
-export function DishCard({ dish, onEdit, onDelete, onToggleAvailability }: DishCardProps) {
+export const DishCard = memo(function DishCard({ dish, onEdit, onDelete, onToggleAvailability }: DishCardProps) {
   const [isToggling, setIsToggling] = useState(false);
   
   const images = dish.image ? dish.image.split(',') : [];
   const categoryStyle = categoryColors[dish.category] || categoryColors['أطباق رئيسية'];
-const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-useEffect(() => {
-  if (!images || images.length <= 1) return;
+  useEffect(() => {
+    if (images.length <= 1) return;
 
-  const interval = setInterval(() => {
-    setCurrentImageIndex((prev) => (prev + 1) % images.length);
-  }, 3000);
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % images.length);
+    }, 3000);
 
-  return () => clearInterval(interval);
-}, [images]);
+    return () => clearInterval(interval);
+  }, [images]);
 
 
   const handleToggle = async () => {
@@ -61,34 +61,34 @@ useEffect(() => {
 
   return (
     <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-200 cursor-default">
-<div className="relative w-full p-3 rounded-3xl h-40 bg-[#F3F4F6] overflow-hidden group">
-  {images && images.length > 0 ? (
-    <Image
-      src={images[currentImageIndex] || images[0]}
-      alt={dish.name}
-      fill
-      className="object-cover group-hover:scale-105 transition-transform duration-300"
-    />
-  ) : (
-    <div className="w-full h-full flex items-center justify-center">
-      <span className="text-6xl text-[#9CA3AF]">🍽️</span>
-    </div>
-  )}
+      <div className="relative w-full p-3 rounded-3xl h-40 bg-[#F3F4F6] overflow-hidden group">
+        {images.length > 0 ? (
+          <Image
+            src={images[currentImageIndex] || images[0]}
+            alt={dish.name}
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <span className="text-6xl text-[#9CA3AF]">🍽️</span>
+          </div>
+        )}
 
-  {images && images.length > 1 && (
-    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-      {images.slice(0, 3).map((_, index) => (
-        <div
-          key={index}
-          className={`w-2 h-2 rounded-full ${
-            index === currentImageIndex
-              ? "bg-white"
-              : "bg-white/50"
-          }`}
-        />
-      ))}
-    </div>
-  )}
+        {images.length > 1 && (
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+            {images.slice(0, 3).map((_, index) => (
+              <div
+                key={index}
+                className={`w-2 h-2 rounded-full ${
+                  index === currentImageIndex
+                    ? "bg-white"
+                    : "bg-white/50"
+                }`}
+              />
+            ))}
+          </div>
+        )}
 
   <div className="absolute top-3 right-3">
     <span
@@ -113,7 +113,7 @@ useEffect(() => {
       {dish.category}
     </span>
   </div>
-</div>
+      </div>
 
 
 
@@ -174,6 +174,6 @@ useEffect(() => {
       </div>
     </div>
   );
-}
+});
 
 

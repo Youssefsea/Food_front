@@ -1,6 +1,6 @@
 'use client';
 
-import { Search, Mic } from 'lucide-react';
+import { Search } from 'lucide-react';
 
 interface SearchBarProps {
   searchQuery: string;
