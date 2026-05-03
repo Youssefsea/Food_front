@@ -12,7 +12,6 @@ export default function AnimatedLayout({ children }: { children: React.ReactNode
   const pathname = usePathname();
 
   const isVendor = pathname.startsWith('/vendor');
-  const isCustomer = pathname.startsWith('/customer');
 
   const hideNavRoutes = ['/login', '/register', '/', '/signup', '/cart', '/customer/cart'];
   const hideNav =
@@ -25,7 +24,7 @@ export default function AnimatedLayout({ children }: { children: React.ReactNode
     <AuthProvider>
       <CartProvider>
         {isVendor ? (
-          /* ── Vendor Layout: Sidebar + Content ── */
+          /* ── Vendor: VendorSidebar فقط ── */
           <div className="flex min-h-screen bg-[#FAFAFA]" dir="rtl">
             <VendorSidebar />
             <main className="flex-1 min-w-0 overflow-y-auto">
@@ -43,23 +42,28 @@ export default function AnimatedLayout({ children }: { children: React.ReactNode
             </main>
           </div>
         ) : (
-          /* ── Customer / Auth Layout: BottomNav ── */
-          <div className="flex flex-col min-h-screen">
+          /* ── Customer: Sidebar للـ desktop + BottomNav للـ mobile ── */
+          <div className="flex min-h-screen">
+            {/* Sidebar يظهر على md+ فقط */}
             <Sidebar role="customer" />
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.div
-                key={pathname}
-                className="flex-1"
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.25 }}
-              >
-                {children}
-              </motion.div>
-            </AnimatePresence>
 
-            {!hideNav && <BottomNav role="customer" />}
+            <div className="flex flex-col flex-1 min-w-0">
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={pathname}
+                  className="flex-1"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -12 }}
+                  transition={{ duration: 0.25 }}
+                >
+                  {children}
+                </motion.div>
+              </AnimatePresence>
+
+              {/* BottomNav يظهر على mobile فقط */}
+              {!hideNav && <BottomNav role="customer" />}
+            </div>
           </div>
         )}
       </CartProvider>

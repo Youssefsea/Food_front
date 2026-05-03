@@ -33,6 +33,9 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ role }: SidebarProps) {
+  if (role === 'vendor') {
+    return null;
+  }
   const [expanded, setExpanded] = useState(false);
   const pathname = usePathname();
   const items = role === 'customer' ? customerNavItems : vendorNavItems;
