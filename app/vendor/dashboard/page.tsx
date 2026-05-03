@@ -170,7 +170,7 @@ export default function VendorDashboard() {
   return (
     <ProtectedRoute role="vendor">
       <div className="min-h-screen bg-[#F8FAFC] lg:flex" dir="rtl">
-        <VendorSidebar restaurantName={dashboardData.restaurantName || 'مطعمي'} />
+        {/* <VendorSidebar restaurantName={dashboardData.restaurantName || 'مطعمي'} /> */}
 
         <div className="flex-1">
           <Sidebar
