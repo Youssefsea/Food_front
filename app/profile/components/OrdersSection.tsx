@@ -18,10 +18,10 @@ const tabs = [
 interface OrdersSectionProps {
   orders: Order[];
   isLoading?: boolean;
-  onChatClick: (orderId: number, restaurantName: string) => void;
+
 }
 
-export function OrdersSection({ orders, isLoading, onChatClick }: OrdersSectionProps) {
+export function OrdersSection({ orders, isLoading }: OrdersSectionProps) {
   const [activeTab, setActiveTab] = useState('all');
 
   const filteredOrders = orders.filter(order => {
@@ -91,7 +91,6 @@ export function OrdersSection({ orders, isLoading, onChatClick }: OrdersSectionP
             <OrderCard 
               key={order.id} 
               order={order} 
-              onChatClick={onChatClick}
             />
             <div className="h-4"/>
             </>

@@ -6,7 +6,6 @@ import api from "@/lib/api";
 import { ProfileHeader } from "./components/ProfileHeader";
 import { WalletCard } from "./components/WalletCard";
 import { OrdersSection } from "./components/OrdersSection";
-import { ChatModal } from "./components/ChatModal";
 import { EditProfileModal } from "./components/EditProfileModal"; // ← أضفناه
 import { UserProfile, Order, OrderRowFromAPI } from "./types";
 import { ProtectedRoute } from "../context/AuthContext";
@@ -20,10 +19,6 @@ export default function ProfilePage() {
   const [isOrdersLoading, setIsOrdersLoading] = useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // Chat state
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
-  const [selectedRestaurantName, setSelectedRestaurantName] = useState("");
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -111,17 +106,7 @@ export default function ProfilePage() {
     await fetchProfile();
   };
 
-  const handleChatClick = (orderId: number, restaurantName: string) => {
-    setSelectedOrderId(orderId);
-    setSelectedRestaurantName(restaurantName);
-    setIsChatOpen(true);
-  };
-
-  const handleCloseChat = () => {
-    setIsChatOpen(false);
-    setSelectedOrderId(null);
-    setSelectedRestaurantName("");
-  };
+ 
 
   return (
     <ProtectedRoute role="customer">
@@ -142,7 +127,6 @@ export default function ProfilePage() {
         <OrdersSection
           orders={orders}
           isLoading={isOrdersLoading}
-          onChatClick={handleChatClick}
         />
 
         {/* Edit Modal */}
@@ -153,15 +137,7 @@ export default function ProfilePage() {
           onSave={handleProfileUpdate}
         />
 
-        {/* Chat Modal */}
-        {selectedOrderId && (
-          <ChatModal
-            isOpen={isChatOpen}
-            onClose={handleCloseChat}
-            orderId={selectedOrderId}
-            restaurantName={selectedRestaurantName}
-          />
-        )}
+  
 
         <Toaster
           position="top-center"
