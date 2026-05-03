@@ -14,7 +14,7 @@ interface NavItem {
 
 const customerNavItems: NavItem[] = [
   { href: '/customer/home', label: 'الرئيسية', icon: <Home className="w-5 h-5" /> },
-  { href: '/explore', label: 'استكشف', icon: <Utensils className="w-5 h-5" /> },
+
   { href: '/customer/orders', label: 'طلباتي', icon: <ClipboardList className="w-5 h-5" /> },
   { href: '/customer/cart', label: 'السلة', icon: <ShoppingCart className="w-5 h-5" /> },
   { href: '/customer/chat', label: 'المحادثات', icon: <MessageCircle className="w-5 h-5" /> },

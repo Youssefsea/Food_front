@@ -1,6 +1,6 @@
 'use client';
 
-import { Wallet } from "lucide-react";
+import { Wallet, TrendingUp } from "lucide-react";
 
 interface WalletCardProps {
   balance: number;
@@ -10,52 +10,41 @@ interface WalletCardProps {
 export function WalletCard({ balance, isLoading }: WalletCardProps) {
   if (isLoading) {
     return (
-      <div 
-        className="rounded-[16px] p-5 mx-4 mt-4 shadow-sm"
-        style={{ 
-          background: 'linear-gradient(135deg, #FEF3E2 0%, #FFF5E7 100%)',
-          borderColor: '#E5A04D',
-          borderWidth: '1px'
-        }}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-gray-200 animate-pulse" />
-            <div>
-              <div className="h-4 w-16 bg-gray-200 animate-pulse rounded mb-2" />
-              <div className="h-8 w-28 bg-gray-200 animate-pulse rounded" />
-            </div>
-          </div>
-        </div>
-      </div>
+      <div className="mx-4 mb-4 rounded-2xl p-5 bg-white shadow-md animate-pulse h-24" />
     );
   }
 
   return (
-    <div 
-      className="rounded-[16px] p-5 mx-4 mt-4 shadow-sm"
-      style={{ 
-        background: 'linear-gradient(135deg, #FEF3E2 0%, #FFF5E7 100%)',
-        borderColor: '#E5A04D',
-        borderWidth: '1px'
+    <div
+      className="mx-4 mb-4 rounded-2xl p-5 flex items-center justify-between"
+      style={{
+        background: '#fff',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.07)',
+        border: '1px solid #f3f4f6'
       }}
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div 
-            className="w-12 h-12 rounded-full flex items-center justify-center"
-            style={{ backgroundColor: '#E5A04D' }}
-          >
-            <Wallet className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <p style={{ fontSize: '0.875rem', color: '#6B7280' }}>محفظتي</p>
-            <p style={{ fontSize: '1.5rem', fontWeight: 700, color: '#E5A04D' }}>
-             {Number(balance || 0)} ج.م
-
-            </p>
-          </div>
+      <div className="flex items-center gap-4">
+        <div
+          className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
+          style={{ background: 'linear-gradient(135deg, #FF6B35, #E5A04D)' }}
+        >
+          <Wallet className="w-6 h-6 text-white" />
         </div>
+        <div>
+          <p className="text-xs font-medium" style={{ color: '#9ca3af' }}>رصيد محفظتي</p>
+          <p className="text-2xl font-black leading-tight" style={{ color: '#1a1a1a' }}>
+            {Number(balance || 0).toFixed(2)}
+            <span className="text-sm font-semibold mr-1" style={{ color: '#E5A04D' }}>ج.م</span>
+          </p>
+          <p className="text-xs" style={{ color: '#e5a04d' }}>متاح للاستخدام</p>
+        </div>
+      </div>
+      <div
+        className="flex items-center gap-1 px-3 py-2 rounded-full"
+        style={{ background: '#f0fdf4', border: '1px solid #bbf7d0' }}
+      >
+        <TrendingUp className="w-3 h-3" style={{ color: '#16a34a' }} />
+        <span className="text-xs font-bold" style={{ color: '#16a34a' }}>نشط</span>
       </div>
     </div>
   );
