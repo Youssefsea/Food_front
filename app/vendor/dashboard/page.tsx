@@ -11,7 +11,7 @@ import {
   NotificationToast,
 } from './components';
 import { ProtectedRoute } from '@/app/context/AuthContext';
-import VendorSidebar from '@/components/layout/VendorSidebar';
+
 
 interface DashboardData {
   restaurantName: string;
@@ -41,6 +41,7 @@ interface DashboardData {
     }>;
     total_amount: number;
     status: 'pending' | 'cooking' | 'delivering' | 'completed' | 'cancelled';
+    payment_status: 'pending' | 'confirmed' | 'rejected';
     created_at: string;
   }>;
 }
@@ -71,7 +72,7 @@ export default function VendorDashboard() {
       setPendingPaidOrders(0);
       return;
     }
-    const paidButPendingWork = orders.filter(order => order.status === 'pending').length;
+    const paidButPendingWork = orders.filter(order => order.status === 'pending' && order.payment_status === 'confirmed').length;
     setPendingPaidOrders(paidButPendingWork);
   }, []);
 
