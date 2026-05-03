@@ -6,11 +6,13 @@ import { CartProvider } from './context/CartContext';
 import BottomNav from '@/components/layout/BottomNav';
 import VendorSidebar from '@/components/layout/VendorSidebar';
 import { usePathname } from 'next/navigation';
+import Sidebar from '@/components/layout/Sidebar';
 
 export default function AnimatedLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   const isVendor = pathname.startsWith('/vendor');
+  const isCustomer = pathname.startsWith('/customer');
 
   const hideNavRoutes = ['/login', '/register', '/', '/signup', '/cart', '/customer/cart'];
   const hideNav =
@@ -43,6 +45,7 @@ export default function AnimatedLayout({ children }: { children: React.ReactNode
         ) : (
           /* ── Customer / Auth Layout: BottomNav ── */
           <div className="flex flex-col min-h-screen">
+            <Sidebar role="customer" />
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={pathname}
