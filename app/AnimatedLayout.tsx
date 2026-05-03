@@ -20,6 +20,14 @@ export default function AnimatedLayout({ children }: { children: React.ReactNode
     pathname.startsWith('/signup/') ||
     pathname.startsWith('/admin');
 
+
+    const hideSidebarRoutes = ['/login', '/register', '/', '/signup'];
+    const hideSidebar =
+      hideSidebarRoutes.includes(pathname) ||
+      pathname.startsWith('/customer/chat/') ||
+      pathname.startsWith('/signup/') ||
+      pathname.startsWith('/admin');
+
   return (
     <AuthProvider>
       <CartProvider>
@@ -43,9 +51,9 @@ export default function AnimatedLayout({ children }: { children: React.ReactNode
           </div>
         ) : (
           /* ── Customer: Sidebar للـ desktop + BottomNav للـ mobile ── */
-          <div className="flex min-h-screen">
+          <div className="flex min-h-screen"> 
             {/* Sidebar يظهر على md+ فقط */}
-            <Sidebar role="customer" />
+            {!hideSidebar && <Sidebar role="customer" />}
 
             <div className="flex flex-col flex-1 min-w-0">
               <AnimatePresence mode="wait" initial={false}>
