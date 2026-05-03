@@ -34,7 +34,7 @@ export default function AnimatedLayout({ children }: { children: React.ReactNode
         {isVendor ? (
           /* ── Vendor: VendorSidebar + BottomNav للـ mobile ── */
           <div className="flex min-h-screen bg-[#FAFAFA]" dir="rtl">
-            <VendorSidebar />
+            {!hideSidebar && <VendorSidebar />}
             <div className="flex flex-col flex-1 min-w-0">
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
