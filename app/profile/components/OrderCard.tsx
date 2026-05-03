@@ -1,285 +1,182 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import Pusher from 'pusher-js';
-import api from '@/lib/api';
-import { ProtectedRoute } from '@/app/context/AuthContext';
-import { ChatMessage, ChatRoom } from '@/types';
-import { ArrowLeft, Send, Phone, Info, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { MessageCircle, Truck, Calendar, CheckCircle, XCircle, Clock, ChefHat } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
+import api from "@/lib/api";
+import { Order, OrderStatus } from "../types";
 
-export default function ChatRoomPage() {
-  const params = useParams();
+interface OrderCardProps {
+  order: Order;
+}
+
+const statusConfig: Record<OrderStatus, { label: string; color: string; bgColor: string; icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }> }> = {
+  pending: { label: 'في انتظار تأكيد المطعم', color: '#F59E0B', bgColor: '#FEF3C7', icon: Clock },
+  cooking: { label: 'جاري التحضير', color: '#3B82F6', bgColor: '#DBEAFE', icon: ChefHat },
+  delivering: { label: 'جاري التوصيل', color: '#8B5CF6', bgColor: '#EDE9FE', icon: Truck },
+  completed: { label: 'تم التوصيل', color: '#10B981', bgColor: '#D1FAE5', icon: CheckCircle },
+  cancelled: { label: 'ملغي', color: '#EF4444', bgColor: '#FEE2E2', icon: XCircle }
+};
+
+const StatusConfigPay: Record<'pending' | 'confirmed' | 'rejected', { label: string; color: string; bgColor: string; icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }> }> = {
+  pending: { label: 'الدفع معلق', color: '#F59E0B', bgColor: '#FEF3C7', icon: Clock },
+  confirmed: { label: 'تم الدفع', color: '#10B981', bgColor: '#D1FAE5', icon: CheckCircle },
+  rejected: { label: 'فشل الدفع', color: '#EF4444', bgColor: '#FEE2E2', icon: XCircle }
+};
+
+export function OrderCard({ order }: OrderCardProps) {
   const router = useRouter();
-  const roomId = parseInt(params.roomId as string, 10);
+  const [isChatLoading, setIsChatLoading] = useState(false);
 
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [inputMessage, setInputMessage] = useState('');
-  const [roomInfo, setRoomInfo] = useState<ChatRoom | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isConnected, setIsConnected] = useState(false);
-  const [isSending, setIsSending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const statusInfo = statusConfig[order.status] || statusConfig.pending;
+  const StatusIcon = statusInfo.icon;
+  const payStatus = StatusConfigPay[order.payment_status || 'pending'] || StatusConfigPay.pending;
+  const PayStatusIcon = payStatus.icon;
 
-  const pusherRef = useRef<Pusher | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const showChatButton =
+    ['pending', 'cooking', 'delivering'].includes(order.status) &&
+    order.payment_status === 'confirmed' &&
+    order.is_reservation;
 
-  const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, []);
+  const displayName = order.restaurant_name || `مطعم #${order.restaurant_id}`;
 
-  useEffect(() => {
-    if (!roomId || isNaN(roomId)) return;
-
-    const fetchData = async () => {
-      try {
-        const roomsRes = await api.get('/customer/chat-rooms');
-        const rooms = roomsRes.data.rooms || roomsRes.data || [];
-        const room = rooms.find((r: ChatRoom) => r.id === roomId);
-        if (room) setRoomInfo(room);
-      } catch {
-        // مش critical
-      }
-
-      try {
-        const res = await api.get(`/customer/chat-messages/${roomId}`);
-        const msgs = res.data?.messages || [];
-        if (msgs.length > 0) {
-          setMessages(msgs);
-          setTimeout(scrollToBottom, 100);
-        }
-      } catch {
-        // هنعتمد على Pusher channel history
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [roomId, scrollToBottom]);
-
-  useEffect(() => {
-    if (!roomId || isNaN(roomId)) {
-      setError('معرف الغرفة غير صالح');
-      return;
-    }
-
-    const pusher = new Pusher('39ade55f3979c3c6e71b', {
-      cluster: 'eu',
-    });
-
-    pusherRef.current = pusher;
-
-    const channel = pusher.subscribe(`room-${roomId}`);
-
-    channel.bind('pusher:subscription_succeeded', () => {
-      setIsConnected(true);
-    });
-
-    channel.bind('pusher:subscription_error', () => {
-      setIsConnected(false);
-    });
-
-    channel.bind('new-message', (message: ChatMessage) => {
-      setMessages((prev) => {
-        const exists = prev.some((m) => m.id === message.id);
-        if (exists) return prev;
-        return [...prev, message];
-      });
-      setTimeout(scrollToBottom, 100);
-    });
-
-    pusher.connection.bind('connected', () => setIsConnected(true));
-    pusher.connection.bind('disconnected', () => setIsConnected(false));
-    pusher.connection.bind('error', () => {
-      setIsConnected(false);
-    });
-
-    return () => {
-      pusher.unsubscribe(`room-${roomId}`);
-      pusher.disconnect();
-      pusherRef.current = null;
-      setIsConnected(false);
-    };
-  }, [roomId, scrollToBottom]);
-
-  const handleSendMessage = async (e?: React.FormEvent) => {
-    e?.preventDefault();
-    const message = inputMessage.trim();
-    if (!message || isSending) return;
-
-    setIsSending(true);
-    setInputMessage('');
-
+  const formatDate = (d: string) => {
     try {
-      await api.post(`/room/${roomId}/message`, { message });
-    } catch (err) {
-      toast.error('فشل إرسال الرسالة، حاول مرة أخرى');
-      setInputMessage(message);
-    } finally {
-      setIsSending(false);
-    }
-  };
-
-  const formatMessageTime = (timestamp: string) => {
-    try {
-      return new Date(timestamp).toLocaleTimeString('ar-EG', {
-        hour: '2-digit',
-        minute: '2-digit',
-      });
+      return new Date(d).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' });
     } catch {
-      return '';
+      return d;
     }
   };
 
-  const groupedMessages = messages.reduce((groups, message) => {
-    const date = new Date(message.created_at).toLocaleDateString('ar-EG');
-    if (!groups[date]) groups[date] = [];
-    groups[date].push(message);
-    return groups;
-  }, {} as Record<string, ChatMessage[]>);
+  const handleChatClick = async () => {
+    if (isChatLoading) return;
+    setIsChatLoading(true);
+    try {
+      const res = await api.get(`/customer/chat-room/order/${order.id}`);
+      const roomId = res.data?.room?.id;
+      if (roomId) {
+        router.push(`/customer/chat/${roomId}`);
+      } else {
+        toast.error('غرفة المحادثة غير متوفرة بعد');
+      }
+    } catch {
+      toast.error('فشل في فتح المحادثة، حاول مرة أخرى');
+    } finally {
+      setIsChatLoading(false);
+    }
+  };
 
   return (
-    <ProtectedRoute role="customer">
-      <div className="h-screen flex flex-col" dir="rtl">
-        <header className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between px-4 py-3">
-            <button
-              onClick={() => router.push('/customer/chat')}
-              className="p-2 -mr-2 rounded-full hover:bg-gray-100 transition-colors"
+    <div
+      className="mx-4 mb-3 rounded-2xl overflow-hidden"
+      style={{ background: '#fff', boxShadow: '0 2px 14px rgba(0,0,0,0.06)', border: '1px solid #f3f4f6' }}
+    >
+      {/* Top: restaurant + order id */}
+      <div className="flex items-center gap-3 p-4 pb-3">
+        <div
+          className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0"
+          style={{ background: 'linear-gradient(135deg,#fff3e0,#ffe0b2)' }}
+        >
+          🍽️
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="font-bold text-sm truncate" style={{ color: '#1a1a1a' }}>{displayName}</h3>
+            <span
+              className="text-xs font-bold shrink-0 px-2 py-0.5 rounded-lg"
+              style={{ background: '#fff3e0', color: '#e5a04d' }}
             >
-              <ArrowLeft className="w-5 h-5 text-[#1A1A2E]" />
-            </button>
-
-            <div className="flex-1 text-center px-4">
-              <h1 className="font-bold text-[#1A1A2E] truncate">
-                {roomInfo?.restaurant_name || 'المحادثة'}
-              </h1>
-              <p className="text-xs flex items-center justify-center gap-1">
-                <span
-                  className={`inline-block w-1.5 h-1.5 rounded-full ${
-                    isConnected ? 'bg-green-500' : 'bg-gray-300 animate-pulse'
-                  }`}
-                />
-                <span className={isConnected ? 'text-green-600' : 'text-[#9CA3AF]'}>
-                  {isConnected ? 'متصل' : 'جاري الاتصال...'}
-                </span>
-              </p>
-            </div>
-
-            <button className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors">
-              <Info className="w-5 h-5 text-[#6B7280]" />
-            </button>
+              #{order.id}
+            </span>
           </div>
-        </header>
-
-        <main className="flex-1 overflow-y-auto pb-20">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="w-8 h-8 text-[#E5A04D] animate-spin" />
-            </div>
-          ) : error ? (
-            <div className="text-center py-12">
-              <p className="text-red-500 mb-4">{error}</p>
-              <button
-                onClick={() => router.push('/customer/chat')}
-                className="px-4 py-2 bg-[#E5A04D] text-white rounded-lg"
-              >
-                العودة للمحادثات
-              </button>
-            </div>
-          ) : messages.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-[#FFF8F0] rounded-full flex items-center justify-center mx-auto mb-4">
-                <Phone className="w-8 h-8 text-[#E5A04D]" />
-              </div>
-              <h3 className="text-lg font-medium text-[#1A1A2E] mb-2">ابدأ المحادثة</h3>
-              <p className="text-sm text-[#6B7280]">
-                يمكنك التواصل مع المطعم بخصوص طلبك هنا
-              </p>
-            </div>
-          ) : (
-            Object.entries(groupedMessages).map(([date, dayMessages]) => (
-              <div key={date} className="space-y-3">
-                <div className="flex items-center justify-center">
-                  <span className="text-xs text-[#9CA3AF] bg-gray-100 px-3 py-1 rounded-full">
-                    {date}
-                  </span>
-                </div>
-
-                {dayMessages.map((message, index) => {
-                  const isMe = message.sender_role === 'customer';
-                  const showSenderName =
-                    !isMe &&
-                    (index === 0 ||
-                      dayMessages[index - 1].sender_id !== message.sender_id);
-
-                  return (
-                    <div
-                      key={message.id}
-                      className={`flex ${isMe ? 'justify-start' : 'justify-end'}`}
-                    >
-                      <div
-                        className={`max-w-[80%] rounded-2xl px-4 py-2 shadow-sm ${
-                          isMe
-                            ? 'bg-white text-[#1A1A2E]'
-                            : 'bg-[#E5A04D] text-white'
-                        }`}
-                      >
-                        {showSenderName && (
-                          <p className="text-xs font-medium mb-1 opacity-80">
-                            {message.sender_name}
-                          </p>
-                        )}
-                        <p className="text-sm leading-relaxed">{message.message}</p>
-                        <p
-                          className={`text-[10px] mt-1 ${
-                            isMe ? 'text-[#9CA3AF]' : 'text-white/70'
-                          }`}
-                        >
-                          {formatMessageTime(message.created_at)}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ))
-          )}
-          <div ref={messagesEndRef} />
-        </main>
-
-        <footer className="sticky bottom-0 bg-white">
-          <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-            <input
-              ref={inputRef}
-              type="text"
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              placeholder={isConnected ? 'اكتب رسالتك...' : 'جاري الاتصال...'}
-              className="flex-1 bg-gray-100 rounded-full px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#E5A04D]/20"
-              disabled={isSending}
-            />
-            <button
-              type="submit"
-              disabled={!inputMessage.trim() || isSending}
-              className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-                inputMessage.trim() && !isSending
-                  ? 'bg-[#E5A04D] text-white hover:bg-[#d49140]'
-                  : 'bg-gray-200 text-gray-400'
-              }`}
-            >
-              {isSending ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <Send className="w-5 h-5" />
-              )}
-            </button>
-          </form>
-        </footer>
+          <p className="text-xs mt-0.5" style={{ color: '#9ca3af' }}>
+            {formatDate(order.order_date)}
+          </p>
+        </div>
       </div>
-    </ProtectedRoute>
+
+      {/* Items */}
+      {order.items && order.items.length > 0 && (
+        <>
+          <div style={{ height: '1px', background: '#f3f4f6', margin: '0 16px' }} />
+          <div className="px-4 py-3 space-y-1.5">
+            {order.items.map((item, i) => (
+              <div key={i} className="flex justify-between items-center">
+                <span className="text-sm" style={{ color: '#4b5563' }}>
+                  🍴 {item.name}
+                  <span className="ml-1 text-xs" style={{ color: '#9ca3af' }}>x{item.quantity}</span>
+                </span>
+                <span className="text-xs font-medium" style={{ color: '#9ca3af' }}>
+                  {(item.price * item.quantity).toFixed(2)} ج.م
+                </span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Footer */}
+      <div style={{ height: '1px', background: '#f3f4f6', margin: '0 16px' }} />
+      <div className="px-4 py-3">
+        {/* Total */}
+        <div className="flex justify-between items-center mb-3">
+          <span className="text-sm font-semibold" style={{ color: '#6b7280' }}>الإجمالي</span>
+          <span className="text-lg font-black" style={{ color: '#FF6B35' }}>{order.total_amount} ج.م</span>
+        </div>
+
+        {/* Badges */}
+        <div className="flex flex-wrap gap-2">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full" style={{ background: statusInfo.bgColor }}>
+            <StatusIcon className="w-3 h-3" style={{ color: statusInfo.color }} />
+            <span className="text-xs font-bold" style={{ color: statusInfo.color }}>{statusInfo.label}</span>
+          </div>
+
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full" style={{ background: payStatus.bgColor }}>
+            <PayStatusIcon className="w-3 h-3" style={{ color: payStatus.color }} />
+            <span className="text-xs font-bold" style={{ color: payStatus.color }}>{payStatus.label}</span>
+          </div>
+
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full" style={{ background: '#f3f4f6' }}>
+            {order.is_reservation
+              ? <><Calendar className="w-3 h-3 text-gray-500" /><span className="text-xs font-bold text-gray-500">حجز</span></>
+              : <><Truck className="w-3 h-3 text-gray-500" /><span className="text-xs font-bold text-gray-500">توصيل</span></>
+            }
+          </div>
+        </div>
+
+        {/* Reservation date */}
+        {order.is_reservation && order.reservation_date && (
+          <div className="mt-3 p-3 rounded-xl flex items-center gap-2" style={{ background: '#fff3e0' }}>
+            <Calendar className="w-4 h-4 shrink-0" style={{ color: '#E5A04D' }} />
+            <span className="text-sm font-semibold" style={{ color: '#1a1a1a' }}>
+              موعد الحجز: {formatDate(order.reservation_date)}
+            </span>
+          </div>
+        )}
+
+        {/* Chat button */}
+        {showChatButton && (
+          <button
+            onClick={handleChatClick}
+            disabled={isChatLoading}
+            className="mt-3 w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm active:scale-[0.98] transition-all"
+            style={{
+              background: '#fff3e0',
+              color: '#E5A04D',
+              border: '1.5px solid #e5a04d',
+              opacity: isChatLoading ? 0.7 : 1
+            }}
+          >
+            {isChatLoading ? (
+              <div className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: '#E5A04D', borderTopColor: 'transparent' }} />
+            ) : (
+              <MessageCircle className="w-4 h-4" />
+            )}
+            {isChatLoading ? 'جاري الفتح...' : 'محادثة المطعم'}
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
