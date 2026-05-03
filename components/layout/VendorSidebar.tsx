@@ -162,7 +162,7 @@ export default function VendorSidebar({ restaurantName  }: VendorSidebarProps) {
         )}
         dir="rtl"
       >
-        {/* Header */}
+        
         <div
           className={cn(
             'flex items-center p-4 border-b border-gray-100 h-16',
