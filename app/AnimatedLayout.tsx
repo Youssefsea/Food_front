@@ -7,11 +7,11 @@ import BottomNav from '@/components/layout/BottomNav';
 import VendorSidebar from '@/components/layout/VendorSidebar';
 import { usePathname } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
-
+import { getUserRole } from '@/lib/api';
 export default function AnimatedLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
-  const isVendor = pathname.startsWith('/vendor');
+  const isVendor = getUserRole() === 'vendor' || getUserRole() === 'restaurant';
 
   const hideNavRoutes = ['/login', '/register', '/', '/signup', '/cart', '/customer/cart'];
   const hideNav =
