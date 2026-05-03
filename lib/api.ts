@@ -138,6 +138,23 @@ export function getUserRole(): 'customer' | 'vendor' | 'restaurant' | 'admin' | 
   return null;
 }
 
+
+export function getUsername(): string | null {
+  if (typeof window !== 'undefined') {
+    const userData = localStorage.getItem('userData') ;
+    if (userData) {
+      try {
+        const user = JSON.parse(userData);
+        return user.name || null;
+        
+      } catch {
+        return null;
+      }
+    }
+  }
+  return null;
+}
+
 export function isAuthenticated(): boolean {
   if (typeof window !== 'undefined') {
     const token = getToken();

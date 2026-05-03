@@ -7,20 +7,19 @@ interface DashboardHeaderProps {
   restaurantName: string;
   isOpen: boolean;
   onToggleStatus: () => void;
-  unreadMessages: number;
   notifications: number;
   onRefresh: () => void;
-  onToggleSidebar: () => void;
+ 
 }
 
 export function DashboardHeader({
   restaurantName,
   isOpen,
   onToggleStatus,
-  unreadMessages,
+  
   notifications,
   onRefresh,
-  onToggleSidebar,
+
 }: DashboardHeaderProps) {
   const now = new Date();
   const timeString = now.toLocaleTimeString('ar-EG', {
@@ -48,12 +47,7 @@ export function DashboardHeader({
   <div className="max-w-full mx-auto px-4 sm:px-8 h-full flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0">
 
     <div className="flex items-center gap-3 sm:gap-4">
-      <button 
-        onClick={onToggleSidebar}
-        className="p-2 hover:bg-[#F3F4F6] rounded-lg transition-colors lg:hidden"
-      >
-        <Menu className="w-6 h-6 text-[#6B7280]" />
-      </button>
+    
 
       <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#E5A04D] rounded-full flex items-center justify-center">
         <Store className="w-5 h-5 text-white" />
@@ -92,14 +86,7 @@ export function DashboardHeader({
     <RefreshCw className="w-4 sm:w-5 h-4 sm:h-5 text-[#6B7280]" />
   </button>
 
-  <button className="relative left-1 p-1 sm:p-2 hover:bg-[#F3F4F6] rounded-lg transition-colors">
-    <MessageCircle className="w-4 sm:w-5 h-4 sm:h-5 text-[#6B7280]" />
-    {unreadMessages > 0 && (
-      <span className="absolute -top-1 -right-1 w-4 sm:w-5 h-4 sm:h-5 bg-[#7C3AED] text-white text-[8px] sm:text-xs font-bold rounded-full flex items-center justify-center">
-        {unreadMessages}
-      </span>
-    )}
-  </button>
+
 
   <button className="relative left-2 p-1 sm:p-2 hover:bg-[#F3F4F6] rounded-lg transition-colors">
     <Bell className="w-4 sm:w-5 h-4 sm:h-5 text-[#6B7280]" />

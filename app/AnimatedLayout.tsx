@@ -7,13 +7,13 @@ import BottomNav from '@/components/layout/BottomNav';
 import VendorSidebar from '@/components/layout/VendorSidebar';
 import { usePathname } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
-import { getUserRole } from '@/lib/api';
+import { getUserRole,getUsername } from '@/lib/api';
 
 export default function AnimatedLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   const isVendor = getUserRole() === 'restaurant';
-
+const vendorName=getUsername();
   const hideNavRoutes = ['/login', '/register', '/', '/signup', '/cart', '/customer/cart'];
   const hideNav =
     hideNavRoutes.includes(pathname) ||
@@ -34,7 +34,7 @@ export default function AnimatedLayout({ children }: { children: React.ReactNode
         {isVendor ? (
           /* ── Vendor: VendorSidebar + BottomNav للـ mobile ── */
           <div className="flex min-h-screen bg-[#FAFAFA]" dir="rtl">
-            {!hideSidebar && <VendorSidebar />}
+            {!hideSidebar && <VendorSidebar restaurantName={vendorName||'مطعمي'} />}
             <div className="flex flex-col flex-1 min-w-0">
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div

@@ -60,12 +60,9 @@ export default function VendorDashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isSidebarVisible, setIsSidebarVisible] = useState(false);
   const [pendingPaidOrders, setPendingPaidOrders] = useState(0);
 
-  const toggleSidebar = () => {
-    setIsSidebarVisible(prev => !prev);
-  };
+
 
   const fetchPendingPaidOrdersCount = useCallback(async (orders: DashboardData['recentOrders']) => {
     if (orders.length === 0) {
@@ -177,10 +174,9 @@ export default function VendorDashboard() {
             restaurantName={dashboardData.restaurantName}
             isOpen={dashboardData.isOpen}
             onToggleStatus={handleToggleStatus}
-            unreadMessages={0}
+         
             notifications={pendingPaidOrders}
             onRefresh={fetchDashboardData}
-            onToggleSidebar={toggleSidebar}
           />
 
           <NotificationToast pendingPaidOrders={pendingPaidOrders} />

@@ -91,12 +91,12 @@ interface VendorSidebarProps {
   restaurantName?: string;
 }
 
-export default function VendorSidebar({ restaurantName = 'مطعمي' }: VendorSidebarProps) {
+export default function VendorSidebar({ restaurantName  }: VendorSidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const initial = restaurantName.trim().charAt(0) || 'م';
+  const initial = restaurantName?.trim().charAt(0) || 'م';
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + '/');
@@ -105,7 +105,7 @@ export default function VendorSidebar({ restaurantName = 'مطعمي' }: VendorS
     <>
       {/* ══ Mobile: Hamburger ══ */}
       <button
-        className="lg:hidden fixed top-4 right-4 z-50 w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-md border border-gray-100"
+        className="lg:hidden fixed top-4 right-4 z-150 w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-md border border-gray-100"
         onClick={() => setDrawerOpen(true)}
         aria-label="فتح القائمة"
       >
