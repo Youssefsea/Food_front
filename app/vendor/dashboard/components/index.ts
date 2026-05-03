@@ -1,5 +1,3 @@
-export { Sidebar } from './Sidebar';
-
 export { DashboardHeader } from './DashboardHeader';
 export { StatsCards } from './StatsCards';
 export { TopSellingDishes } from './TopSellingDishes';
