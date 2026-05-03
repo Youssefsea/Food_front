@@ -6,7 +6,7 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
       <main className="pb-20 md:pb-0">
         {children}
       </main>
-      <BottomNav role="vendor" />
+      <BottomNav role="restaurant" />
     </div>
   );
 }
