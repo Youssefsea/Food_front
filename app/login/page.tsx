@@ -144,9 +144,7 @@ export default function LoginPage() {
                 rightIcon={<Lock className="w-4 h-4" />}
               />
               <div className="min-h-5" />
-              <Link href="/forgot-password" className="block -mt-3 text-sm text-primary text-right hover:underline">
-                نسيت كلمة المرور؟
-              </Link>
+            
 
               <Button
                 type="submit"
