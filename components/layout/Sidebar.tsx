@@ -33,13 +33,13 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ role }: SidebarProps) {
-  if (role === 'vendor') {
-    return null;
-  }
+
   const [expanded, setExpanded] = useState(false);
   const pathname = usePathname();
   const items = role === 'customer' ? customerNavItems : vendorNavItems;
-
+  if (role === 'vendor') {
+    return null;
+  }
   const isActive = (href: string) => {
     if (href === '/customer/home') {
       return pathname === '/customer/home' || pathname === '/explore' || pathname === '/';
