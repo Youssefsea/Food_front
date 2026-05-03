@@ -198,8 +198,8 @@ export default function VendorSidebar({ restaurantName = 'مطعمي' }: VendorS
               collapsed && 'rotate-180'
             )}
           />
-        </button>
+        </button>   
       </aside>
     </>
   );
-}
+}    
