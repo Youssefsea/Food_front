@@ -5,7 +5,7 @@ import BottomNav from './BottomNav';
 
 interface AppLayoutProps {
   children: React.ReactNode;
-  role: 'customer' | 'vendor';
+  role: 'customer' | 'restaurant';
 }
 
 export default function AppLayout({ children, role }: AppLayoutProps) {

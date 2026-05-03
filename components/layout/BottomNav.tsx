@@ -30,7 +30,7 @@ const vendorNavItems: NavItem[] = [
 ];
 
 interface BottomNavProps {
-  role: 'customer' | 'vendor';
+  role: 'customer' | 'restaurant';
 }
 
 const BottomNav = memo(function BottomNav({ role }: BottomNavProps) {

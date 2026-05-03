@@ -29,7 +29,7 @@ const vendorNavItems: NavItem[] = [
 ];
 
 interface SidebarProps {
-  role: 'customer' | 'vendor';
+  role: 'customer' | 'restaurant';
 }
 
 export default function Sidebar({ role }: SidebarProps) {
@@ -37,7 +37,7 @@ export default function Sidebar({ role }: SidebarProps) {
   const [expanded, setExpanded] = useState(false);
   const pathname = usePathname();
   const items = role === 'customer' ? customerNavItems : vendorNavItems;
-  if (role === 'vendor') {
+  if (role === 'restaurant') {
     return null;
   }
   const isActive = (href: string) => {

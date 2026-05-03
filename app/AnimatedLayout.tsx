@@ -8,10 +8,11 @@ import VendorSidebar from '@/components/layout/VendorSidebar';
 import { usePathname } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
 import { getUserRole } from '@/lib/api';
+
 export default function AnimatedLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
-  const isVendor = getUserRole() === 'vendor' || getUserRole() === 'restaurant';
+  const isVendor = getUserRole() === 'restaurant';
 
   const hideNavRoutes = ['/login', '/register', '/', '/signup', '/cart', '/customer/cart'];
   const hideNav =
@@ -20,25 +21,25 @@ export default function AnimatedLayout({ children }: { children: React.ReactNode
     pathname.startsWith('/signup/') ||
     pathname.startsWith('/admin');
 
-
-    const hideSidebarRoutes = ['/login', '/register', '/', '/signup'];
-    const hideSidebar =
-      hideSidebarRoutes.includes(pathname) ||
-      pathname.startsWith('/customer/chat/') ||
-      pathname.startsWith('/signup/') ||
-      pathname.startsWith('/admin');
+  const hideSidebarRoutes = ['/login', '/register', '/', '/signup'];
+  const hideSidebar =
+    hideSidebarRoutes.includes(pathname) ||
+    pathname.startsWith('/customer/chat/') ||
+    pathname.startsWith('/signup/') ||
+    pathname.startsWith('/admin');
 
   return (
     <AuthProvider>
       <CartProvider>
         {isVendor ? (
-          /* ── Vendor: VendorSidebar فقط ── */
+          /* ── Vendor: VendorSidebar + BottomNav للـ mobile ── */
           <div className="flex min-h-screen bg-[#FAFAFA]" dir="rtl">
             <VendorSidebar />
-            <main className="flex-1 min-w-0 overflow-y-auto">
+            <div className="flex flex-col flex-1 min-w-0">
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
                   key={pathname}
+                  className="flex-1"
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
@@ -47,14 +48,13 @@ export default function AnimatedLayout({ children }: { children: React.ReactNode
                   {children}
                 </motion.div>
               </AnimatePresence>
-            </main>
+              {!hideNav && <BottomNav role="restaurant" />}
+            </div>
           </div>
         ) : (
           /* ── Customer: Sidebar للـ desktop + BottomNav للـ mobile ── */
-          <div className="flex min-h-screen"> 
-            {/* Sidebar يظهر على md+ فقط */}
+          <div className="flex min-h-screen">
             {!hideSidebar && <Sidebar role="customer" />}
-
             <div className="flex flex-col flex-1 min-w-0">
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
@@ -68,8 +68,6 @@ export default function AnimatedLayout({ children }: { children: React.ReactNode
                   {children}
                 </motion.div>
               </AnimatePresence>
-
-              {/* BottomNav يظهر على mobile فقط */}
               {!hideNav && <BottomNav role="customer" />}
             </div>
           </div>
