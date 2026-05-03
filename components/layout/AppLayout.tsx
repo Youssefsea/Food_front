@@ -12,7 +12,7 @@ export default function AppLayout({ children, role }: AppLayoutProps) {
   return (
     <div className="flex min-h-screen bg-[#FAFAFA]" dir="rtl">
       {/* Sidebar — tablet/desktop only */}
-      <Sidebar role={role} />
+      {/* <Sidebar role={role} /> */}
 
       <main className="flex-1 overflow-y-auto pb-20 md:pb-0 min-h-screen">
         {children}
