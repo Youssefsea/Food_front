@@ -123,13 +123,13 @@ export function getToken(): string | null {
 
 export function getUserRole(): 'customer' | 'vendor' | 'restaurant' | 'admin' | null {
   if (typeof window !== 'undefined') {
-    const userData = localStorage.getItem('userData') || Cookies.get('user');
+    const userData = localStorage.getItem('userData') ;
     if (userData) {
       try {
         const user = JSON.parse(userData);
-        const role = user.role as 'customer' | 'vendor' | 'restaurant' | 'admin';
+        const role = user.role as 'customer' || 'restaurant' ;
         // Normalize 'restaurant' to 'vendor' for consistency
-        return role === 'restaurant' ? 'vendor' : role;
+        return role;
       } catch {
         return null;
       }

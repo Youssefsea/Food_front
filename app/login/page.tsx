@@ -11,12 +11,11 @@ import { useAuth } from "@/app/context/AuthContext";
 import { cn } from "@/lib/utils";
 import { getUserRole, isAuthenticated } from "@/lib/api";
 
-type UserType = "customer" | "vendor" | "admin";
+type UserType = "customer" | "vendor" ;
 
 const roleConfig = {
   customer: { label: "زبون", icon: User, gradient: "from-[#FF6B35] to-[#E63946]" },
   vendor: { label: "مطعم", icon: Store, gradient: "from-[#E63946] to-[#C62828]" },
-  admin: { label: "مدير", icon: Shield, gradient: "from-[#1A1A2E] to-[#252540]" },
 };
 
 export default function LoginPage() {
@@ -32,9 +31,9 @@ export default function LoginPage() {
   useEffect(() => {
     if (!isAuthenticated()) return;
     const role = getUserRole();
+    console.log("User role on login page:", role);
     if (role === 'customer') router.replace('/explore');
     else if (role === 'restaurant') router.replace('/restaurant/dashboard');
-    else if (role === 'admin') router.replace('/admin/payments');
   }, [router]);
 
   const validate = (): boolean => {
@@ -65,12 +64,7 @@ export default function LoginPage() {
         toast.success("مرحباً بك! جاري التحويل...");
         refreshUser();
         setTimeout(() => router.push("/restaurant/dashboard"), 800);
-      } else {
-        await adminLogin(formData);
-        toast.success("مرحباً بك! جاري التحويل...");
-        refreshUser();
-        setTimeout(() => router.push("/admin/payments"), 800);
-      }
+      } 
     } catch {
       toast.error("فشل تسجيل الدخول. يرجى التحقق من بيانات الاعتماد.");
     } finally {
