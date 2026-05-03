@@ -17,6 +17,7 @@ interface Order {
   }>;
   total_amount: number;
   status: OrderStatus;
+  payment_status: PaymentStatus; 
   created_at: string;
   is_reservation?: number;
   reservation_date?: string;
@@ -48,8 +49,7 @@ const statusOrder: OrderStatus[] = ['pending', 'cooking', 'delivering', 'complet
 export function RecentOrdersTable({ orders, onStatusChange }: RecentOrdersTableProps) {
   const [activeFilter, setActiveFilter] = useState<'all' | 'pending' | 'cooking' | 'completed'>('all');
   const [updatingOrder, setUpdatingOrder] = useState<number | null>(null);
-  const [paymentStatuses, setPaymentStatuses] = useState<Record<number, PaymentStatus>>({});
-  const [loadingPayments, setLoadingPayments] = useState(true);
+
 
   const filters = [
     { id: 'all', label: 'الكل' },
@@ -58,30 +58,7 @@ export function RecentOrdersTable({ orders, onStatusChange }: RecentOrdersTableP
     { id: 'completed', label: 'مكتمل' },
   ];
 
-  useEffect(() => {
-    const fetchPaymentStatuses = async () => {
-      setLoadingPayments(true);
-      const statuses: Record<string, PaymentStatus> = {};
-      
-      await Promise.all(
-        orders.map(async (order) => {
-          try {
-            const res = await api.post('/restaurant/payment-status', { orderId: order.id });
-            statuses[order.id] = res.data.paymentStatus as PaymentStatus;
-          } catch (error) {
-            statuses[order.id] = 'pending';
-          }
-        })
-      );
-      
-      setPaymentStatuses(statuses);
-      setLoadingPayments(false);
-    };
 
-    if (orders.length > 0) {
-      fetchPaymentStatuses();
-    }
-  }, [orders]);
 
   const filteredOrders = orders.filter((order) => {
     if (activeFilter === 'all') return true;
@@ -126,11 +103,12 @@ export function RecentOrdersTable({ orders, onStatusChange }: RecentOrdersTableP
     return colors[index];
   };
 
-  const isHighPriority = (orderId: number, orderStatus: OrderStatus) => {
-    return paymentStatuses[orderId] === 'confirmed' && orderStatus === 'pending';
-  };
+const isHighPriority = (order: Order) => {
+  return order.payment_status === 'confirmed' && order.status === 'pending';
+};
 
-  const hasPriorityOrders = filteredOrders.some((order) => isHighPriority(order.id, order.status));
+
+  const hasPriorityOrders = filteredOrders.some((order) => isHighPriority(order));
 
   return (
     <section className="space-y-4">
@@ -187,9 +165,9 @@ export function RecentOrdersTable({ orders, onStatusChange }: RecentOrdersTableP
                 <tbody>
                   {filteredOrders.slice(0, 10).map((order, index) => {
                     const orderStatusInfo = orderStatusConfig[order.status];
-                    const paymentStatus = paymentStatuses[order.id] || 'pending';
-                    const paymentStatusInfo = paymentStatusConfig[paymentStatus];
-                    const isPriority = isHighPriority(order.id, order.status);
+                 const paymentStatus = order.payment_status || 'pending';
+                 const paymentStatusInfo = paymentStatusConfig[paymentStatus];
+                    const isPriority = isHighPriority(order);
 
                     return (
                       <tr
@@ -239,18 +217,15 @@ export function RecentOrdersTable({ orders, onStatusChange }: RecentOrdersTableP
                         </td>
 
                         <td className="px-6 py-4">
-                          {loadingPayments ? (
-                            <div className="inline-flex px-3 py-1 rounded-full bg-gray-100 animate-pulse">
-                              <div className="w-16 h-4 bg-gray-200 rounded"></div>
-                            </div>
-                          ) : (
-                            <span
-                              className="inline-flex px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap"
-                              style={{ backgroundColor: paymentStatusInfo.bg, color: paymentStatusInfo.text }}
-                            >
-                              {paymentStatusInfo.label}
-                            </span>
-                          )}
+                        <span
+  className="inline-flex px-3 py-1 rounded-full text-xs font-semibold"
+  style={{
+    backgroundColor: paymentStatusInfo.bg,
+    color: paymentStatusInfo.text
+  }}
+>
+  {paymentStatusInfo.label}
+</span>
                         </td>
 
                         <td className="px-6 py-4">
@@ -284,9 +259,9 @@ export function RecentOrdersTable({ orders, onStatusChange }: RecentOrdersTableP
             <div className="block md:hidden space-y-4 p-4">
               {filteredOrders.slice(0, 10).map((order) => {
                 const orderStatusInfo = orderStatusConfig[order.status];
-                const paymentStatus = paymentStatuses[order.id] || 'pending';
+                const paymentStatus = order.payment_status || 'pending'; ;
                 const paymentStatusInfo = paymentStatusConfig[paymentStatus];
-                const isPriority = isHighPriority(order.id, order.status);
+                const isPriority = isHighPriority(order);
 
                 return (
                   <div
@@ -356,18 +331,15 @@ export function RecentOrdersTable({ orders, onStatusChange }: RecentOrdersTableP
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-[#6B7280]">حالة الدفع:</span>
-                        {loadingPayments ? (
-                          <div className="inline-flex px-3 py-1 rounded-full bg-gray-100 animate-pulse">
-                            <div className="w-16 h-4 bg-gray-200 rounded"></div>
-                          </div>
-                        ) : (
-                          <span
-                            className="inline-flex px-3 py-1 rounded-full text-xs font-semibold"
-                            style={{ backgroundColor: paymentStatusInfo.bg, color: paymentStatusInfo.text }}
-                          >
-                            {paymentStatusInfo.label}
-                          </span>
-                        )}
+                     <span
+  className="inline-flex px-3 py-1 rounded-full text-xs font-semibold"
+  style={{
+    backgroundColor: paymentStatusInfo.bg,
+    color: paymentStatusInfo.text
+  }}
+>
+  {paymentStatusInfo.label}
+</span>
                       </div>
 
                       <div className="flex items-center justify-between">
