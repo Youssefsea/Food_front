@@ -4,7 +4,7 @@ import { ArrowLeft, Edit2, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { UserProfile } from "../types";
-import { logout } from "@/app/services/authService";
+import { logout } from "@/services/auth.service"; // تأكد من مسار ملف الـ API بشكل صحيح هنا
 
 interface ProfileHeaderProps {
   user: UserProfile | null;
