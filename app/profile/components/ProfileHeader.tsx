@@ -1,8 +1,10 @@
 'use client';
 
-import { ArrowLeft, Edit2 } from "lucide-react";
+import { ArrowLeft, Edit2, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { UserProfile } from "../types";
+import { logout } from "@/app/services/authService";
 
 interface ProfileHeaderProps {
   user: UserProfile | null;
@@ -11,9 +13,20 @@ interface ProfileHeaderProps {
 
 export function ProfileHeader({ user, onEditClick }: ProfileHeaderProps) {
   const router = useRouter();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const getInitials = (name: string) =>
     name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    try {
+      await logout(); // بيعمل redirect لـ /login تلقائياً
+    } catch {
+      setIsLoggingOut(false);
+    }
+  };
 
   return (
     <div className="relative">
@@ -37,14 +50,37 @@ export function ProfileHeader({ user, onEditClick }: ProfileHeaderProps) {
         <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full bg-white/8 pointer-events-none" />
         <div className="absolute -bottom-14 -left-6 w-40 h-40 rounded-full bg-white/6 pointer-events-none" />
 
-        {/* Edit button */}
+        {/* Edit button — يسار */}
         <button
           onClick={onEditClick}
-          className="absolute top-0 left-4 flex items-center gap-1.5 px-4 py-2 rounded-full text-white text-xs font-semibold active:scale-95 transition-transform"
+          className="absolute top-0 left-16 flex items-center gap-1.5 px-4 py-2 rounded-full text-white text-xs font-semibold active:scale-95 transition-transform"
           style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.3)', backdropFilter: 'blur(8px)' }}
         >
           <Edit2 className="w-3 h-3" />
           تعديل
+        </button>
+
+        {/* Logout button — أقصى اليسار */}
+        <button
+          onClick={handleLogout}
+          disabled={isLoggingOut}
+          className="absolute top-0 left-4 w-9 h-9 rounded-full flex items-center justify-center active:scale-95 transition-all"
+          style={{
+            background: 'rgba(255,255,255,0.15)',
+            border: '1px solid rgba(255,255,255,0.25)',
+            backdropFilter: 'blur(8px)',
+            opacity: isLoggingOut ? 0.6 : 1
+          }}
+          aria-label="تسجيل الخروج"
+        >
+          {isLoggingOut ? (
+            <div
+              className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin"
+              style={{ borderColor: 'white', borderTopColor: 'transparent' }}
+            />
+          ) : (
+            <LogOut className="w-4 h-4 text-white" />
+          )}
         </button>
 
         {/* Avatar */}
