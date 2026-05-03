@@ -44,7 +44,6 @@ interface DashboardData {
     status: 'pending' | 'cooking' | 'delivering' | 'completed' | 'cancelled';
     created_at: string;
   }>;
- 
 }
 
 export default function VendorDashboard() {
@@ -73,10 +72,7 @@ export default function VendorDashboard() {
       setPendingPaidOrders(0);
       return;
     }
-    const paidButPendingWork = orders.filter((order) =>
-      order.status === 'pending'
-    ).length;
-
+    const paidButPendingWork = orders.filter(order => order.status === 'pending').length;
     setPendingPaidOrders(paidButPendingWork);
   }, []);
 
@@ -86,27 +82,40 @@ export default function VendorDashboard() {
       setLoading(true);
       setError(null);
 
-      const dashboardRes = await api.get('/restaurant/dashboard', { signal });
-      const ordersRes = await api.get('/restaurant/orders', { signal });
+      const [dashboardRes, ordersRes] = await Promise.all([
+        api.get('/restaurant/dashboard', { signal }),
+        api.get('/restaurant/orders', { signal }),
+      ]);
 
       const stats = dashboardRes.data;
       const orders = ordersRes.data.orders || [];
-      const resStatus = await api.get('/restaurant/profile', { signal });
 
       setDashboardData({
         restaurantName: stats.restaurant.name || 'مطعمي',
-        isOpen: resStatus.data.is_open,
+        isOpen: stats.restaurant.is_open,
         todayRevenue: stats.stats.revenue.today || 0,
-        todayOrders: stats.stats.orders.today || 0,
-        pendingOrders: stats.stats.orders.pending || 0,
-        totalDishes: stats.stats.dishes.total || 0,
-        topDishes: stats.topDishes || [],
-        recentOrders: orders || [],
-       
-
+        todayOrders: Number(stats.stats.orders.today) || 0,
+        pendingOrders: Number(stats.stats.orders.pending) || 0,
+        totalDishes: Number(stats.stats.dishes.total) || 0,
+        topDishes: stats.topDishes.map((dish: {
+          id: number;
+          name: string;
+          price: string;
+          image?: string;
+          order_count?: string;
+          total_quantity?: string | null;
+          total_revenue?: string | null;
+        }) => ({
+          id: dish.id,
+          name: dish.name,
+          price: Number(dish.price),
+          image: dish.image,
+          soldCount: Number(dish.total_quantity) || 0,
+          revenue: Number(dish.total_revenue) || 0,
+        })),
+        recentOrders: orders,
       });
 
-     
       await fetchPendingPaidOrdersCount(orders);
     } catch (err) {
       const error = err as { response?: { data?: { message?: string } } };
@@ -116,7 +125,6 @@ export default function VendorDashboard() {
     }
   }, [fetchPendingPaidOrdersCount, mounted]);
 
-  // Mount guard - fix for first-visit data loading bug
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -129,14 +137,14 @@ export default function VendorDashboard() {
   }, [fetchDashboardData, mounted]);
 
   const handleToggleStatus = () => {
-    setDashboardData((prev) => ({ ...prev, isOpen: !prev.isOpen }));
+    setDashboardData(prev => ({ ...prev, isOpen: !prev.isOpen }));
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center" dir="rtl">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-[#E5A04D] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-16 h-16 border-4 border-[#E5A04D] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-[#6B7280]">جاري تحميل البيانات...</p>
         </div>
       </div>
@@ -162,50 +170,50 @@ export default function VendorDashboard() {
   return (
     <ProtectedRoute role="vendor">
       <div className="min-h-screen bg-[#F8FAFC] lg:flex" dir="rtl">
-      <VendorSidebar restaurantName={dashboardData.restaurantName || 'مطعمي'} />
-      <div className="flex-1">
-      <Sidebar
-        pendingOrders={dashboardData.pendingOrders}
-        unreadMessages={0}
-        todayReservations={0}
-        isVisible={isSidebarVisible}
-        onClose={toggleSidebar}
-      />
-      
-      <DashboardHeader
-        restaurantName={dashboardData.restaurantName}
-        isOpen={dashboardData.isOpen}
-        onToggleStatus={handleToggleStatus}
-        unreadMessages={0}
-        notifications={pendingPaidOrders}
-        onRefresh={fetchDashboardData}
-        onToggleSidebar={toggleSidebar}
-      />
-      <div className="h-20" />
+        <VendorSidebar restaurantName={dashboardData.restaurantName || 'مطعمي'} />
 
-      <NotificationToast pendingPaidOrders={pendingPaidOrders} />
+        <div className="flex-1">
+          <Sidebar
+            pendingOrders={dashboardData.pendingOrders}
+            unreadMessages={0}
+            todayReservations={0}
+            isVisible={isSidebarVisible}
+            onClose={toggleSidebar}
+          />
 
-      <main className="pt-24 px-4 md:px-6 lg:px-8 max-w-[1440px] mx-auto space-y-6">
-        <StatsCards
-          todayRevenue={dashboardData.todayRevenue}
-          todayOrders={dashboardData.todayOrders}
-          pendingOrders={dashboardData.pendingOrders}
-          totalDishes={dashboardData.totalDishes}
-          reservedOrders={dashboardData.recentOrders.filter(order => order.is_reservation).length}
-     
-        />
-        <TopSellingDishes dishes={dashboardData.topDishes} />
+          <DashboardHeader
+            restaurantName={dashboardData.restaurantName}
+            isOpen={dashboardData.isOpen}
+            onToggleStatus={handleToggleStatus}
+            unreadMessages={0}
+            notifications={pendingPaidOrders}
+            onRefresh={fetchDashboardData}
+            onToggleSidebar={toggleSidebar}
+          />
 
-        <RecentOrdersTable
-          orders={dashboardData.recentOrders}
-          onStatusChange={fetchDashboardData}
-        />
+          <NotificationToast pendingPaidOrders={pendingPaidOrders} />
 
-        <QuickActionsPanel />
-      </main>
-      <div className="h-6" />
+          <main className="pt-24 px-4 md:px-6 lg:px-8 max-w-[1440px] mx-auto space-y-6">
+            <StatsCards
+              todayRevenue={dashboardData.todayRevenue}
+              todayOrders={dashboardData.todayOrders}
+              pendingOrders={dashboardData.pendingOrders}
+              totalDishes={dashboardData.totalDishes}
+              reservedOrders={dashboardData.recentOrders.filter(order => order.is_reservation).length}
+            />
 
-      </div>
+            <TopSellingDishes dishes={dashboardData.topDishes} />
+
+            <RecentOrdersTable
+              orders={dashboardData.recentOrders}
+              onStatusChange={fetchDashboardData}
+            />
+
+            <QuickActionsPanel />
+          </main>
+
+          <div className="h-6" />
+        </div>
       </div>
     </ProtectedRoute>
   );
