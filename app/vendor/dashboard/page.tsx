@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '@/lib/api';
 import {
-  Sidebar,
   DashboardHeader,
   StatsCards,
   TopSellingDishes,
@@ -172,14 +171,7 @@ export default function VendorDashboard() {
       <div className="min-h-screen bg-[#F8FAFC] lg:flex" dir="rtl">
 
         <div className="flex-1">
-          <Sidebar
-            pendingOrders={dashboardData.pendingOrders}
-            unreadMessages={0}
-            todayReservations={0}
-            isVisible={isSidebarVisible}
-            onClose={toggleSidebar}
-          />
-
+       
           <DashboardHeader
             restaurantName={dashboardData.restaurantName}
             isOpen={dashboardData.isOpen}
