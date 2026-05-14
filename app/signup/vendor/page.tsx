@@ -170,7 +170,6 @@ export default function VendorSignUpPage() {
     setErrorMsg("");
     if (!validateStep()) return;
 
-    // ✅ لما نوصل Step 3 وننتهي، نبعت الـ OTP وننتقل لـ Step 4
     if (step === 3) {
       setIsLoading(true);
       const success = await sendOtp();
