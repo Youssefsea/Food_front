@@ -28,14 +28,17 @@ export default function CustomerSignUpPage() {
     else if (role === "admin") router.replace("/admin/payments");
   }, [router]);
 
+  // ✅ تعريف واحد نضيف لـ err مع status
   const sendOtp = async () => {
     try {
       const res = await api.post("/send-otp", { email: formData.email, phone: formData.phone });
       if (res.status === 200) return true;
     } catch (error) {
-      const err = error as { response?: { data?: { error?: string } } };
+      const err = error as { response?: { data?: { error?: string }; status?: number } };
       if (err.response?.data?.error === "Email or phone already exists") {
         setErrorMsg("البريد الإلكتروني أو رقم الهاتف مسجل مسبقاً.");
+      } else if (err.response?.status === 429) {
+        setErrorMsg("تم إرسال الرمز مسبقاً، انتظر دقيقة قبل إعادة المحاولة.");
       } else {
         setErrorMsg("فشل إرسال رمز التحقق. يرجى المحاولة مرة أخرى.");
       }
@@ -106,7 +109,6 @@ export default function CustomerSignUpPage() {
     <div className="min-h-screen bg-background flex flex-col" dir="rtl">
       <div className="h-2 bg-gradient-to-r from-primary to-secondary" />
 
-      {/* Header */}
       <header className="flex items-center justify-between px-4 py-4 max-w-lg mx-auto w-full">
         {step === 2 ? (
           <button onClick={() => { setStep(1); setErrorMsg(""); }}
@@ -130,6 +132,7 @@ export default function CustomerSignUpPage() {
           <p className="text-xs sm:text-sm text-muted text-right mb-4">
             {step === 1 ? "الخطوة 1 من 2" : "الخطوة 2 من 2"}
           </p>
+
           {step === 1 ? (
             <>
               <h1 className="text-2xl font-bold text-dark mb-1">إنشاء حساب</h1>
@@ -209,12 +212,19 @@ export default function CustomerSignUpPage() {
                           const merged = next.join("").slice(0, 6);
                           setOtp(merged);
                           setFieldErrors((prev) => ({ ...prev, otp: undefined }));
+                          // ✅ auto-focus للخانة الجاية
+                          if (value && index < 5) {
+                            const inputs = document.querySelectorAll<HTMLInputElement>('input[inputMode="numeric"]');
+                            inputs[index + 1]?.focus();
+                          }
                         }}
                         className="w-10 h-12 rounded-input border border-muted/30 bg-transparent text-dark text-center text-2xl focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
                       />
                     ))}
                   </div>
-                  {fieldErrors.otp && <p className="text-xs text-secondary mt-2 text-right">{fieldErrors.otp}</p>}
+                  {fieldErrors.otp && (
+                    <p className="text-xs text-secondary mt-2 text-right">{fieldErrors.otp}</p>
+                  )}
                 </div>
 
                 {errorMsg && (
