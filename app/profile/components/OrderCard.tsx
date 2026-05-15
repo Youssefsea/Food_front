@@ -28,7 +28,7 @@ const StatusConfigPay: Record<'pending' | 'confirmed' | 'rejected', { label: str
 export function OrderCard({ order }: OrderCardProps) {
   const router = useRouter();
   const [isChatLoading, setIsChatLoading] = useState(false);
-
+console.log('Rendering OrderCard for order:', order);
   const statusInfo = statusConfig[order.status] || statusConfig.pending;
   const StatusIcon = statusInfo.icon;
   const payStatus = StatusConfigPay[order.payment_status || 'pending'] || StatusConfigPay.pending;
