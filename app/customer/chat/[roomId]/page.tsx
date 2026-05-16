@@ -6,7 +6,7 @@ import Pusher from 'pusher-js';
 import api from '@/lib/api';
 import { ProtectedRoute } from '@/app/context/AuthContext';
 import { ChatMessage, ChatRoom } from '@/types';
-import { ArrowLeft, Send, Phone, Info, Loader2, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Send, Phone, Loader2, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function VendorChatRoomPage() {
@@ -14,13 +14,13 @@ export default function VendorChatRoomPage() {
   const router = useRouter();
   const roomId = parseInt(params.roomId as string, 10);
 
-  const [messages, setMessages]         = useState<ChatMessage[]>([]);
-  const [inputMessage, setInputMessage] = useState('');
-  const [roomInfo, setRoomInfo]         = useState<ChatRoom | null>(null);
-  const [isLoading, setIsLoading]       = useState(true);
-  const [isConnected, setIsConnected]   = useState(false);
-  const [isSending, setIsSending]       = useState(false);
-  const [error, setError]               = useState<string | null>(null);
+  const [messages, setMessages]           = useState<ChatMessage[]>([]);
+  const [inputMessage, setInputMessage]   = useState('');
+  const [roomInfo, setRoomInfo]           = useState<ChatRoom | null>(null);
+  const [isLoading, setIsLoading]         = useState(true);
+  const [isConnected, setIsConnected]     = useState(false);
+  const [isSending, setIsSending]         = useState(false);
+  const [error, setError]                 = useState<string | null>(null);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
 
   const pusherRef      = useRef<Pusher | null>(null);
@@ -41,7 +41,8 @@ export default function VendorChatRoomPage() {
 
   // ── جلب الرسائل ──
   useEffect(() => {
-    if (!roomId || isNaN(roomId)) return;
+    if (!params.roomId) return; // لسه مجاش
+    if (isNaN(roomId)) return;
 
     const fetchData = async () => {
       try {
@@ -63,16 +64,18 @@ export default function VendorChatRoomPage() {
     };
 
     fetchData();
-  }, [roomId, scrollToBottom]);
+  }, [roomId, params.roomId, scrollToBottom]);
 
   // ── Pusher ──
   useEffect(() => {
-    if (!roomId || isNaN(roomId)) {
+    if (!params.roomId) return; // لسه مجاش
+
+    if (isNaN(roomId)) {
       setError('معرف الغرفة غير صالح');
+      setIsLoading(false);
       return;
     }
 
-    // التحسين: استخدام متغيرات البيئة بدلاً من كتابة المفتاح صراحة
     const pusherKey = process.env.NEXT_PUBLIC_PUSHER_KEY || '39ade55f3979c3c6e71b';
     const pusher = new Pusher(pusherKey, { cluster: 'eu' });
     pusherRef.current = pusher;
@@ -100,7 +103,7 @@ export default function VendorChatRoomPage() {
       pusherRef.current = null;
       setIsConnected(false);
     };
-  }, [roomId, scrollToBottom]);
+  }, [roomId, params.roomId, scrollToBottom]);
 
   // ── إرسال رسالة ──
   const handleSendMessage = async (e?: React.FormEvent) => {
