@@ -12,12 +12,12 @@ import { useSyncExternalStore } from 'react';
 
 function useMounted() {
   return useSyncExternalStore(
-    () => () => {}, // subscribe (مش محتاجين)
-    () => true,     // client
-    () => false     // server
+    () => () => {},
+    () => true,
+    () => false
   );
 }
-// routes
+
 const AUTH_ROUTES = ['/login', '/register', '/', '/signup'];
 const NO_NAV_ROUTES = ['/customer/cart'];
 
@@ -36,13 +36,20 @@ const shouldHideSidebar = (pathname: string) =>
 
 export default function AnimatedLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-
-  // ✅ حل hydration mismatch
   const mounted = useMounted();
 
-  if (!mounted) return null; // ⛔ يمنع mismatch
+  // ✅ لو مش mounted، render الـ providers بس بدون nav/sidebar
+  // عشان الـ AuthProvider يشتغل ويحمّل الـ user قبل ما ProtectedRoute يحكم
+  if (!mounted) {
+    return (
+      <AuthProvider>
+        <CartProvider>
+          {children}
+        </CartProvider>
+      </AuthProvider>
+    );
+  }
 
-  // ✅ نحسب role مباشرة (بدون state ولا effect)
   const role: 'customer' | 'restaurant' =
     getUserRole() === 'restaurant' ? 'restaurant' : 'customer';
 
