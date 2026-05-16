@@ -46,14 +46,14 @@ export default function VendorChatRoomPage() {
 
     const fetchData = async () => {
       try {
-        const roomsRes = await api.get('/restaurant/chat-rooms');
+        const roomsRes = await api.get('/customer/chat-rooms');
         const rooms = roomsRes.data.rooms || roomsRes.data || [];
         const room = rooms.find((r: ChatRoom) => r.id === roomId);
         if (room) setRoomInfo(room);
       } catch { /* not critical */ }
 
       try {
-        const res = await api.get(`/restaurant/chat-messages/${roomId}`);
+        const res = await api.get(`/customer/chat-messages/${roomId}`);
         const msgs = res.data?.messages || [];
         if (msgs.length > 0) {
           setMessages(msgs);
@@ -105,7 +105,6 @@ export default function VendorChatRoomPage() {
     };
   }, [roomId, params.roomId, scrollToBottom]);
 
-  // ── إرسال رسالة ──
   const handleSendMessage = async (e?: React.FormEvent) => {
     e?.preventDefault();
     const message = inputMessage.trim();
@@ -149,7 +148,7 @@ export default function VendorChatRoomPage() {
   }, {} as Record<string, ChatMessage[]>);
 
   return (
-    <ProtectedRoute role="vendor">
+    <ProtectedRoute role="customer">
       <div className="h-dvh flex flex-col bg-[#F5F5F5]" dir="rtl">
 
         {/* ── Header ── */}
@@ -157,7 +156,7 @@ export default function VendorChatRoomPage() {
           <div className="flex items-center gap-3">
 
             <button
-              onClick={() => router.push('/vendor/chat')}
+              onClick={() => router.push('/customer/chat')}
               className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors flex-shrink-0"
             >
               <ArrowLeft className="w-5 h-5 text-[#1A1A2E]" />
@@ -220,7 +219,7 @@ export default function VendorChatRoomPage() {
               <div className="text-center">
                 <p className="text-red-500 mb-4 text-sm">{error}</p>
                 <button
-                  onClick={() => router.push('/vendor/chat')}
+                  onClick={() => router.push('/customer/chat')}
                   className="px-5 py-2 bg-[#E5A04D] text-white rounded-full text-sm font-medium"
                 >
                   العودة للمحادثات
