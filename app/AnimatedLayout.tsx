@@ -8,10 +8,18 @@ import BottomNav from '@/components/layout/BottomNav';
 import Sidebar from '@/components/layout/Sidebar';
 import { usePathname } from 'next/navigation';
 import { getUserRole } from '@/lib/api';
+import { useSyncExternalStore } from 'react';
 
-// ✅ الروتس اللي بنخفي فيها الـ nav والـ sidebar
-const AUTH_ROUTES    = ['/login', '/register', '/', '/signup'];
-const NO_NAV_ROUTES  = ['/customer/cart'];
+function useMounted() {
+  return useSyncExternalStore(
+    () => () => {}, // subscribe (مش محتاجين)
+    () => true,     // client
+    () => false     // server
+  );
+}
+// routes
+const AUTH_ROUTES = ['/login', '/register', '/', '/signup'];
+const NO_NAV_ROUTES = ['/customer/cart'];
 
 const shouldHideNav = (pathname: string) =>
   AUTH_ROUTES.includes(pathname) ||
@@ -29,29 +37,27 @@ const shouldHideSidebar = (pathname: string) =>
 export default function AnimatedLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
-  // ✅ role في state عشان نتجنب hydration mismatch
-  const [role, setRole] = useState<'customer' | 'restaurant'>('customer');
+  // ✅ حل hydration mismatch
+  const mounted = useMounted();
 
-  useEffect(() => {
-    const r = getUserRole();
-    if (r === 'restaurant') setRole('restaurant');
-    else setRole('customer');
-  }, [pathname]); // بنعيد التحقق كل ما الـ route تتغير
+  if (!mounted) return null; // ⛔ يمنع mismatch
 
-  const isVendor  = role === 'restaurant';
-  const hideNav     = shouldHideNav(pathname);
+  // ✅ نحسب role مباشرة (بدون state ولا effect)
+  const role: 'customer' | 'restaurant' =
+    getUserRole() === 'restaurant' ? 'restaurant' : 'customer';
+
+  const isVendor = role === 'restaurant';
+  const hideNav = shouldHideNav(pathname);
   const hideSidebar = shouldHideSidebar(pathname);
-
   const showSidebar = !hideSidebar;
 
   return (
     <AuthProvider>
       <CartProvider>
-        <div
-          className="flex min-h-screen bg-[#FAFAFA]"
-          dir="rtl"
-        >
-          {showSidebar && <Sidebar role={isVendor ? 'restaurant' : 'customer'} />}
+        <div className="flex min-h-screen bg-[#FAFAFA]" dir="rtl">
+          {showSidebar && (
+            <Sidebar role={isVendor ? 'restaurant' : 'customer'} />
+          )}
 
           <div className="flex flex-col flex-1 min-w-0">
             <AnimatePresence mode="wait" initial={false}>
@@ -67,7 +73,9 @@ export default function AnimatedLayout({ children }: { children: React.ReactNode
               </motion.div>
             </AnimatePresence>
 
-            {!hideNav && <BottomNav role={isVendor ? 'restaurant' : 'customer'} />}
+            {!hideNav && (
+              <BottomNav role={isVendor ? 'restaurant' : 'customer'} />
+            )}
           </div>
         </div>
       </CartProvider>
