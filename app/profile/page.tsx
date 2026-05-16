@@ -7,7 +7,7 @@ import { ProfileHeader } from "./components/ProfileHeader";
 import { WalletCard } from "./components/WalletCard";
 import { OrdersSection } from "./components/OrdersSection";
 import { EditProfileModal } from "./components/EditProfileModal"; // ← أضفناه
-import { UserProfile, Order, OrderRowFromAPI } from "./types";
+import { UserProfile, Order, OrderRowFromAPI, OrderStatus } from "./types";
 import { ProtectedRoute } from "../context/AuthContext";
 
 export default function ProfilePage() {
@@ -51,9 +51,9 @@ const fetchOrders = useCallback(async (signal?: AbortSignal) => {
       restaurant_name: row.restaurant_name,
       order_date: row.created_at,
       total_amount: parseFloat(row.total_amount),
-      status: row.status,
+      status: row.status as OrderStatus,
       is_reservation: row.is_reservation,
-      payment_status: row.payment_status,
+      payment_status: row.payment_status as 'pending' | 'confirmed' | 'rejected',
       reservation_date: row.reservation_date || undefined,
       items: (row.items || []).map(item => ({
         dish_id: item.dish_id,

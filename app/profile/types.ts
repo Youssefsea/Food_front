@@ -39,7 +39,7 @@ export interface Order {
   items?: OrderItem[];
   total_amount: number;
   delivery_fee?: number;
-  status: OrderStatus;
+  status: string;
   is_reservation?: boolean;
   reservation_date?: string;
   reservation_time?: string;
