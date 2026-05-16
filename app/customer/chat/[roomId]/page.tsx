@@ -9,7 +9,7 @@ import { ChatMessage, ChatRoom } from '@/types';
 import { ArrowLeft, Send, Phone, Loader2, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function VendorChatRoomPage() {
+export default function CustomerChatRoomPage() {
   const params = useParams();
   const router = useRouter();
   const roomId = parseInt(params.roomId as string, 10);
@@ -41,7 +41,7 @@ export default function VendorChatRoomPage() {
 
   // ── جلب الرسائل ──
   useEffect(() => {
-    if (!params.roomId) return; // لسه مجاش
+    if (!params.roomId) return;
     if (isNaN(roomId)) return;
 
     const fetchData = async () => {
@@ -68,7 +68,7 @@ export default function VendorChatRoomPage() {
 
   // ── Pusher ──
   useEffect(() => {
-    if (!params.roomId) return; // لسه مجاش
+    if (!params.roomId) return;
 
     if (isNaN(roomId)) {
       setError('معرف الغرفة غير صالح');
@@ -105,6 +105,7 @@ export default function VendorChatRoomPage() {
     };
   }, [roomId, params.roomId, scrollToBottom]);
 
+  // ── إرسال رسالة ──
   const handleSendMessage = async (e?: React.FormEvent) => {
     e?.preventDefault();
     const message = inputMessage.trim();
@@ -154,7 +155,6 @@ export default function VendorChatRoomPage() {
         {/* ── Header ── */}
         <header className="flex-shrink-0 bg-white border-b border-gray-100 px-4 py-3">
           <div className="flex items-center gap-3">
-
             <button
               onClick={() => router.push('/customer/chat')}
               className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors flex-shrink-0"
@@ -162,16 +162,16 @@ export default function VendorChatRoomPage() {
               <ArrowLeft className="w-5 h-5 text-[#1A1A2E]" />
             </button>
 
-            {/* Avatar */}
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#E5A04D] to-[#d4894a] flex items-center justify-center flex-shrink-0 shadow-sm">
+            {/* Avatar المطعم */}
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#E5A04D] to-[#FF6B35] flex items-center justify-center flex-shrink-0 shadow-sm">
               <span className="text-white text-sm font-bold">
-                {(roomInfo?.customer_name || 'ع').charAt(0)}
+                {(roomInfo?.restaurant_name || 'م').charAt(0)}
               </span>
             </div>
 
             <div className="flex-1 min-w-0">
               <h1 className="font-bold text-[#1A1A2E] text-sm truncate">
-                {roomInfo?.customer_name || 'العميل'}
+                {roomInfo?.restaurant_name || 'المطعم'}
               </h1>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
@@ -234,7 +234,7 @@ export default function VendorChatRoomPage() {
                 </div>
                 <h3 className="text-base font-bold text-[#1A1A2E] mb-1">ابدأ المحادثة</h3>
                 <p className="text-xs text-[#9CA3AF] max-w-[200px] mx-auto leading-relaxed">
-                  تواصل مع العميل بخصوص طلبه مباشرة من هنا
+                  تواصل مع المطعم بخصوص طلبك مباشرة من هنا
                 </p>
               </div>
             </div>
@@ -252,7 +252,8 @@ export default function VendorChatRoomPage() {
 
                 <div className="space-y-1.5">
                   {dayMessages.map((message, index) => {
-                    const isMe = message.sender_role === 'restaurant';
+                    // ✅ التصحيح الرئيسي: العميل هو "أنا" في هذه الصفحة
+                    const isMe = message.sender_role === 'customer';
                     const prevMsg = dayMessages[index - 1];
                     const nextMsg = dayMessages[index + 1];
                     const isFirstInGroup = !prevMsg || prevMsg.sender_id !== message.sender_id;
@@ -265,16 +266,16 @@ export default function VendorChatRoomPage() {
                           isFirstInGroup ? 'mt-3' : 'mt-0.5'
                         }`}
                       >
-                        {/* Avatar للعميل */}
+                        {/* Avatar المطعم */}
                         {!isMe && (
                           <div className={`w-7 h-7 rounded-full flex-shrink-0 ${
                             isLastInGroup
-                              ? 'bg-gradient-to-br from-[#E5A04D] to-[#d4894a] flex items-center justify-center'
+                              ? 'bg-gradient-to-br from-[#E5A04D] to-[#FF6B35] flex items-center justify-center'
                               : 'invisible'
                           }`}>
                             {isLastInGroup && (
                               <span className="text-white text-[10px] font-bold">
-                                {(message.sender_name || 'ع').charAt(0)}
+                                {(roomInfo?.restaurant_name || 'م').charAt(0)}
                               </span>
                             )}
                           </div>
