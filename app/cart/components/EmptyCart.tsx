@@ -33,7 +33,7 @@ export function EmptyCart() {
         </p>
 
         <button
-          onClick={() => router.push("/customer/home")}
+          onClick={() => router.push("/explore")}
           className="bg-gradient-to-r from-[#E5A04D] to-[#D4903D] text-white px-8 py-4 rounded-xl text-[16px] font-bold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_4px_16px_rgba(229,160,77,0.4)] flex items-center gap-2"
         >
           <span className="text-[20px]">🍕</span>

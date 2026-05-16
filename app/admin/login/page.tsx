@@ -7,9 +7,11 @@ import { toast } from "sonner";
 import { Button, Input } from "@/components/ui";
 import { adminLogin } from "@/services/auth.service";
 import Link from "next/link";
+import { useAuth } from "@/app/context/AuthContext";
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const { refreshUser } = useAuth();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [isLoading, setIsLoading] = useState(false);
 
@@ -24,6 +26,7 @@ export default function AdminLoginPage() {
     try {
       await adminLogin(formData);
       toast.success("مرحباً بك!");
+      refreshUser();
       setTimeout(() => router.push("/admin/payments"), 800);
     } catch {
       toast.error("بيانات الاعتماد غير صحيحة");

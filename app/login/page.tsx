@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { User, Store, Shield, Mail, Lock, ChevronRight } from "lucide-react";
+import { User, Store, Mail, Lock, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { Button, Input } from "@/components/ui";
 import { customerLogin, vendorLogin, adminLogin } from "@/services/auth.service";
@@ -31,7 +31,6 @@ export default function LoginPage() {
   useEffect(() => {
     if (!isAuthenticated()) return;
     const role = getUserRole();
-    console.log("User role on login page:", role);
     if (role === 'customer') router.replace('/explore');
     else if (role === 'restaurant') router.replace('/restaurant/dashboard');
   }, [router]);

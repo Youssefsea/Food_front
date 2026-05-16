@@ -36,8 +36,10 @@ export interface RestaurantCart {
   can_reserve: boolean;
   can_delivery: boolean;
   delivery_fees: number;
+  allowed_radius_km?: number;
   calculatedDeliveryFee: number;
   distanceKm: number;
+  isOutsideDeliveryRadius?: boolean;
   dishes: {
     dishId: number;
     dishName: string;

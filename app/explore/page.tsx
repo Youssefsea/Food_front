@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo, useCallback, memo, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import Image from 'next/image';
-import api from '@/lib/api';
+import api, { isTimeoutError } from '@/lib/api';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { RestaurantCardSkeleton, CategoryChipSkeleton } from '@/components/ui/Skeleton';
@@ -21,15 +21,6 @@ const RESTAURANTS_CACHE_TTL = 60_000;
 const DISH_FETCH_BATCH_SIZE = 5;
 const RESTAURANTS_PER_PAGE = 9;
 
-const CATEGORIES = [
-  { name: 'بيتزا',   icon: '🍕' },
-  { name: 'برجر',    icon: '🍔' },
-  { name: 'شاورما',  icon: '🥙' },
-  { name: 'مكرونة',  icon: '🍝' },
-  { name: 'صحي',     icon: '🥗' },
-];
-
-// ─── Types ───
 interface Restaurant {
   id: number;
   restaurant_name: string;
@@ -56,7 +47,6 @@ type RestaurantsCache = {
   updatedAt: number;
 } | null;
 
-// helper — نفرق بين abort عادي والـ error الحقيقي
 function isAbortError(err: unknown): boolean {
   if (err instanceof Error) {
     return err.name === 'AbortError' || err.name === 'CanceledError';
@@ -176,10 +166,9 @@ const RestaurantCard = memo(function RestaurantCard({
   );
 });
 
-// ─── Main Page ───
+
 export default function ExplorePage() {
   const [mounted, setMounted]                         = useState(false);
-  const [showPicker, setShowPicker]                   = useState(false);
   const [allRestaurants, setAllRestaurants]           = useState<Restaurant[]>([]);
   const [nearbyRestaurantIds, setNearbyRestaurantIds] = useState<Set<number>>(new Set());
   const [restaurantDishes, setRestaurantDishes]       = useState<Record<number, Dish[]>>({});
@@ -195,18 +184,14 @@ export default function ExplorePage() {
   const [page, setPage]                               = useState(1);
   const [hasMore, setHasMore]                         = useState(true);
 
-  // ── كل controller له ref خاص ──
   const initialControllerRef = useRef<AbortController | null>(null);
   const moreControllerRef    = useRef<AbortController | null>(null);
-
-  // ── Cache جوا الـ component — آمن من SSR leak ──
-  const restaurantsCacheRef = useRef<RestaurantsCache>(null);
+  const restaurantsCacheRef  = useRef<RestaurantsCache>(null);
 
   const debouncedSearch = useDebounce(searchQuery, 300);
   const { lat, lng, isLocating, getCurrentPosition, setPosition } = useGeolocation();
   const { ref: infiniteScrollRef, inView } = useInView({ threshold: 0.1 });
 
-  // ─── Fetch helpers ───────────────────────────────────────
 
   const fetchRestaurantDishes = useCallback(async (
     restaurantId: number,
@@ -260,7 +245,6 @@ export default function ExplorePage() {
       return;
     }
 
-    // abort أي initial fetch سابق
     initialControllerRef.current?.abort();
     const controller = new AbortController();
     initialControllerRef.current = controller;
@@ -281,7 +265,6 @@ export default function ExplorePage() {
       setPage(1);
       setHasMore(restaurants.length === RESTAURANTS_PER_PAGE);
 
-      // حفظ في الـ cache
       restaurantsCacheRef.current = {
         data: restaurants,
         dishes: dishesMap,
@@ -289,7 +272,11 @@ export default function ExplorePage() {
       };
     } catch (err: unknown) {
       if (isAbortError(err)) return;
-      setLoadError('تعذر تحميل المطاعم حالياً');
+      if (isTimeoutError(err)) {
+        setLoadError('انتهت المهلة أثناء تحميل المطاعم. حاول مرة أخرى.');
+      } else {
+        setLoadError('تعذر تحميل المطاعم حالياً');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -298,7 +285,6 @@ export default function ExplorePage() {
   const fetchMoreRestaurants = useCallback(async () => {
     if (isFetchingMore || !hasMore || isLoading) return;
 
-    // controller منفصل تماماً — مش بيأثر على fetchAllRestaurants
     moreControllerRef.current?.abort();
     const controller = new AbortController();
     moreControllerRef.current = controller;
@@ -351,7 +337,6 @@ export default function ExplorePage() {
     }
   }, []);
 
-  // استخدم api instance مش axios مباشرة — بيدعم external URLs
   const getLocationName = useCallback(async (
     latitude: number,
     longitude: number,
@@ -379,19 +364,6 @@ export default function ExplorePage() {
     }
   }, [getCurrentPosition, getLocationName, fetchNearbyRestaurants]);
 
-  const handleLocationChange = useCallback(async (
-    newLat: number,
-    newLng: number,
-  ) => {
-    setPosition(newLat, newLng);
-    const [locationName] = await Promise.all([
-      getLocationName(newLat, newLng),
-      fetchNearbyRestaurants(newLat, newLng),
-    ]);
-    setCity(locationName);
-    setShowPicker(false);
-  }, [setPosition, getLocationName, fetchNearbyRestaurants]);
-
   // ─── Computed values ──────────────────────────────────────
 
   const filteredRestaurants = useMemo(() => {
@@ -405,7 +377,6 @@ export default function ExplorePage() {
     }
 
     if (activeCategory) {
-      // ✅ فلترة على dish.category مش dish.name
       filtered = filtered.filter(r =>
         (restaurantDishes[r.id] || []).some(d => d.category === activeCategory),
       );
@@ -446,7 +417,7 @@ export default function ExplorePage() {
       initialControllerRef.current?.abort();
       moreControllerRef.current?.abort();
     };
-  }, [mounted]); // ← mounted فقط — fetchAllRestaurants مش في الـ deps عشان نمنع re-fetch
+  }, [mounted]);
 
   useEffect(() => {
     if (!mounted) return;
@@ -454,8 +425,6 @@ export default function ExplorePage() {
       fetchMoreRestaurants();
     }
   }, [inView, hasMore, isLoading, isFetchingMore, fetchMoreRestaurants, mounted]);
-
-  // ─── Filter chips data ────────────────────────────────────
 
   const filterChips = [
     {
@@ -489,7 +458,6 @@ export default function ExplorePage() {
 
         {/* ── Hero ── */}
         <section className="relative bg-gradient-to-br from-[#FF6B35] to-[#E63946] pt-14 pb-16 sm:pt-16 sm:pb-20 overflow-hidden">
-          {/* Decorative blobs */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
             <div className="absolute top-4 right-8 text-xl sm:text-2xl opacity-15">🍕</div>
             <div className="absolute bottom-8 left-12 text-xl sm:text-2xl opacity-10">🍔</div>
@@ -534,34 +502,10 @@ export default function ExplorePage() {
             </div>
           </div>
 
-          {/* Wave */}
           <svg className="absolute bottom-0 left-0 right-0 h-6" viewBox="0 0 1440 24" fill="none" preserveAspectRatio="none">
             <path d="M0 24h1440V12c-120 8-240 12-360 12s-240-4-360-12c-120-8-240-12-360-12S120 4 0 12v12z" fill="#FAFAFA" />
           </svg>
         </section>
-
-        {/* ── Category Chips ── */}
-        <div className="px-4 sm:px-5 pt-6">
-          <div className="flex items-center gap-3 overflow-x-auto hide-scrollbar pb-2">
-            {isLoading
-              ? Array.from({ length: 5 }).map((_, i) => <CategoryChipSkeleton key={i} />)
-              : CATEGORIES.map((cat) => (
-                <button
-                  key={cat.name}
-                  onClick={() => setActiveCategory(activeCategory === cat.name ? null : cat.name)}
-                  className={cn(
-                    'flex flex-col items-center gap-2 min-w-[70px] p-3 rounded-2xl transition-all flex-shrink-0',
-                    activeCategory === cat.name
-                      ? 'bg-[#FF6B35] text-white shadow-lg shadow-orange-500/30 scale-105'
-                      : 'bg-white text-[#1A1A2E] border border-gray-100 hover:border-orange-200',
-                  )}
-                >
-                  <span className="text-2xl">{cat.icon}</span>
-                  <span className="text-[10px] font-bold">{cat.name}</span>
-                </button>
-              ))}
-          </div>
-        </div>
 
         {/* ── Location & Filter Chips ── */}
         <div className="px-4 sm:px-5 pt-4 pb-2">
@@ -580,16 +524,7 @@ export default function ExplorePage() {
               </span>
             </button>
 
-            {/* Map picker */}
-            <button
-              onClick={() => setShowPicker(true)}
-              className="flex items-center gap-1.5 bg-white shadow-sm rounded-full px-3 py-2 text-xs font-medium text-[#1A1A2E] hover:shadow-md transition-all flex-shrink-0 border border-gray-100"
-            >
-              <div className="w-5 h-5 rounded-full bg-emerald-500/10 flex items-center justify-center">
-                <MapPin className="w-3 h-3 text-emerald-600" />
-              </div>
-              <span>الخريطة</span>
-            </button>
+       
 
             {/* City badge */}
             {city && (
@@ -680,12 +615,18 @@ export default function ExplorePage() {
               icon="🔍"
               title="لا توجد مطاعم"
               description={
-                searchQuery
-                  ? 'جرب كلمات بحث مختلفة'
-                  : 'لم نجد مطاعم بهذه الفلاتر'
+                nearbyOnly
+                  ? 'لا توجد مطاعم قريبة حالياً. جرّب توسيع نطاق البحث.'
+                  : searchQuery
+                    ? 'جرب كلمات بحث مختلفة'
+                    : 'لم نجد مطاعم بهذه الفلاتر'
               }
-              actionLabel={activeFiltersCount > 0 ? 'مسح الفلاتر' : undefined}
-              onAction={activeFiltersCount > 0 ? clearAllFilters : undefined}
+              actionLabel={
+                nearbyOnly ? 'عرض كل المطاعم' : activeFiltersCount > 0 ? 'مسح الفلاتر' : undefined
+              }
+              onAction={
+                nearbyOnly ? () => setNearbyOnly(false) : activeFiltersCount > 0 ? clearAllFilters : undefined
+              }
             />
           )}
 
@@ -698,19 +639,10 @@ export default function ExplorePage() {
             </div>
           )}
 
-          {/* Infinite scroll trigger */}
           <div ref={infiniteScrollRef} className="h-1" />
         </main>
 
-        {/* Location Picker Modal */}
-        {showPicker && (
-          <LocationCustomer
-            lat={lat || 30.0444}
-            lng={lng || 31.2357}
-            onLocationChange={handleLocationChange}
-            onClose={() => setShowPicker(false)}
-          />
-        )}
+     
 
       </div>
     </ProtectedRoute>

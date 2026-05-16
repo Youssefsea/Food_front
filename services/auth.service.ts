@@ -1,4 +1,5 @@
 import api from '@/lib/api';
+import Cookies from 'js-cookie';
 import { setCustomerToken, setVendorToken, setAdminToken, clearAllTokens } from '@/lib/api';
 import { ENDPOINTS } from '@/lib/constants';
 
@@ -48,7 +49,7 @@ export async function customerLogin(credentials: LoginCredentials): Promise<User
   if (user?.token) {
     localStorage.clear();
     await setCustomerToken(user.token);
-    localStorage.setItem('userData', JSON.stringify(user));
+    Cookies.set('user', JSON.stringify(user), { expires: 7 });
   }
   return user;
 }
@@ -59,13 +60,16 @@ export async function customerSignup(data: CustomerSignupData): Promise<void> {
 
 // ─── Vendor Auth ───
 export async function vendorLogin(credentials: LoginCredentials): Promise<UserData> {
-  const res = await api.post(ENDPOINTS.RESTAURANT_LOGIN, credentials);
+  const res = await api.post(ENDPOINTS.RESTAURANT_LOGIN, {
+    ...credentials,
+    role: 'restaurant',
+  });
   const restaurant = res.data.restaurant || res.data.user;
   if (restaurant?.token) {
     localStorage.clear();
 
     await setVendorToken(restaurant.token);
-    localStorage.setItem('userData', JSON.stringify(restaurant));
+    Cookies.set('user', JSON.stringify(restaurant), { expires: 7 });
   }
   return restaurant;
 }
@@ -82,7 +86,7 @@ export async function adminLogin(credentials: LoginCredentials): Promise<UserDat
     localStorage.clear();
 
     await setAdminToken(user.token);
-    localStorage.setItem('userData', JSON.stringify(user));
+    Cookies.set('user', JSON.stringify(user), { expires: 7 });
   }
   return user;
 }
@@ -109,7 +113,7 @@ export async function logout(): Promise<void> {
 export function getStoredUser(): UserData | null {
   if (typeof window === 'undefined') return null;
   try {
-    const data = localStorage.getItem('userData');
+    const data = Cookies.get('user');
     return data ? JSON.parse(data) : null;
   } catch {
     return null;

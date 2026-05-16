@@ -4,7 +4,10 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Home, ShoppingCart, ClipboardList, User, MessageCircle, Utensils } from 'lucide-react';
+import {
+  Home, ShoppingCart, ClipboardList,
+  User, MessageCircle, Utensils,
+} from 'lucide-react';
 
 interface NavItem {
   href: string;
@@ -13,19 +16,19 @@ interface NavItem {
 }
 
 const customerNavItems: NavItem[] = [
-  { href: '/customer/home', label: 'الرئيسية', icon: <Home className="w-5 h-5" /> },
-
-  { href: '/customer/orders', label: 'طلباتي', icon: <ClipboardList className="w-5 h-5" /> },
-  { href: '/customer/cart', label: 'السلة', icon: <ShoppingCart className="w-5 h-5" /> },
-  { href: '/customer/chat', label: 'المحادثات', icon: <MessageCircle className="w-5 h-5" /> },
-  { href: '/profile', label: 'حسابي', icon: <User className="w-5 h-5" /> },
+  { href: '/explore',         label: 'الرئيسية',  icon: <Home className="w-[18px] h-[18px]" /> },
+  { href: '/customer/orders', label: 'طلباتي',    icon: <ClipboardList className="w-[18px] h-[18px]" /> },
+  { href: '/customer/cart',   label: 'السلة',     icon: <ShoppingCart className="w-[18px] h-[18px]" /> },
+  { href: '/customer/chat',   label: 'المحادثات', icon: <MessageCircle className="w-[18px] h-[18px]" /> },
+  { href: '/profile',         label: 'حسابي',     icon: <User className="w-[18px] h-[18px]" /> },
 ];
 
 const vendorNavItems: NavItem[] = [
-  { href: '/vendor/dashboard', label: 'الرئيسية', icon: <Home className="w-5 h-5" /> },
-  { href: '/vendor/orders', label: 'الطلبات', icon: <ClipboardList className="w-5 h-5" /> },
-  { href: '/vendor/dishes', label: 'القائمة', icon: <Utensils className="w-5 h-5" /> },
-  { href: '/vendor/chat', label: 'المحادثات', icon: <MessageCircle className="w-5 h-5" /> },
+  { href: '/vendor/dashboard', label: 'الرئيسية',  icon: <Home className="w-[18px] h-[18px]" /> },
+  { href: '/vendor/orders',    label: 'الطلبات',   icon: <ClipboardList className="w-[18px] h-[18px]" /> },
+  { href: '/vendor/dishes',    label: 'القائمة',   icon: <Utensils className="w-[18px] h-[18px]" /> },
+  { href: '/vendor/chat',      label: 'المحادثات', icon: <MessageCircle className="w-[18px] h-[18px]" /> },
+  { href: '/vendor/profile',   label: 'حسابي',     icon: <User className="w-[18px] h-[18px]" /> },
 ];
 
 interface SidebarProps {
@@ -33,74 +36,69 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ role }: SidebarProps) {
-
   const [expanded, setExpanded] = useState(false);
   const pathname = usePathname();
-  const items = role === 'customer' ? customerNavItems : vendorNavItems;
-  if (role === 'restaurant') {
-    return null;
-  }
+  const items    = role === 'customer' ? customerNavItems : vendorNavItems;
+
   const isActive = (href: string) => {
-    if (href === '/customer/home') {
-      return pathname === '/customer/home' || pathname === '/explore' || pathname === '/';
-    }
+    if (href === '/explore') return pathname === '/explore' || pathname === '/';
     return pathname === href || pathname.startsWith(href + '/');
   };
 
   return (
-    <aside
-      className={cn(
-        'hidden md:flex flex-col transition-all duration-300 bg-white border-l border-gray-200 h-screen sticky top-0',
-        expanded ? 'w-56' : 'w-16'
-      )}
-      onMouseEnter={() => setExpanded(true)}
-      onMouseLeave={() => setExpanded(false)}
-    >
-      {/* Logo / Header */}
-      <div className="flex items-center justify-center h-16 border-b border-gray-100">
-        {expanded ? (
-          <span className="font-bold text-[#E5A04D] text-lg">🍽️ فودي</span>
-        ) : (
-          <span className="text-2xl">🍽️</span>
+ 
+    <div className="hidden md:block w-16 flex-shrink-0">
+      <aside
+        className={cn(
+          'fixed right-3 top-1/2 -translate-y-1/2 z-50',
+          'flex flex-col gap-1 p-2',
+          'bg-white/90 backdrop-blur-md',
+          'border border-gray-200/80',
+          'shadow-lg shadow-black/5',
+          'rounded-2xl',
+          'transition-all duration-300 ease-in-out',
+          expanded ? 'w-50' : 'w-12',
         )}
-      </div>
-
-      {/* Nav Items */}
-      <nav className="flex flex-col gap-1 p-2 flex-1">
+        onMouseEnter={() => setExpanded(true)}
+        onMouseLeave={() => setExpanded(false)}
+      >
         {items.map((item) => {
           const active = isActive(item.href);
+
           return (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                'flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200',
+                'flex items-center gap-2.5 rounded-xl transition-all duration-200 overflow-hidden',
+                expanded ? 'px-3 py-2.5' : 'px-2 py-2.5 justify-center',
                 active
-                  ? 'bg-[#FFF8F0] text-[#E5A04D] font-medium'
-                  : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+                  ? 'bg-[#FFF3E6] text-[#E5A04D]'
+                  : 'text-gray-400 hover:bg-gray-50 hover:text-gray-600'
               )}
             >
-              <span className="shrink-0">{item.icon}</span>
-              <span
-                className={cn(
-                  'text-sm whitespace-nowrap overflow-hidden transition-all duration-300',
-                  expanded ? 'opacity-100 w-auto' : 'opacity-0 w-0'
-                )}
-              >
+              {/* Icon */}
+              <span className={cn('flex-shrink-0', active && 'text-[#E5A04D]')}>
+                {item.icon}
+              </span>
+
+              {/* Label */}
+              <span className={cn(
+                'text-[13px] font-medium whitespace-nowrap',
+                'transition-all duration-200',
+                expanded ? 'opacity-100 max-w-[120px]' : 'opacity-0 max-w-0',
+              )}>
                 {item.label}
               </span>
+
+              {/* Active dot لما تكون مضغوطة */}
+              {!expanded && active && (
+                <span className="absolute right-1.5 w-1 h-1 rounded-full bg-[#E5A04D]" />
+              )}
             </Link>
           );
         })}
-      </nav>
-
-      {/* Toggle button for desktop */}
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="hidden lg:flex items-center justify-center h-10 border-t border-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
-      >
-        {expanded ? '◀' : '▶'}
-      </button>
-    </aside>
+      </aside>
+    </div>
   );
 }

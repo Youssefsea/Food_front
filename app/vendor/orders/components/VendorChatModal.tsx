@@ -4,6 +4,7 @@ import { X, Send, ArrowLeft, WifiOff } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import Pusher from 'pusher-js';
 import api from "@/lib/api";
+import Cookies from 'js-cookie';
 
 interface ChatMessage {
   id: number;
@@ -40,7 +41,7 @@ export function VendorChatModal({ isOpen, onClose, orderId, customerName }: Vend
   // استخرج currentUserId من الـ token
   useEffect(() => {
     try {
-      const userData = localStorage.getItem('userData');
+      const userData = Cookies.get('user');
       if (userData) {
         const user = JSON.parse(userData);
         setCurrentUserId(user.id ?? null);

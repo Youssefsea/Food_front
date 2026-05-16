@@ -43,3 +43,7 @@ next-env.d.ts
 .claudeTask.md
 /.claude/
 /.cursor/
+
+.COMPLETED.md
+.COMPONENTS.md
+.ISSUES.md

@@ -7,6 +7,7 @@ export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://foo
 const api = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
+  timeout: 10000,
 });
 
 // Store in-flight requests to prevent duplicates
@@ -19,7 +20,6 @@ if (typeof window !== 'undefined') {
       return Promise.reject(new Error('Offline'));
     }
 
-    // [مهم] إضافة التوكن تلقائياً لأي طلب لتجنب تسجيل الخروج عند تحديث الصفحة
     const token = getToken();
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
@@ -123,13 +123,11 @@ export function getToken(): string | null {
 
 export function getUserRole(): 'customer' | 'vendor' | 'restaurant' | 'admin' | null {
   if (typeof window !== 'undefined') {
-    const userData = localStorage.getItem('userData') ;
+    const userData = Cookies.get('user');
     if (userData) {
       try {
         const user = JSON.parse(userData);
-        const role = user.role as 'customer' || 'restaurant' ;
-        // Normalize 'restaurant' to 'vendor' for consistency
-        return role;
+        return user.role ?? null;
       } catch {
         return null;
       }
@@ -141,7 +139,7 @@ export function getUserRole(): 'customer' | 'vendor' | 'restaurant' | 'admin' | 
 
 export function getUsername(): string | null {
   if (typeof window !== 'undefined') {
-    const userData = localStorage.getItem('userData') ;
+    const userData = Cookies.get('user');
     if (userData) {
       try {
         const user = JSON.parse(userData);
@@ -156,11 +154,17 @@ export function getUsername(): string | null {
 }
 
 export function isAuthenticated(): boolean {
-  if (typeof window !== 'undefined') {
+  if (typeof window !== 'undefined' && window.location.pathname !== '/login'&& window.location.pathname !== '/signup'&& window.location.pathname !== '/vendor/signup'&& window.location.pathname !== '/vendor/login'&& window.location.pathname !== '/admin/login'&& window.location.pathname !== '/admin/signup'&& window.location.pathname !== '/explore') {
     const token = getToken();
     return !!token;
   }
   return false;
+}
+
+export function isTimeoutError(error: unknown): boolean {
+  if (!axios.isAxiosError(error)) return false;
+  const message = error.message?.toLowerCase() || '';
+  return error.code === 'ECONNABORTED' || message.includes('timeout');
 }
 
 export default api;

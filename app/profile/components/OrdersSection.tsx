@@ -40,7 +40,7 @@ export function OrdersSection({ orders, isLoading }: OrdersSectionProps) {
         <h2 className="flex items-center gap-2" style={{ fontSize: '1.25rem', fontWeight: 600, color: '#1A1A1A' }}>
           طلباتي 
           <span 
-            className="ml-2 px-2.5 py-1 rounded-full "
+            className="ml-1 px-2 py-1 rounded-full "
             style={{ 
               fontSize: '0.875rem',
               backgroundColor: '#FEF3E2',
@@ -52,7 +52,7 @@ export function OrdersSection({ orders, isLoading }: OrdersSectionProps) {
           </span>
         </h2>
       </div>
-      <div className="h-2"/>
+      <div className="h-4"/>
 
 
       <div className="overflow-x-auto px-4 mb-4 scrollbar-hide">

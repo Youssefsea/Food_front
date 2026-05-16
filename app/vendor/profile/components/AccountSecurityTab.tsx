@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Eye, EyeOff, ChevronDown, CheckCircle, Loader2, Lock, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, ChevronDown, CheckCircle, Loader2, Lock, AlertCircle, LogOut } from 'lucide-react';
 import api from '@/lib/api';
+import { logout } from '../../../../services/auth.service';
 
 interface AccountData {
   email?: string;
@@ -28,6 +29,7 @@ export function AccountSecurityTab({ data: _data }: AccountSecurityTabProps) {
   });
   const [isPasswordSectionOpen, setIsPasswordSectionOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLogoutLoading, setIsLogoutLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const calculatePasswordStrength = (password: string): number => {
@@ -103,6 +105,15 @@ export function AccountSecurityTab({ data: _data }: AccountSecurityTabProps) {
       }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    setIsLogoutLoading(true);
+    try {
+      await logout();
+    } catch {
+      setIsLogoutLoading(false);
     }
   };
 
@@ -278,6 +289,44 @@ export function AccountSecurityTab({ data: _data }: AccountSecurityTabProps) {
             </div>
           </div>
         )}
+      </div>
+
+      <div className="h-8" />
+
+      {/* Section: Logout */}
+      <div className="px-7 pb-5 border-b border-[#E5E7EB]">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-[#FEF2F2] flex items-center justify-center">
+              <LogOut className="w-6 h-6 text-[#EF4444]" />
+            </div>
+            <div className="text-right">
+              <h3 className="text-lg font-semibold text-[#1A1A1A]">تسجيل الخروج</h3>
+              <p className="text-xs text-[#6B7280]">الخروج من حسابك على هذا الجهاز</p>
+            </div>
+          </div>
+          <button
+            onClick={handleLogout}
+            disabled={isLogoutLoading}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold border-2 transition-all duration-200 ${
+              isLogoutLoading
+                ? 'border-[#E5E7EB] text-[#9CA3AF] cursor-not-allowed'
+                : 'border-[#EF4444] text-[#EF4444] hover:bg-[#EF4444] hover:text-white cursor-pointer'
+            }`}
+          >
+            {isLogoutLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                جاري الخروج...
+              </>
+            ) : (
+              <>
+                <LogOut className="w-4 h-4" />
+                تسجيل الخروج
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       <div className="h-8" />

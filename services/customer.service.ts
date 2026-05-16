@@ -103,11 +103,12 @@ export async function placeOrder(data: OrderData) {
   return res.data;
 }
 
-export async function uploadPaymentProof(orderId: number, paymentMethod: string, imageFile: File) {
+export async function uploadPaymentProof(orderId: number, paymentMethod: string, imageFiles: File | File[]) {
   const formData = new FormData();
   formData.append('orderId', orderId.toString());
   formData.append('payment_method', paymentMethod);
-  formData.append('images', imageFile);
+  const files = Array.isArray(imageFiles) ? imageFiles : [imageFiles];
+  files.forEach((file) => formData.append('images', file));
   
   const res = await api.post(ENDPOINTS.UPLOAD_PAYMENT, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },

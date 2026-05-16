@@ -38,53 +38,39 @@ export default function ProfilePage() {
     } catch {}
   }, [mounted]);
 
-  const fetchOrders = useCallback(async (signal?: AbortSignal) => {
-    if (!mounted) return;
-    setIsOrdersLoading(true);
-    try {
-      const ordersRes = await api.get('/customer/orders', { signal });
-      const ordersRows: OrderRowFromAPI[] = ordersRes.data.orders || [];
-      const ordersMap = new Map<number, Order>();
+const fetchOrders = useCallback(async (signal?: AbortSignal) => {
+  if (!mounted) return;
+  setIsOrdersLoading(true);
+  try {
+    const ordersRes = await api.get('/customer/orders', { signal });
+    const ordersRows: OrderRowFromAPI[] = ordersRes.data.orders || [];
 
-      ordersRows.forEach(row => {
-        if (!ordersMap.has(row.id)) {
-          ordersMap.set(row.id, {
-            id: row.id,
-            restaurant_id: row.restaurant_id,
-            restaurant_name: row.restaurant_name,
-            order_date: row.created_at,
-            total_amount: row.total_amount,
-            status: row.status,
-            is_reservation: row.is_reservation,
-            payment_status: row.payment_status,
-            reservation_date: row.reservation_date || undefined,
-            items: []
-          });
-        }
-        const order = ordersMap.get(row.id)!;
-        const existing = order.items?.find(i => i.dish_id === row.dish_id);
-        if (existing) {
-          existing.quantity += 1;
-        } else {
-          order.items?.push({
-            id: row.dish_id,
-            dish_id: row.dish_id,
-            name: row.dish_name,
-            price: row.dish_price,
-            image: row.dish_image,
-            quantity: 1
-          });
-        }
-      });
+    const orders: Order[] = ordersRows.map(row => ({
+      id: row.id,
+      restaurant_id: row.restaurant_id,
+      restaurant_name: row.restaurant_name,
+      order_date: row.created_at,
+      total_amount: parseFloat(row.total_amount),
+      status: row.status,
+      is_reservation: row.is_reservation,
+      payment_status: row.payment_status,
+      reservation_date: row.reservation_date || undefined,
+      items: (row.items || []).map(item => ({
+        dish_id: item.dish_id,
+        dish_name: item.dish_name,
+        dish_price: parseFloat(item.dish_price),
+        dish_image: item.dish_image,
+        quantity: item.quantity ?? 1
+      }))
+    }));
 
-      setOrders(Array.from(ordersMap.values()));
-    } catch {
-      setOrders([]);
-    } finally {
-      setIsOrdersLoading(false);
-    }
-  }, [mounted]);
-
+    setOrders(orders);
+  } catch {
+    setOrders([]);
+  } finally {
+    setIsOrdersLoading(false);
+  }
+}, [mounted]);
   useEffect(() => {
     if (!mounted) return;
     const controller = new AbortController();
@@ -114,7 +100,6 @@ export default function ProfilePage() {
         className="min-h-screen bg-white"
         style={{ paddingBottom: 'calc(72px + env(safe-area-inset-bottom))' }}
       >
-        {/* Hero Header — يحتوي على الـ avatar والـ edit button */}
         <ProfileHeader
           user={isLoading ? null : user}
           onEditClick={() => setIsEditModalOpen(true)}

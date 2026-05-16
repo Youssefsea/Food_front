@@ -1,16 +1,33 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+  memo,
+} from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import api from '@/lib/api';
+import api, { isTimeoutError } from '@/lib/api';
 import { cn, getFirstImage, parseDishImages, formatCurrency } from '@/lib/utils';
 import { Badge, Modal, EmptyState } from '@/components/ui';
 import { DishCardSkeleton } from '@/components/ui/Skeleton';
 import { useCart } from '@/app/context/CartContext';
-import { ChevronRight, Search, Plus, Minus, ShoppingCart, Clock, MapPin, Truck } from 'lucide-react';
+import {
+  ChevronRight,
+  Search,
+  Plus,
+  Minus,
+  ShoppingCart,
+  Clock,
+  MapPin,
+  Truck,
+} from 'lucide-react';
 
-// ─── Types ───
+// ─── Types ────────────────────────────────────────────────────────────────────
+
 interface Restaurant {
   id: number;
   name?: string;
@@ -37,7 +54,8 @@ interface Dish {
   isPopular?: boolean;
 }
 
-// ─── Helpers ───
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 function isAbortError(err: unknown): boolean {
   if (err instanceof Error) {
     return err.name === 'AbortError' || err.name === 'CanceledError';
@@ -45,26 +63,30 @@ function isAbortError(err: unknown): boolean {
   return false;
 }
 
-// ─── Dish Card Component ───
+// ─── Dish Card ────────────────────────────────────────────────────────────────
+
 const DishCard = memo(function DishCard({
   dish,
   cartQuantity,
   onAdd,
   onClick,
+  isRestaurantOpen,
 }: {
   dish: Dish;
   cartQuantity: number;
   onAdd: (dishId: number, qty: number) => void;
   onClick: () => void;
+  isRestaurantOpen: boolean;
 }) {
   const image = getFirstImage(dish.image);
   const isUnavailable = dish.is_available === false;
+  const canOrder = isRestaurantOpen && !isUnavailable;
 
   return (
     <div
       className={cn(
         'bg-white rounded-xl border border-gray-100 flex gap-3 p-3 sm:p-4 group cursor-pointer hover:shadow-md transition-all duration-200',
-        isUnavailable && 'opacity-50'
+        !canOrder && 'opacity-50'
       )}
       onClick={onClick}
       role="button"
@@ -75,7 +97,9 @@ const DishCard = memo(function DishCard({
         {image ? (
           <Image src={image} alt={dish.name} fill className="object-cover" sizes="96px" />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-3xl opacity-30">🍽️</div>
+          <div className="w-full h-full flex items-center justify-center text-3xl opacity-30">
+            🍽️
+          </div>
         )}
         {dish.isPopular && (
           <div className="absolute top-1 right-1 px-1.5 py-0.5 bg-[#FF6B35] text-white text-[8px] font-bold rounded-md">
@@ -89,7 +113,9 @@ const DishCard = memo(function DishCard({
         <div>
           <h3 className="text-sm font-bold text-[#1A1A2E] mb-0.5 line-clamp-1">{dish.name}</h3>
           {dish.description && (
-            <p className="text-[11px] text-[#9CA3AF] line-clamp-2 mb-1.5 leading-relaxed">{dish.description}</p>
+            <p className="text-[11px] text-[#9CA3AF] line-clamp-2 mb-1.5 leading-relaxed">
+              {dish.description}
+            </p>
           )}
         </div>
 
@@ -104,7 +130,7 @@ const DishCard = memo(function DishCard({
             )}
           </div>
 
-          {!isUnavailable && (
+          {canOrder && (
             <div onClick={(e) => e.stopPropagation()}>
               {cartQuantity > 0 ? (
                 <div className="flex items-center gap-2 bg-[#FFF8F0] rounded-lg px-1">
@@ -115,7 +141,9 @@ const DishCard = memo(function DishCard({
                   >
                     <Minus className="w-3.5 h-3.5" />
                   </button>
-                  <span className="text-sm font-bold text-[#1A1A2E] min-w-[16px] text-center">{cartQuantity}</span>
+                  <span className="text-sm font-bold text-[#1A1A2E] min-w-[16px] text-center">
+                    {cartQuantity}
+                  </span>
                   <button
                     onClick={() => onAdd(dish.id, cartQuantity + 1)}
                     className="w-7 h-7 rounded-lg flex items-center justify-center bg-[#FF6B35] text-white hover:bg-[#E63946] transition-colors"
@@ -141,22 +169,26 @@ const DishCard = memo(function DishCard({
   );
 });
 
-// ─── Dish Detail Modal ───
+// ─── Dish Detail Modal ────────────────────────────────────────────────────────
+
 function DishDetailModal({
   dish,
   isOpen,
   onClose,
   onAdd,
   initialQty,
+  isRestaurantOpen,
 }: {
   dish: Dish | null;
   isOpen: boolean;
   onClose: () => void;
   onAdd: (dishId: number, qty: number) => void;
   initialQty: number;
+  isRestaurantOpen: boolean;
 }) {
   const [quantity, setQuantity] = useState(initialQty || 1);
   const images = dish ? parseDishImages(dish.image) : [];
+  const canOrder = !!dish && isRestaurantOpen && dish.is_available !== false;
 
   if (!dish) return null;
 
@@ -169,7 +201,9 @@ function DishDetailModal({
       )}
 
       <h2 className="text-xl font-bold text-[#1A1A2E] mb-1">{dish.name}</h2>
-      {dish.description && <p className="text-sm text-[#6B7280] mb-4 leading-relaxed">{dish.description}</p>}
+      {dish.description && (
+        <p className="text-sm text-[#6B7280] mb-4 leading-relaxed">{dish.description}</p>
+      )}
 
       <div className="flex items-center gap-4 mb-6">
         <span className="text-xl font-bold text-[#FF6B35]">{formatCurrency(dish.price)}</span>
@@ -180,7 +214,9 @@ function DishDetailModal({
           </span>
         )}
         {dish.category && (
-          <Badge variant="neutral" size="md">{dish.category}</Badge>
+          <Badge variant="neutral" size="md">
+            {dish.category}
+          </Badge>
         )}
       </div>
 
@@ -194,7 +230,9 @@ function DishDetailModal({
           >
             <Minus className="w-4 h-4 text-[#6B7280]" />
           </button>
-          <span className="text-lg font-bold text-[#1A1A2E] min-w-[24px] text-center">{quantity}</span>
+          <span className="text-lg font-bold text-[#1A1A2E] min-w-[24px] text-center">
+            {quantity}
+          </span>
           <button
             onClick={() => setQuantity(quantity + 1)}
             className="w-9 h-9 rounded-xl bg-[#FF6B35] text-white flex items-center justify-center hover:bg-[#E63946]"
@@ -206,18 +244,33 @@ function DishDetailModal({
       </div>
 
       <button
-        onClick={() => { onAdd(dish.id, quantity); onClose(); }}
-        className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#FF6B35] to-[#E63946] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 hover:shadow-xl transition-all"
+        onClick={() => {
+          if (canOrder) {
+            onAdd(dish.id, quantity);
+            onClose();
+          }
+        }}
+        disabled={!canOrder}
+        className={`w-full py-3.5 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 transition-all ${
+          canOrder
+            ? 'bg-gradient-to-r from-[#FF6B35] to-[#E63946] hover:shadow-xl'
+            : 'bg-[#C4C4C4] cursor-not-allowed'
+        }`}
         aria-label="أضف إلى السلة"
       >
         <ShoppingCart className="w-4 h-4" />
-        {quantity === 0 ? 'إزالة من السلة' : `أضف للسلة — ${formatCurrency(dish.price * quantity)}`}
+        {!isRestaurantOpen
+          ? 'المطعم مغلق حالياً'
+          : quantity === 0
+          ? 'إزالة من السلة'
+          : `أضف للسلة — ${formatCurrency(dish.price * quantity)}`}
       </button>
     </Modal>
   );
 }
 
-// ─── Floating Cart Bar ───
+// ─── Floating Cart Bar ────────────────────────────────────────────────────────
+
 const FloatingCartBar = memo(function FloatingCartBar({
   itemCount,
   totalPrice,
@@ -248,43 +301,41 @@ const FloatingCartBar = memo(function FloatingCartBar({
   );
 });
 
-// ─── Main Page ───
+// ─── Main Page ────────────────────────────────────────────────────────────────
+
 export default function RestaurantPage() {
   const params = useParams();
   const router = useRouter();
   const { incrementCount, decrementCount } = useCart();
   const restaurantName = decodeURIComponent(params.restaurant_name as string);
 
+  // ── State ──
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
-  const [dishes, setDishes] = useState<Dish[]>([]);
+  const [dishes, setDishes]         = useState<Dish[]>([]);
   const [coverImage, setCoverImage] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading]   = useState(true);
+  const [error, setError]           = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState('الكل');
-  const [selectedDish, setSelectedDish] = useState<Dish | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [cart, setCart] = useState<Record<number, number>>({});
+  const [selectedDish, setSelectedDish]     = useState<Dish | null>(null);
+  const [isModalOpen, setIsModalOpen]       = useState(false);
+  const [cart, setCart]             = useState<Record<number, number>>({});
   const [searchQuery, setSearchQuery] = useState('');
 
-  const categoryRefs = useRef<Record<string, HTMLDivElement | null>>({});
-
-  // ── كل fetch بياخد controller خاص بيه عشان مفيش race condition ──
+  // ── Refs ──
+  const categoryRefs          = useRef<Record<string, HTMLDivElement | null>>({});
   const restaurantControllerRef = useRef<AbortController | null>(null);
   const dishesControllerRef     = useRef<AbortController | null>(null);
   const cartControllerRef       = useRef<AbortController | null>(null);
 
-  const fetchRestaurant = useCallback(async () => {
-    restaurantControllerRef.current?.abort();
-    const controller = new AbortController();
-    restaurantControllerRef.current = controller;
+  // ── Fetch helpers ──
 
+  const fetchRestaurant = useCallback(async (signal: AbortSignal) => {
     try {
-      const cleanName = restaurantName.trim();
       const res = await api.get('/restaurant/search-by-name', {
-        params: { name: cleanName },
-        signal: controller.signal,
+        params: { name: restaurantName.trim() },
+        signal,
       });
-      const data = res.data.restaurant;
+      const data: Restaurant | undefined = res.data.restaurant;
       if (data) {
         setRestaurant(data);
         return data;
@@ -292,91 +343,135 @@ export default function RestaurantPage() {
       setError('المطعم غير موجود');
       return null;
     } catch (err: unknown) {
-      // تجاهل الـ abort — مش error حقيقي
       if (isAbortError(err)) return null;
-      const axiosErr = err as { response?: { status?: number } };
-      if (axiosErr.response?.status === 404) {
-        setError('المطعم غير موجود');
-      } else {
-        setError('حدث خطأ في تحميل بيانات المطعم');
+      if (isTimeoutError(err)) {
+        setError('انتهت المهلة أثناء تحميل بيانات المطعم. حاول مرة أخرى.');
+        return null;
       }
+      const axiosErr = err as { response?: { status?: number } };
+      setError(
+        axiosErr.response?.status === 404
+          ? 'المطعم غير موجود'
+          : 'حدث خطأ في تحميل بيانات المطعم'
+      );
       return null;
     }
   }, [restaurantName]);
 
-  const fetchDishes = useCallback(async (restaurantId: number) => {
-    dishesControllerRef.current?.abort();
-    const controller = new AbortController();
-    dishesControllerRef.current = controller;
-
+  const fetchDishes = useCallback(async (restaurantId: number, signal: AbortSignal) => {
     try {
       const res = await api.post(
         '/restaurant/all-dishes-for-restaurantE',
         { restaurantId },
-        { signal: controller.signal }
+        { signal }
       );
-      const dishesData: Dish[] = res.data.dishes || [];
-      const processed = dishesData.map((d, i) => ({ ...d, isPopular: i < 3 }));
+      const raw: Dish[] = res.data.dishes || [];
+      const processed   = raw.map((d, i) => ({ ...d, isPopular: i < 3 }));
       setDishes(processed);
-      if (processed.length > 0) {
-        const img = getFirstImage(processed[0]?.image);
-        if (img) setCoverImage(img);
-      }
+      const img = getFirstImage(processed[0]?.image);
+      if (img) setCoverImage(img);
     } catch (err: unknown) {
       if (isAbortError(err)) return;
+      if (isTimeoutError(err)) setError('انتهت المهلة أثناء تحميل الأطباق. حاول مرة أخرى.');
     }
   }, []);
 
-  const fetchCart = useCallback(async () => {
-    cartControllerRef.current?.abort();
-    const controller = new AbortController();
-    cartControllerRef.current = controller;
-
+  const fetchCart = useCallback(async (signal: AbortSignal) => {
     try {
-      const res = await api.get('/customer/view-cart', { signal: controller.signal });
+      const res   = await api.get('/customer/view-cart', { signal });
       const items = res.data.cartItems || [];
-      const cartMap: Record<number, number> = {};
+      const map: Record<number, number> = {};
       items.forEach((item: { dishId: number; quantity: number }) => {
-        cartMap[item.dishId] = item.quantity;
+        map[item.dishId] = item.quantity;
       });
-      setCart(cartMap);
+      setCart(map);
     } catch (err: unknown) {
       if (isAbortError(err)) return;
     }
   }, []);
 
+  // ── Initial load effect ──
+  // setState calls are inside an async function — not synchronous in the effect body,
+  // so no cascading-render warning is triggered.
   useEffect(() => {
-    const load = async () => {
+    let cancelled = false;
+
+    const restaurantController = new AbortController();
+    const dishesController     = new AbortController();
+    const cartController       = new AbortController();
+
+    restaurantControllerRef.current = restaurantController;
+    dishesControllerRef.current     = dishesController;
+    cartControllerRef.current       = cartController;
+
+    const run = async () => {
+      if (cancelled) return;
       setIsLoading(true);
-      setError(null); // ← reset الـ error عند كل load جديد
-      const data = await fetchRestaurant();
+      setError(null);
+
+      const data = await fetchRestaurant(restaurantController.signal);
+      if (cancelled) return;
+
       if (data) {
-        // dishes و cart بالتوازي — بعد ما نجيب المطعم بنجاح
-        await Promise.all([fetchDishes(data.id), fetchCart()]);
+        await Promise.all([
+          fetchDishes(data.id, dishesController.signal),
+          fetchCart(cartController.signal),
+        ]);
       }
-      setIsLoading(false);
+
+      if (!cancelled) setIsLoading(false);
     };
 
-    load();
+    run();
 
     return () => {
-      // cleanup الـ 3 controllers منفصلين
-      restaurantControllerRef.current?.abort();
-      dishesControllerRef.current?.abort();
-      cartControllerRef.current?.abort();
+      cancelled = true;
+      restaurantController.abort();
+      dishesController.abort();
+      cartController.abort();
     };
+  }, [restaurantName, fetchRestaurant, fetchDishes, fetchCart]);
+  // ↑ restaurantName بدل reload — stable dependency
+
+  // ── Manual reload (زر "إعادة المحاولة" فقط) ──
+  const reload = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+
+    const restaurantController = new AbortController();
+    const dishesController     = new AbortController();
+    const cartController       = new AbortController();
+
+    restaurantControllerRef.current = restaurantController;
+    dishesControllerRef.current     = dishesController;
+    cartControllerRef.current       = cartController;
+
+    const data = await fetchRestaurant(restaurantController.signal);
+    if (data) {
+      await Promise.all([
+        fetchDishes(data.id, dishesController.signal),
+        fetchCart(cartController.signal),
+      ]);
+    }
+
+    setIsLoading(false);
   }, [fetchRestaurant, fetchDishes, fetchCart]);
 
+  // ── Derived data ──
+
   const categories = useMemo(() => {
-    const unique = [...new Set(dishes.map(d => d.category).filter((c): c is string => !!c))];
+    const unique = [
+      ...new Set(dishes.map((d) => d.category).filter((c): c is string => !!c)),
+    ];
     return ['الكل', ...unique];
   }, [dishes]);
 
   const filteredDishes = useMemo(() => {
-    return dishes.filter(d => {
-      const matchSearch = !searchQuery
-        || d.name.toLowerCase().includes(searchQuery.toLowerCase())
-        || d.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    return dishes.filter((d) => {
+      const matchSearch =
+        !searchQuery ||
+        d.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        d.description?.toLowerCase().includes(searchQuery.toLowerCase());
       const matchCat = activeCategory === 'الكل' || d.category === activeCategory;
       return matchSearch && matchCat;
     });
@@ -385,63 +480,93 @@ export default function RestaurantPage() {
   const dishesByCategory = useMemo(() => {
     return categories.reduce((acc, cat) => {
       if (cat === 'الكل') return acc;
-      acc[cat] = filteredDishes.filter(d => d.category === cat);
+      acc[cat] = filteredDishes.filter((d) => d.category === cat);
       return acc;
     }, {} as Record<string, Dish[]>);
   }, [categories, filteredDishes]);
 
-  const cartItemCount = useMemo(() => Object.values(cart).reduce((s, q) => s + q, 0), [cart]);
-  const cartTotal = useMemo(() => Object.entries(cart).reduce((s, [id, q]) => {
-    const d = dishes.find(d => d.id === Number(id));
-    return s + (d?.price || 0) * q;
-  }, 0), [cart, dishes]);
+  const cartItemCount = useMemo(
+    () => Object.values(cart).reduce((s, q) => s + q, 0),
+    [cart]
+  );
 
-  const handleAddToCart = useCallback(async (dishId: number, quantity: number) => {
-    const current = cart[dishId] || 0;
-    const diff = quantity - current;
+  const cartTotal = useMemo(
+    () =>
+      Object.entries(cart).reduce((s, [id, q]) => {
+        const d = dishes.find((d) => d.id === Number(id));
+        return s + (d?.price || 0) * q;
+      }, 0),
+    [cart, dishes]
+  );
 
-    // Optimistic update
-    setCart(p =>
-      quantity === 0
-        ? (() => { const n = { ...p }; delete n[dishId]; return n; })()
-        : { ...p, [dishId]: quantity }
-    );
-    if (diff > 0) incrementCount(diff);
-    else if (diff < 0) decrementCount(Math.abs(diff));
+  // ── Cart handler ──
 
-    try {
-      if (quantity === 0) {
-        await api.delete('/customer/remove-dish-from-cart', { data: { dishId } });
-      } else if (current === 0) {
-        await api.post('/customer/add-dish-to-cart', { dishId, quantity });
-      } else {
-        await api.put('/customer/update-dish-quantity-in-cart', { dishId, quantity });
+  const handleAddToCart = useCallback(
+    async (dishId: number, quantity: number) => {
+      if (restaurant?.is_open === 0 || restaurant?.is_open === false) return;
+
+      const current = cart[dishId] || 0;
+      const diff    = quantity - current;
+
+      // Optimistic update
+      setCart((prev) => {
+        if (quantity === 0) {
+          const next = { ...prev };
+          delete next[dishId];
+          return next;
+        }
+        return { ...prev, [dishId]: quantity };
+      });
+      if (diff > 0) incrementCount(diff);
+      else if (diff < 0) decrementCount(Math.abs(diff));
+
+      try {
+        if (quantity === 0) {
+          await api.delete('/customer/remove-dish-from-cart', { data: { dishId } });
+        } else if (current === 0) {
+          await api.post('/customer/add-dish-to-cart', { dishId, quantity });
+        } else {
+          await api.put('/customer/update-dish-quantity-in-cart', { dishId, quantity });
+        }
+      } catch {
+        // Rollback
+        setCart((prev) => {
+          if (current === 0) {
+            const next = { ...prev };
+            delete next[dishId];
+            return next;
+          }
+          return { ...prev, [dishId]: current };
+        });
+        if (diff > 0) decrementCount(diff);
+        else if (diff < 0) incrementCount(Math.abs(diff));
       }
-    } catch {
-      // Rollback optimistic update
-      setCart(p =>
-        current === 0
-          ? (() => { const n = { ...p }; delete n[dishId]; return n; })()
-          : { ...p, [dishId]: current }
-      );
-      if (diff > 0) decrementCount(diff);
-      else if (diff < 0) incrementCount(Math.abs(diff));
-    }
-  }, [cart, incrementCount, decrementCount]);
+    },
+    [cart, incrementCount, decrementCount, restaurant]
+  );
 
-  // ── Loading ──
+  // ── Loading state ──
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#FAFAFA]" dir="rtl">
         <div className="h-48 bg-gradient-to-br from-orange-100 to-red-50 animate-pulse" />
         <div className="px-4 py-4 space-y-3">
-          {Array.from({ length: 5 }).map((_, i) => <DishCardSkeleton key={i} />)}
+          {Array.from({ length: 5 }).map((_, i) => (
+            <DishCardSkeleton key={i} />
+          ))}
         </div>
       </div>
     );
   }
 
-  // ── Error ──
+  // ── Error state ──
+
+  const errorActionLabel = error?.includes('غير موجود') ? 'العودة للمطاعم' : 'إعادة المحاولة';
+  const errorAction = error?.includes('غير موجود')
+    ? () => router.push('/customer/home')
+    : reload;
+
   if (error || !restaurant) {
     return (
       <div className="min-h-screen bg-[#FAFAFA]" dir="rtl">
@@ -449,21 +574,32 @@ export default function RestaurantPage() {
           icon="😕"
           title={error || 'المطعم غير موجود'}
           description="عذراً، لم نتمكن من العثور على هذا المطعم"
-          actionLabel="العودة للمطاعم"
-          onAction={() => router.push('/customer/home')}
+          actionLabel={errorActionLabel}
+          onAction={errorAction}
         />
       </div>
     );
   }
 
-  const displayName = restaurant.restaurant_name || restaurant.name || restaurantName;
+  // ── Render ──
+
+  const displayName      = restaurant.restaurant_name || restaurant.name || restaurantName;
+  const isRestaurantOpen = restaurant.is_open !== 0 && restaurant.is_open !== false;
 
   return (
     <div className="min-h-screen bg-[#FAFAFA]" dir="rtl">
-      {/* ── Hero ── */}
+
+      {/* Hero */}
       <div className="relative h-48 sm:h-56 overflow-hidden">
         {coverImage ? (
-          <Image src={coverImage} alt={displayName} fill className="object-cover" sizes="100vw" priority />
+          <Image
+            src={coverImage}
+            alt={displayName}
+            fill
+            className="object-cover"
+            sizes="100vw"
+            priority
+          />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-[#FF6B35] to-[#E63946] flex items-center justify-center">
             <span className="text-6xl opacity-30">🍕</span>
@@ -480,7 +616,9 @@ export default function RestaurantPage() {
         </button>
 
         <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5">
-          <h1 className="text-xl sm:text-2xl font-bold text-white mb-2">{displayName}</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-white mb-2 truncate">
+            {displayName}
+          </h1>
           <div className="flex items-center gap-2 flex-wrap">
             <Badge variant={restaurant.is_open ? 'success' : 'danger'} size="sm" dot>
               {restaurant.is_open ? 'مفتوح الآن' : 'مغلق'}
@@ -499,10 +637,10 @@ export default function RestaurantPage() {
         </div>
       </div>
 
-      {/* ── Category Tabs ── */}
+      {/* Category Tabs */}
       <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-gray-100">
         <div className="flex overflow-x-auto hide-scrollbar px-4 gap-1">
-          {categories.map(cat => (
+          {categories.map((cat) => (
             <button
               key={cat}
               onClick={() => {
@@ -525,7 +663,7 @@ export default function RestaurantPage() {
         </div>
       </div>
 
-      {/* ── Search ── */}
+      {/* Search */}
       <div className="px-4 py-3">
         <div className="relative">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" />
@@ -540,25 +678,26 @@ export default function RestaurantPage() {
         </div>
       </div>
 
-      {/* ── Dishes ── */}
+      {/* Dishes */}
       <div className="px-4 py-2 pb-32 space-y-6">
         {activeCategory === 'الكل' ? (
           Object.entries(dishesByCategory).map(([cat, catDishes]) => {
             if (catDishes.length === 0) return null;
             return (
-              <div key={cat} ref={el => { categoryRefs.current[cat] = el; }}>
+              <div key={cat} ref={(el) => { categoryRefs.current[cat] = el; }}>
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-base font-bold text-[#1A1A2E]">{cat}</h2>
                   <span className="text-[11px] text-[#9CA3AF]">({catDishes.length})</span>
                 </div>
                 <div className="space-y-2.5">
-                  {catDishes.map(dish => (
+                  {catDishes.map((dish) => (
                     <DishCard
                       key={dish.id}
                       dish={dish}
                       cartQuantity={cart[dish.id] || 0}
                       onAdd={handleAddToCart}
                       onClick={() => { setSelectedDish(dish); setIsModalOpen(true); }}
+                      isRestaurantOpen={isRestaurantOpen}
                     />
                   ))}
                 </div>
@@ -567,13 +706,14 @@ export default function RestaurantPage() {
           })
         ) : filteredDishes.length > 0 ? (
           <div className="space-y-2.5">
-            {filteredDishes.map(dish => (
+            {filteredDishes.map((dish) => (
               <DishCard
                 key={dish.id}
                 dish={dish}
                 cartQuantity={cart[dish.id] || 0}
                 onAdd={handleAddToCart}
                 onClick={() => { setSelectedDish(dish); setIsModalOpen(true); }}
+                isRestaurantOpen={isRestaurantOpen}
               />
             ))}
           </div>
@@ -594,6 +734,7 @@ export default function RestaurantPage() {
         onClose={() => setIsModalOpen(false)}
         onAdd={handleAddToCart}
         initialQty={selectedDish ? cart[selectedDish.id] || 1 : 1}
+        isRestaurantOpen={isRestaurantOpen}
       />
 
       {/* Floating Cart Bar */}

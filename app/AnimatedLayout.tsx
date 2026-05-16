@@ -1,77 +1,75 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import BottomNav from '@/components/layout/BottomNav';
-import VendorSidebar from '@/components/layout/VendorSidebar';
-import { usePathname } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
-import { getUserRole,getUsername } from '@/lib/api';
+import { usePathname } from 'next/navigation';
+import { getUserRole } from '@/lib/api';
+
+// ✅ الروتس اللي بنخفي فيها الـ nav والـ sidebar
+const AUTH_ROUTES    = ['/login', '/register', '/', '/signup'];
+const NO_NAV_ROUTES  = ['/customer/cart'];
+
+const shouldHideNav = (pathname: string) =>
+  AUTH_ROUTES.includes(pathname) ||
+  NO_NAV_ROUTES.includes(pathname) ||
+  pathname.startsWith('/customer/chat/') ||
+  pathname.startsWith('/signup/') ||
+  pathname.startsWith('/admin');
+
+const shouldHideSidebar = (pathname: string) =>
+  AUTH_ROUTES.includes(pathname) ||
+  pathname.startsWith('/customer/chat/') ||
+  pathname.startsWith('/signup/') ||
+  pathname.startsWith('/admin');
 
 export default function AnimatedLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
-  const isVendor = getUserRole() === 'restaurant';
-const vendorName=getUsername();
-  const hideNavRoutes = ['/login', '/register', '/', '/signup', '/cart', '/customer/cart'];
-  const hideNav =
-    hideNavRoutes.includes(pathname) ||
-    pathname.startsWith('/customer/chat/') ||
-    pathname.startsWith('/signup/') ||
-    pathname.startsWith('/admin');
+  // ✅ role في state عشان نتجنب hydration mismatch
+  const [role, setRole] = useState<'customer' | 'restaurant'>('customer');
 
-  const hideSidebarRoutes = ['/login', '/register', '/', '/signup'];
-  const hideSidebar =
-    hideSidebarRoutes.includes(pathname) ||
-    pathname.startsWith('/customer/chat/') ||
-    pathname.startsWith('/signup/') ||
-    pathname.startsWith('/admin');
+  useEffect(() => {
+    const r = getUserRole();
+    if (r === 'restaurant') setRole('restaurant');
+    else setRole('customer');
+  }, [pathname]); // بنعيد التحقق كل ما الـ route تتغير
+
+  const isVendor  = role === 'restaurant';
+  const hideNav     = shouldHideNav(pathname);
+  const hideSidebar = shouldHideSidebar(pathname);
+
+  const showSidebar = !hideSidebar;
 
   return (
     <AuthProvider>
       <CartProvider>
-        {isVendor ? (
-          /* ── Vendor: VendorSidebar + BottomNav للـ mobile ── */
-          <div className="flex min-h-screen bg-[#FAFAFA]" dir="rtl">
-            {!hideSidebar && <VendorSidebar restaurantName={vendorName||'مطعمي'} />}
-            <div className="flex flex-col flex-1 min-w-0">
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.div
-                  key={pathname}
-                  className="flex-1"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  {children}
-                </motion.div>
-              </AnimatePresence>
-              {!hideNav && <BottomNav role="restaurant" />}
-            </div>
+        <div
+          className="flex min-h-screen bg-[#FAFAFA]"
+          dir="rtl"
+        >
+          {showSidebar && <Sidebar role={isVendor ? 'restaurant' : 'customer'} />}
+
+          <div className="flex flex-col flex-1 min-w-0">
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={pathname}
+                className="flex-1"
+                initial={{ opacity: 0, y: isVendor ? 8 : 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: isVendor ? -8 : -12 }}
+                transition={{ duration: isVendor ? 0.2 : 0.25 }}
+              >
+                {children}
+              </motion.div>
+            </AnimatePresence>
+
+            {!hideNav && <BottomNav role={isVendor ? 'restaurant' : 'customer'} />}
           </div>
-        ) : (
-          /* ── Customer: Sidebar للـ desktop + BottomNav للـ mobile ── */
-          <div className="flex min-h-screen">
-            {!hideSidebar && <Sidebar role="customer" />}
-            <div className="flex flex-col flex-1 min-w-0">
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.div
-                  key={pathname}
-                  className="flex-1"
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -12 }}
-                  transition={{ duration: 0.25 }}
-                >
-                  {children}
-                </motion.div>
-              </AnimatePresence>
-              {!hideNav && <BottomNav role="customer" />}
-            </div>
-          </div>
-        )}
+        </div>
       </CartProvider>
     </AuthProvider>
   );

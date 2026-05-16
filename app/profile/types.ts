@@ -3,29 +3,31 @@ export type OrderStatus = 'pending' | 'cooking' | 'delivering' | 'completed' | '
 export type OrderType = 'delivery' | 'reservation';
 
 export interface OrderItem {
-  id: number;
+
   dish_id: number;
-  name: string;
+  dish_name: string;
   quantity: number;
-  price: number;
-  image?: string;
+  dish_price: number;
+  dish_image?: string;
 }
 
-// Raw order row from backend API (each dish is a separate row)
 export interface OrderRowFromAPI {
   id: number;
   restaurant_id: number;
-  total_amount: number;
-  status: OrderStatus;
-  created_at: string;
-  is_reservation: boolean;
-  reservation_date: string | null;
-  dish_id: number;
-  dish_name: string;
-  dish_image: string;
-  dish_price: number;
   restaurant_name: string;
-  payment_status?: 'pending' | 'confirmed' | 'rejected';
+  created_at: string;
+  total_amount: string;
+  status: string;
+  is_reservation: boolean;
+  reservation_date?: string | null;
+  payment_status: string;
+  items: {
+    dish_id: number;
+    dish_name: string;
+    dish_price: string;
+    dish_image: string;
+    quantity?: number;
+  }[];
 }
 
 export interface Order {

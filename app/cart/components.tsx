@@ -117,6 +117,12 @@ const LocationPickerModalm = (({ isOpen, onClose, onSelectLocation, initialLocat
     geocodeTimeoutRef.current = setTimeout(() => reverseGeocode(lat, lng), 600);
   }, [reverseGeocode]);
 
+  useEffect(() => {
+    return () => {
+      if (geocodeTimeoutRef.current) clearTimeout(geocodeTimeoutRef.current);
+    };
+  }, []);
+
   // Geocode on mount if no address yet
   useEffect(() => {
     if (!address) reverseGeocode(currentLat, currentLng);

@@ -10,7 +10,7 @@ import {
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Locate } from "lucide-react";
+import { Locate, Loader2 } from "lucide-react";
 
 const customIcon = new L.Icon({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
@@ -29,11 +29,9 @@ interface Props {
 
 function RecenterMap({ lat, lng }: { lat: number; lng: number }) {
   const map = useMap();
-
   useEffect(() => {
     map.setView([lat, lng], 15);
   }, [lat, lng, map]);
-
   return null;
 }
 
@@ -75,6 +73,7 @@ export default function LocationCustomer({
 }: Props) {
   const [currentLat, setCurrentLat] = useState(lat);
   const [currentLng, setCurrentLng] = useState(lng);
+  const [loading, setLoading] = useState(false); // ← جديد
 
   const locateMe = () => {
     navigator.geolocation.getCurrentPosition(
@@ -86,10 +85,16 @@ export default function LocationCustomer({
     );
   };
 
+  const handleConfirm = async () => {
+    setLoading(true);
+    await onLocationChange(currentLat, currentLng); // ← خليها async
+    setLoading(false);
+    onClose();
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl w-full max-w-2xl shadow-xl overflow-hidden">
-
         <div className="p-4 border-b flex justify-between items-center">
           <h3 className="font-semibold">حدد عنوانك</h3>
           <div className="flex gap-2">
@@ -111,9 +116,7 @@ export default function LocationCustomer({
             className="h-full w-full"
           >
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-
             <RecenterMap lat={currentLat} lng={currentLng} />
-
             <CustomerMarker
               lat={currentLat}
               lng={currentLng}
@@ -129,19 +132,20 @@ export default function LocationCustomer({
           <p className="text-xs text-gray-500">
             ({currentLat.toFixed(6)}, {currentLng.toFixed(6)})
           </p>
-
           <div className="flex gap-3">
             <button onClick={onClose} className="flex-1 border rounded-full py-2">
               إلغاء
             </button>
             <button
-              onClick={() => {
-                onLocationChange(currentLat, currentLng);
-                onClose();
-              }}
-              className="flex-1 bg-[#E5A04D] text-white rounded-full py-2"
+              onClick={handleConfirm}
+              disabled={loading}
+              className="flex-1 bg-[#E5A04D] text-white rounded-full py-2 flex items-center justify-center gap-2"
             >
-              تأكيد العنوان
+              {loading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                "تأكيد العنوان"
+              )}
             </button>
           </div>
         </div>

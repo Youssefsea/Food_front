@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Toaster, toast } from 'sonner';
-import api from '@/lib/api';
+import api, { isTimeoutError } from '@/lib/api';
 import {
   CartHeader,
   NoticeBanner,
@@ -21,6 +21,7 @@ import {
 import { RestaurantCart, LocationData, PaymentMethod as PaymentMethodType, CartSummary } from './types';
 import { useCart } from '../context/CartContext';
 import { SkeletonCard } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui';
 import { calculateDistance } from '@/lib/utils';
 interface CartItemResponse {
   dishId: number;
@@ -35,6 +36,9 @@ interface CartItemResponse {
   restaurantCanDeliver: boolean;
   restaurantCanReserve: boolean;
   deliveryFee: number;
+  allowed_radius_km?: number;
+  restaurantIsOpen?: number | boolean;
+  is_open?: number | boolean;
 }
 
 interface OrderResponse {
@@ -53,6 +57,9 @@ interface GroupedRestaurantResponse {
   restaurantCanReserve: boolean;
   restaurantCanDeliver: boolean;
   deliveryFee: number;
+  allowed_radius_km?: number;
+  restaurantIsOpen?: number | boolean;
+  is_open?: number | boolean;
   dishes: {
     dishId: number;
     name: string;
@@ -66,12 +73,19 @@ interface GroupedRestaurantResponse {
   totalItems: number;
 }
 
+const normalizeIsOpen = (value: unknown): number => {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'boolean') return value ? 1 : 0;
+  return 1;
+};
+
 export default function CartPage() {
   const router = useRouter();
   const { incrementCount, decrementCount, setCount } = useCart();
 
   const [mounted, setMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [groupedCarts, setGroupedCarts] = useState<RestaurantCart[]>([]);
   const [deliveryLocation, setDeliveryLocation] = useState<LocationData | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>(null);
@@ -84,11 +98,13 @@ export default function CartPage() {
     show: boolean;
     orderId: number | null;
     countdown: number;
-  }>({ show: false, orderId: null, countdown: 5 });
+    isReservation: boolean;
+  }>({ show: false, orderId: null, countdown: 5, isReservation: false });
 
   const fetchCart = useCallback(async (signal?: AbortSignal) => {
     try {
       setIsLoading(true);
+      setLoadError(null);
       const res = await api.get('/customer/view-cart', { signal });
       const data = res.data;
       
@@ -108,10 +124,11 @@ export default function CartPage() {
           restaurantLogo: '',
           restaurantLat: r.restaurantLat || null,
           restaurantLng: r.restaurantLng || null,
-          is_open: 1,
+          is_open: normalizeIsOpen(r.is_open ?? r.restaurantIsOpen),
           can_reserve: r.restaurantCanReserve || false,
           can_delivery: r.restaurantCanDeliver || false,
           delivery_fees: r.deliveryFee || 0,
+          allowed_radius_km: r.allowed_radius_km,
           calculatedDeliveryFee: 0,
           distanceKm: 0,
           dishes: r.dishes.map((d) => ({
@@ -150,10 +167,11 @@ export default function CartPage() {
               restaurantLogo: '',
               restaurantLat: null,
               restaurantLng: null,
-              is_open: 1,
+              is_open: normalizeIsOpen(item.is_open ?? item.restaurantIsOpen),
               can_reserve: item.restaurantCanReserve || false,
               can_delivery: item.restaurantCanDeliver || false,
               delivery_fees: item.deliveryFee || 0,
+              allowed_radius_km: item.allowed_radius_km,
               calculatedDeliveryFee: 0,
               distanceKm: 0,
               dishes: [],
@@ -190,6 +208,11 @@ export default function CartPage() {
         }
       }
     } catch (err) {
+      if (isTimeoutError(err)) {
+        setLoadError('انتهت المهلة أثناء تحميل السلة. حاول مرة أخرى.');
+      } else {
+        setLoadError('حدث خطأ في تحميل السلة');
+      }
       toast.error('حدث خطأ في تحميل السلة');
     } finally {
       setIsLoading(false);
@@ -231,6 +254,7 @@ export default function CartPage() {
     setGroupedCarts(prev => prev.map(restaurant => {
       let distanceKm = 0;
       let calculatedFee = 0;
+      let isOutsideDeliveryRadius = false;
       
       if (restaurant.restaurantLat && restaurant.restaurantLng) {
         distanceKm = calculateDistance(
@@ -241,6 +265,9 @@ export default function CartPage() {
         );
         distanceKm = Math.round(distanceKm * 100) / 100;
         calculatedFee = Math.round(restaurant.delivery_fees * distanceKm);
+        if (typeof restaurant.allowed_radius_km === 'number' && restaurant.allowed_radius_km > 0) {
+          isOutsideDeliveryRadius = distanceKm > restaurant.allowed_radius_km;
+        }
       } else {
         distanceKm = 5;
         calculatedFee = restaurant.delivery_fees * distanceKm;
@@ -249,7 +276,8 @@ export default function CartPage() {
       return {
         ...restaurant,
         distanceKm,
-        calculatedDeliveryFee: calculatedFee
+        calculatedDeliveryFee: calculatedFee,
+        isOutsideDeliveryRadius
       };
     }));
   }, [deliveryLocation]);
@@ -415,6 +443,14 @@ export default function CartPage() {
     const restaurant = selectedRestaurant || groupedCarts[0];
     if (restaurant) {
       const isReservation = restaurant.orderType === 'reservation';
+      if (restaurant.is_open === 0) {
+        return 'هذا المطعم مغلق حالياً ولا يمكن إتمام الطلب';
+      }
+      if (!isReservation && restaurant.isOutsideDeliveryRadius) {
+        const distance = restaurant.distanceKm > 0 ? restaurant.distanceKm.toFixed(1) : '';
+        const radius = restaurant.allowed_radius_km ? restaurant.allowed_radius_km.toFixed(1) : '';
+        return `المسافة خارج نطاق التوصيل${distance ? ` (${distance} كم${radius ? `، الحد ${radius} كم` : ''})` : ''}`;
+      }
 
       // Reservation orders require payment proof
       if (isReservation) {
@@ -450,14 +486,16 @@ export default function CartPage() {
 
     try {
       // Step 1: Create the order
+      const isReservationOrder = restaurantToOrder.orderType === 'reservation';
+      const reservationDate = isReservationOrder
+        ? `${restaurantToOrder.reservationDate} ${restaurantToOrder.reservationTime}`
+        : null;
       const orderData = {
-        is_reservation: restaurantToOrder.orderType === 'reservation',
-        reservation_date: restaurantToOrder.orderType === 'reservation' 
-          ? `${restaurantToOrder.reservationDate} ${restaurantToOrder.reservationTime}`
-          : null,
+        is_reservation: isReservationOrder,
         lat: deliveryLocation!.lat,
         lng: deliveryLocation!.lng,
-        restaurantId: restaurantToOrder.restaurantId
+        restaurantId: restaurantToOrder.restaurantId,
+        ...(reservationDate ? { reservation_date: reservationDate } : {})
       };
 
       const orderResponse = await api.post('/customer/place-order', orderData);
@@ -478,8 +516,6 @@ export default function CartPage() {
       ) || createdOrders[0];
 
       // Step 2: Upload payment proof ONLY for reservation orders
-      const isReservationOrder = restaurantToOrder.orderType === 'reservation';
-      
       if (isReservationOrder && paymentMethod && paymentImage) {
         const formData = new FormData();
         formData.append('orderId', ourOrder.orderId.toString());
@@ -506,7 +542,8 @@ export default function CartPage() {
       setOrderSuccess({
         show: true,
         orderId: ourOrder.orderId,
-        countdown: 5
+        countdown: 5,
+        isReservation: isReservationOrder
       });
 
     } catch (err) {
@@ -539,6 +576,20 @@ export default function CartPage() {
         <SkeletonCard />
         <SkeletonCard />
         <SkeletonCard />
+      </div>
+    );
+  }
+ 
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-[#F5F5F5] flex items-center justify-center px-4" dir="rtl">
+        <EmptyState
+          icon="⚠️"
+          title="تعذر تحميل السلة"
+          description={loadError}
+          actionLabel="إعادة المحاولة"
+          onAction={() => fetchCart()}
+        />
       </div>
     );
   }
@@ -640,7 +691,9 @@ export default function CartPage() {
             </p>
             
             <p className="text-[14px] text-[#9CA3AF] mb-6">
-              شكراً لك! سيتم التواصل معك قريباً لتأكيد الطلب
+              {orderSuccess.isReservation
+                ? 'تم استلام إثبات الدفع. الدفع قيد المراجعة وسنتواصل معك لتأكيد الحجز.'
+                : 'شكراً لك! سيتم التواصل معك قريباً لتأكيد الطلب'}
             </p>
             
             <div className="flex items-center justify-center gap-2 text-[14px] text-[#6B7280]">

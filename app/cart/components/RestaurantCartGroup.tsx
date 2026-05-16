@@ -37,15 +37,15 @@ export function RestaurantCartGroup({
         
           </div>
 
-          <div>
-            <div className="text-[16px] font-semibold text-[#1A1A1A]">
+          <div className="min-w-0">
+            <div className="text-[16px] font-semibold text-[#1A1A1A] truncate max-w-[180px] sm:max-w-[240px]">
               {restaurant.restaurantName}
             </div>
 <div className="h-2"/>
 
-            <div className="text-[12px] text-[#9CA3AF] flex items-center gap-1">
+            <div className="text-[12px] text-[#9CA3AF] flex items-center gap-1 min-w-0">
               <span>📍</span>
-              <span>{restaurant.restaurantLocation || 'غير محدد'}</span>
+              <span className="truncate">{restaurant.restaurantLocation || 'غير محدد'}</span>
             </div>
           </div>
         </div>
@@ -62,7 +62,22 @@ export function RestaurantCartGroup({
         <div className="bg-[#FEE2E2] border-b border-[#FECACA] p-3 flex gap-2.5">
           <AlertTriangle className="w-[18px] h-[18px] text-[#EF4444] flex-shrink-0 mt-0.5" />
           <span className="text-[13px] text-[#991B1B]">
-            هذا المطعم مغلق حالياً. سيتم تجاهل هذا الطلب عند ارسال طلب توصيل فوري.
+            هذا المطعم مغلق حالياً ولا يمكن إتمام الطلب.
+          </span>
+        </div>
+      )}
+
+      {restaurant.isOutsideDeliveryRadius && (
+        <div className="bg-[#FEF3C7] border-b border-[#FDE68A] p-3 flex gap-2.5">
+          <AlertTriangle className="w-[18px] h-[18px] text-[#D97706] flex-shrink-0 mt-0.5" />
+          <span className="text-[13px] text-[#92400E]">
+            موقعك خارج نطاق التوصيل
+            {restaurant.distanceKm > 0 && (
+              <span> — المسافة {restaurant.distanceKm.toFixed(1)} كم</span>
+            )}
+            {restaurant.allowed_radius_km && (
+              <span> (الحد {restaurant.allowed_radius_km.toFixed(1)} كم)</span>
+            )}
           </span>
         </div>
       )}

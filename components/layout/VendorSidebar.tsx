@@ -13,7 +13,9 @@ const navItems = [
   { href: '/vendor/dashboard', label: 'لوحة التحكم', icon: LayoutDashboard },
   { href: '/vendor/dishes',    label: 'الأطباق',      icon: UtensilsCrossed },
   { href: '/vendor/orders',    label: 'الطلبات',      icon: ClipboardList },
-  { href: '/vendor/settings',  label: 'الإعدادات',    icon: Settings },
+  { href: '/vendor/chat',      label: 'المحادثات',    icon: Settings },
+  { href: '/vendor/profile',  label: 'الإعدادات',    icon: Settings },
+
 ];
 
 // ── خارج الـ VendorSidebar تماماً ──
@@ -91,115 +93,115 @@ interface VendorSidebarProps {
   restaurantName?: string;
 }
 
-export default function VendorSidebar({ restaurantName  }: VendorSidebarProps) {
-  const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
-  const [drawerOpen, setDrawerOpen] = useState(false);
+// export default function VendorSidebar({ restaurantName  }: VendorSidebarProps) {
+//   const pathname = usePathname();
+//   const [collapsed, setCollapsed] = useState(false);
+//   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const initial = restaurantName?.trim().charAt(0) || 'م';
+//   const initial = restaurantName?.trim().charAt(0) || 'م';
 
-  const isActive = (href: string) =>
-    pathname === href || pathname.startsWith(href + '/');
+//   const isActive = (href: string) =>
+//     pathname === href || pathname.startsWith(href + '/');
 
-  return (
-    <>
-      {/* ══ Mobile: Hamburger ══ */}
-      <button
-        className="lg:hidden fixed top-4 right-4 z-150 w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-md border border-gray-100"
-        onClick={() => setDrawerOpen(true)}
-        aria-label="فتح القائمة"
-      >
-        <Menu className="w-5 h-5 text-gray-700" />
-      </button>
+//   return (
+//     <>
+//       {/* ══ Mobile: Hamburger ══ */}
+//       <button
+//         className="lg:hidden fixed top-4 right-4 z-150 w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-md border border-gray-100"
+//         onClick={() => setDrawerOpen(true)}
+//         aria-label="فتح القائمة"
+//       >
+//         <Menu className="w-5 h-5 text-gray-700" />
+//       </button>
 
-      {/* ══ Mobile: Overlay ══ */}
-      {drawerOpen && (
-        <div
-          className="lg:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
-          onClick={() => setDrawerOpen(false)}
-        />
-      )}
+//       {/* ══ Mobile: Overlay ══ */}
+//       {drawerOpen && (
+//         <div
+//           className="lg:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+//           onClick={() => setDrawerOpen(false)}
+//         />
+//       )}
 
-      {/* ══ Mobile: Drawer ══ */}
-      <aside
-        className={cn(
-          'lg:hidden fixed top-0 right-0 h-full w-64 bg-white z-50 shadow-2xl flex flex-col transition-transform duration-300 ease-out',
-          drawerOpen ? 'translate-x-0' : 'translate-x-full'
-        )}
-        dir="rtl"
-      >
-        <div className="flex items-center justify-between p-4 border-b border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-[#FF6B35] flex items-center justify-center text-white font-bold text-sm">
-              {initial}
-            </div>
-            <span className="font-semibold text-[#1A1A1A] text-sm truncate max-w-[130px]">
-              {restaurantName}
-            </span>
-          </div>
-          <button
-            onClick={() => setDrawerOpen(false)}
-            className="p-1.5 rounded-lg hover:bg-gray-100"
-            aria-label="إغلاق"
-          >
-            <X className="w-5 h-5 text-gray-500" />
-          </button>
-        </div>
+//       {/* ══ Mobile: Drawer ══ */}
+//       <aside
+//         className={cn(
+//           'lg:hidden fixed top-0 right-0 h-full w-64 bg-white z-50 shadow-2xl flex flex-col transition-transform duration-300 ease-out',
+//           drawerOpen ? 'translate-x-0' : 'translate-x-full'
+//         )}
+//         dir="rtl"
+//       >
+//         <div className="flex items-center justify-between p-4 border-b border-gray-100">
+//           <div className="flex items-center gap-3">
+//             <div className="w-9 h-9 rounded-full bg-[#FF6B35] flex items-center justify-center text-white font-bold text-sm">
+//               {initial}
+//             </div>
+//             <span className="font-semibold text-[#1A1A1A] text-sm truncate max-w-[130px]">
+//               {restaurantName}
+//             </span>
+//           </div>
+//           <button
+//             onClick={() => setDrawerOpen(false)}
+//             className="p-1.5 rounded-lg hover:bg-gray-100"
+//             aria-label="إغلاق"
+//           >
+//             <X className="w-5 h-5 text-gray-500" />
+//           </button>
+//         </div>
 
-        <NavList
-          items={navItems}
-          collapsed={false}
-          isActive={isActive}
-          onClick={() => setDrawerOpen(false)}
-        />
-      </aside>
+//         <NavList
+//           items={navItems}
+//           collapsed={false}
+//           isActive={isActive}
+//           onClick={() => setDrawerOpen(false)}
+//         />
+//       </aside>
 
-      {/* ══ Desktop Sidebar ══ */}
-      <aside
-        className={cn(
-          'hidden lg:flex flex-col h-screen sticky top-0 bg-white border-l border-gray-100 transition-all duration-300 ease-out shrink-0',
-          collapsed ? 'w-[68px]' : 'w-60'
-        )}
-        dir="rtl"
-      >
+//       {/* ══ Desktop Sidebar ══ */}
+//       <aside
+//         className={cn(
+//           'hidden lg:flex flex-col h-screen sticky top-0 bg-white border-l border-gray-100 transition-all duration-300 ease-out shrink-0',
+//           collapsed ? 'w-[68px]' : 'w-60'
+//         )}
+//         dir="rtl"
+//       >
         
-        <div
-          className={cn(
-            'flex items-center p-4 border-b border-gray-100 h-16',
-            collapsed ? 'justify-center' : 'gap-3'
-          )}
-        >
-          <div className="w-9 h-9 rounded-full bg-[#FF6B35] flex items-center justify-center text-white font-bold text-sm shrink-0">
-            {initial}
-          </div>
-          {!collapsed && (
-            <span className="font-semibold text-[#1A1A1A] text-sm truncate">
-              {restaurantName}
-            </span>
-          )}
-        </div>
+//         <div
+//           className={cn(
+//             'flex items-center p-4 border-b border-gray-100 h-16',
+//             collapsed ? 'justify-center' : 'gap-3'
+//           )}
+//         >
+//           <div className="w-9 h-9 rounded-full bg-[#FF6B35] flex items-center justify-center text-white font-bold text-sm shrink-0">
+//             {initial}
+//           </div>
+//           {!collapsed && (
+//             <span className="font-semibold text-[#1A1A1A] text-sm truncate">
+//               {restaurantName}
+//             </span>
+//           )}
+//         </div>
 
-        {/* Nav */}
-        <NavList
-          items={navItems}
-          collapsed={collapsed}
-          isActive={isActive}
-        />
+//         {/* Nav */}
+//         <NavList
+//           items={navItems}
+//           collapsed={collapsed}
+//           isActive={isActive}
+//         />
 
-        {/* Collapse Toggle */}
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="flex items-center justify-center h-11 border-t border-gray-100 hover:bg-gray-50 transition-colors"
-          aria-label={collapsed ? 'توسيع' : 'طي'}
-        >
-          <ChevronLeft
-            className={cn(
-              'w-4 h-4 text-gray-400 transition-transform duration-300',
-              collapsed && 'rotate-180'
-            )}
-          />
-        </button>   
-      </aside>
-    </>
-  );
-}    
+//         {/* Collapse Toggle */}
+//         <button
+//           onClick={() => setCollapsed(!collapsed)}
+//           className="flex items-center justify-center h-11 border-t border-gray-100 hover:bg-gray-50 transition-colors"
+//           aria-label={collapsed ? 'توسيع' : 'طي'}
+//         >
+//           <ChevronLeft
+//             className={cn(
+//               'w-4 h-4 text-gray-400 transition-transform duration-300',
+//               collapsed && 'rotate-180'
+//             )}
+//           />
+//         </button>   
+//       </aside>
+//     </>
+//   );
+// }    

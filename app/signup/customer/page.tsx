@@ -31,7 +31,7 @@ export default function CustomerSignUpPage() {
   // ✅ تعريف واحد نضيف لـ err مع status
   const sendOtp = async () => {
     try {
-      const res = await api.post("/send-otp", { email: formData.email, phone: formData.phone });
+      const res = await api.post("/customer/send-otp", { email: formData.email, phone: formData.phone });
       if (res.status === 200) return true;
     } catch (error) {
       const err = error as { response?: { data?: { error?: string }; status?: number } };

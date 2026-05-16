@@ -10,7 +10,7 @@ import { logout } from "@/services/auth.service";
 import { Button, Badge, Modal, EmptyState } from "@/components/ui";
 import { formatCurrency, formatDate, formatTime } from "@/lib/utils";
 import { toast } from "sonner";
-import { Shield, LogOut, Check, X, Eye, RefreshCw, Clock } from "lucide-react";
+import { Shield, LogOut, Check, Eye, RefreshCw, Clock } from "lucide-react";
 import { ProtectedRoute } from "../context/AuthContext";
 
 interface PendingPayment {
@@ -57,12 +57,11 @@ export default function AdminDashboard() {
     fetchPayments();
   }, [fetchPayments]);
 
-  const handleConfirm = async (paymentId: number, status: 'approved' | 'rejected') => {
+  const handleConfirm = async (paymentId: number) => {
     setProcessingId(paymentId);
     try {
-      
-      await confirmPayment(paymentId, status);
-      toast.success(status === 'approved' ? 'تم قبول الدفعة ✅' : 'تم رفض الدفعة ❌');
+      await confirmPayment(paymentId);
+      toast.success('تم تأكيد الدفعة ✅');
       setPayments(prev => prev.filter(p => p.payment_id !== paymentId));
       setSelectedPayment(null);
     } catch {
@@ -77,7 +76,7 @@ export default function AdminDashboard() {
   };
 
   return (
-    // <ProtectedRoute role="admin">
+    <ProtectedRoute role="admin">
       <div className="min-h-screen bg-[#F8FAFC]" dir="rtl">
       {/* Header */}
       <header className="bg-gradient-to-r from-[#1A1A2E] to-[#252540] text-white px-6 py-4">
@@ -177,22 +176,12 @@ export default function AdminDashboard() {
 
                     {/* Approve */}
                     <button
-                      onClick={() => handleConfirm(payment.payment_id, 'approved')}
+                      onClick={() => handleConfirm(payment.payment_id)}
                       disabled={processingId === payment.payment_id}
                       className="p-2 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors disabled:opacity-50"
                       title="قبول"
                     >
                       <Check className="w-4 h-4" />
-                    </button>
-
-                    {/* Reject */}
-                    <button
-                      onClick={() => handleConfirm(payment.payment_id, 'rejected')}
-                      disabled={processingId === payment.payment_id}
-                      className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors disabled:opacity-50"
-                      title="رفض"
-                    >
-                      <X className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
@@ -238,26 +227,17 @@ export default function AdminDashboard() {
               <Button
                 variant="primary"
                 fullWidth
-                onClick={() => handleConfirm(selectedPayment.payment_id, 'approved')}
+                onClick={() => handleConfirm(selectedPayment.payment_id)}
                 isLoading={processingId === selectedPayment.payment_id}
                 icon={<Check className="w-4 h-4" />}
               >
-                قبول الدفعة
-              </Button>
-              <Button
-                variant="danger"
-                fullWidth
-                onClick={() => handleConfirm(selectedPayment.payment_id, 'rejected')}
-                isLoading={processingId === selectedPayment.payment_id}
-                icon={<X className="w-4 h-4" />}
-              >
-                رفض
+                تأكيد الدفعة
               </Button>
             </div>
           </div>
         )}
       </Modal>
       </div>
-    // </ProtectedRoute>
+    </ProtectedRoute>
   );
 }

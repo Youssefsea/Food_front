@@ -28,7 +28,6 @@ const StatusConfigPay: Record<'pending' | 'confirmed' | 'rejected', { label: str
 export function OrderCard({ order }: OrderCardProps) {
   const router = useRouter();
   const [isChatLoading, setIsChatLoading] = useState(false);
-console.log('Rendering OrderCard for order:', order);
   const statusInfo = statusConfig[order.status] || statusConfig.pending;
   const StatusIcon = statusInfo.icon;
   const payStatus = StatusConfigPay[order.payment_status || 'pending'] || StatusConfigPay.pending;
@@ -100,15 +99,20 @@ console.log('Rendering OrderCard for order:', order);
       {order.items && order.items.length > 0 && (
         <>
           <div style={{ height: '1px', background: '#f3f4f6', margin: '0 16px' }} />
+
+
           <div className="px-4 py-3 space-y-1.5">
             {order.items.map((item, i) => (
-              <div key={i} className="flex justify-between items-center">
-                <span className="text-sm" style={{ color: '#4b5563' }}>
-                  🍴 {item.name}
-                  <span className="ml-1 text-xs" style={{ color: '#9ca3af' }}>x{item.quantity}</span>
-                </span>
+              <div key={i} className="flex justify-between items-center gap-2">
+
+                <div className="min-w-0 flex-1">
+                  <span className="text-sm truncate block" style={{ color: '#4b5563' }}>
+                    🍴 {item.dish_name}
+                    <span className="ml-1 text-xs" style={{ color: '#9ca3af' }}>x{item.quantity}</span>
+                  </span>
+                </div>
                 <span className="text-xs font-medium" style={{ color: '#9ca3af' }}>
-                  {(item.price * item.quantity).toFixed(2)} ج.م
+                  {(item.dish_price * item.quantity).toFixed(2)} ج.م
                 </span>
               </div>
             ))}

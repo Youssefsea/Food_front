@@ -30,7 +30,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const initUser = () => {
-      const savedUser = Cookies.get('user') || localStorage.getItem('userData');
+      const savedUser = Cookies.get('user');
       const token = Cookies.get('token');
       
       if (savedUser && token) {
@@ -50,8 +50,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(userData);
     
     Cookies.set('user', JSON.stringify(userData), { expires: 7 });
-    localStorage.setItem('userData', JSON.stringify(userData));
-
 
     const normalizedRole = userData.role === 'restaurant' ? 'vendor' : userData.role;
     if (normalizedRole === 'customer') {
@@ -69,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const refreshUser = () => {
-    const savedUser = Cookies.get('user') || localStorage.getItem('userData');
+    const savedUser = Cookies.get('user');
     if (savedUser) {
       try {
         setUser(JSON.parse(savedUser));

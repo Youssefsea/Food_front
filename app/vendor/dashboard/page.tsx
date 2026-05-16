@@ -94,10 +94,8 @@ function DashboardContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState<string | null>(null);
 
-  // controller منفصل — لا يتأثر بـ re-render
   const controllerRef = useRef<AbortController | null>(null);
 
-  // حساب مباشر — مش محتاج useCallback منفصل
   const pendingPaidCount = data.recentOrders.filter(
     (o) => o.status === 'pending' && o.payment_status === 'confirmed',
   ).length;
@@ -140,30 +138,37 @@ function DashboardContent() {
         recentOrders: orders,
       });
     } catch (err: unknown) {
-      // تجاهل الـ abort
       if (err instanceof Error && (err.name === 'AbortError' || err.name === 'CanceledError')) return;
       const axErr = err as { response?: { data?: { message?: string } } };
       setError(axErr.response?.data?.message || 'حدث خطأ في تحميل البيانات');
     } finally {
       setLoading(false);
     }
-  }, []); // ← dependency array فاضية — fetchData نفسها ثابتة
+  }, []);
 
   useEffect(() => {
     fetchData();
     return () => controllerRef.current?.abort();
   }, [fetchData]);
 
-  // Toggle status — يكلم الـ API وبعدين يحدث الـ state
+  // ✅ الـ toggle — optimistic update + API call + rollback لو فشل
   const handleToggleStatus = useCallback(async () => {
-    const newStatus = !data.isOpen;
-    // Optimistic update
+    const prevStatus = data.isOpen;
+    const newStatus  = !prevStatus;
+
+    // Optimistic update — الـ UI يتغير فورًا
     setData(prev => ({ ...prev, isOpen: newStatus }));
+
     try {
-      await api.patch('/restaurant/toggle-status', { is_open: newStatus });
+      // الباك إند بيعمل toggle تلقائي بمجرد call الـ endpoint
+      const res = await api.get('/restaurant/is-open');
+      // لو الباك إند رجع الحالة الفعلية، نتأكد إننا sync معاه
+      if (typeof res.data?.is_open === 'boolean') {
+        setData(prev => ({ ...prev, isOpen: res.data.is_open }));
+      }
     } catch {
       // Rollback لو فشل
-      setData(prev => ({ ...prev, isOpen: !newStatus }));
+      setData(prev => ({ ...prev, isOpen: prevStatus }));
     }
   }, [data.isOpen]);
 
@@ -204,7 +209,6 @@ function DashboardContent() {
   );
 }
 
-// ─── Page export ─────────────────────────────────────────
 export default function VendorDashboard() {
   return (
     <ProtectedRoute role="vendor">
