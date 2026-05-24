@@ -23,35 +23,37 @@ interface DishCardProps {
 }
 
 const categoryColors: Record<string, { bg: string; text: string }> = {
-  'مقبلات': { bg: '#DBEAFE', text: '#3B82F6' },
-  'أطباق رئيسية': { bg: '#FEF3E2', text: '#E5A04D' },
-  'بيتزا': { bg: '#FEE2E2', text: '#EF4444' },
-  'برجر': { bg: '#FEF9C3', text: '#CA8A04' },
-  'مشروبات': { bg: '#CFFAFE', text: '#06B6D4' },
-  'حلويات': { bg: '#FCE7F3', text: '#EC4899' },
-  'سلطات': { bg: '#D1FAE5', text: '#10B981' },
-  'مشويات': { bg: '#E9D5FF', text: '#9333EA' },
-  'سندويتشات': { bg: '#FED7AA', text: '#EA580C' },
-  'شوربات': { bg: '#FEF3C7', text: '#D97706' },
+  'مقبلات':       { bg: '#DBEAFE', text: '#2563EB' },
+  'أطباق رئيسية': { bg: '#FEF3E2', text: '#D97706' },
+  'بيتزا':        { bg: '#FEE2E2', text: '#DC2626' },
+  'برجر':         { bg: '#FEF9C3', text: '#B45309' },
+  'مشروبات':      { bg: '#CFFAFE', text: '#0891B2' },
+  'حلويات':       { bg: '#FCE7F3', text: '#DB2777' },
+  'سلطات':        { bg: '#D1FAE5', text: '#059669' },
+  'مشويات':       { bg: '#EDE9FE', text: '#7C3AED' },
+  'سندويتشات':    { bg: '#FFEDD5', text: '#C2410C' },
+  'شوربات':       { bg: '#FEF3C7', text: '#B45309' },
 };
 
-export const DishCard = memo(function DishCard({ dish, onEdit, onDelete, onToggleAvailability }: DishCardProps) {
+export const DishCard = memo(function DishCard({
+  dish,
+  onEdit,
+  onDelete,
+  onToggleAvailability,
+}: DishCardProps) {
   const [isToggling, setIsToggling] = useState(false);
-  
-  const images = dish.image ? dish.image.split(',') : [];
-  const categoryStyle = categoryColors[dish.category] || categoryColors['أطباق رئيسية'];
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  const images = dish.image ? dish.image.split(',') : [];
+  const categoryStyle = categoryColors[dish.category] ?? categoryColors['أطباق رئيسية'];
 
   useEffect(() => {
     if (images.length <= 1) return;
-
     const interval = setInterval(() => {
       setCurrentImageIndex((prev) => (prev + 1) % images.length);
     }, 3000);
-
     return () => clearInterval(interval);
-  }, [images]);
-
+  }, [images.length]);
 
   const handleToggle = async () => {
     setIsToggling(true);
@@ -60,120 +62,162 @@ export const DishCard = memo(function DishCard({ dish, onEdit, onDelete, onToggl
   };
 
   return (
-    <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-200 cursor-default">
-      <div className="relative w-full p-3 rounded-3xl h-40 bg-[#F3F4F6] overflow-hidden group">
+    <div
+      dir="rtl"
+      className="
+        group relative flex flex-col
+        bg-white rounded-2xl overflow-hidden
+        border border-[#F0F0F0]
+        shadow-[0_2px_8px_rgba(0,0,0,0.06)]
+        hover:shadow-[0_8px_24px_rgba(0,0,0,0.10)]
+        hover:-translate-y-1
+        transition-all duration-250 ease-out
+        cursor-default
+      "
+    >
+      {/* ── Image area ── */}
+      <div className="relative w-full h-44 bg-[#F5F5F5] overflow-hidden">
         {images.length > 0 ? (
           <Image
-            src={images[currentImageIndex] || images[0]}
+            src={images[currentImageIndex] ?? images[0]}
             alt={dish.name}
             fill
-            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            className="object-cover group-hover:scale-105 transition-transform duration-400 ease-out"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <span className="text-6xl text-[#9CA3AF]">🍽️</span>
+            <span className="text-6xl opacity-30">🍽️</span>
           </div>
         )}
 
+        {/* Subtle bottom gradient so badges are readable */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
+
+        {/* Dot indicators */}
         {images.length > 1 && (
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-            {images.slice(0, 3).map((_, index) => (
+          <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+            {images.slice(0, 4).map((_, i) => (
               <div
-                key={index}
-                className={`w-2 h-2 rounded-full ${
-                  index === currentImageIndex
-                    ? "bg-white"
-                    : "bg-white/50"
+                key={i}
+                className={`rounded-full transition-all duration-300 ${
+                  i === currentImageIndex
+                    ? 'w-4 h-1.5 bg-white'
+                    : 'w-1.5 h-1.5 bg-white/50'
                 }`}
               />
             ))}
           </div>
         )}
 
-  <div className="absolute top-3 right-3">
-    <span
-      className={`px-3 py-1.5 rounded-full text-xs font-semibold ${
-        dish.is_available
-          ? "bg-[#D1FAE5] text-[#10B981]"
-          : "bg-[#FEE2E2] text-[#EF4444]"
-      }`}
-    >
-      {dish.is_available ? "✓ متاح" : "غير متاح"}
-    </span>
-  </div>
+        {/* Availability badge — top right */}
+        <span
+          className={`
+            absolute top-2.5 right-2.5 z-10
+            px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wide
+            backdrop-blur-sm
+            ${dish.is_available
+              ? 'bg-emerald-500/90 text-white'
+              : 'bg-red-500/90 text-white'}
+          `}
+        >
+          {dish.is_available ? '✓ متاح' : 'غير متاح'}
+        </span>
 
-  <div className="absolute top-3 left-3">
-    <span
-      className="px-3 py-1.5 rounded-full text-xs font-semibold"
-      style={{
-        backgroundColor: categoryStyle.bg,
-        color: categoryStyle.text,
-      }}
-    >
-      {dish.category}
-    </span>
-  </div>
+        {/* Category badge — top left */}
+        <span
+          className="absolute top-2.5 left-2.5 z-10 px-2.5 py-1 rounded-full text-[11px] font-semibold backdrop-blur-sm"
+          style={{ backgroundColor: categoryStyle.bg, color: categoryStyle.text }}
+        >
+          {dish.category}
+        </span>
       </div>
 
-
-
-      <div className="p-4">
-        <h3 className="text-lg font-semibold text-[#1A1A1A] mb-2 line-clamp-1">
+      {/* ── Body ── */}
+      <div className="flex flex-col flex-1 px-4 pt-3.5 pb-3 gap-1.5">
+        <h3 className="text-[15px] font-bold text-[#111827] leading-snug line-clamp-1">
           {dish.name}
         </h3>
 
-        <p className="text-sm text-[#6B7280] mb-3 line-clamp-2 min-h-10">
+        <p className="text-[13px] text-[#6B7280] leading-relaxed line-clamp-2 min-h-[2.6rem]">
           {dish.description}
         </p>
 
-        <div className="flex items-center justify-between mb-4">
-          <span className="text-[22px] font-bold text-[#E5A04D]">
-            {dish.price} ج.م
+        <div className="flex items-center justify-between mt-1">
+          <span className="text-[20px] font-extrabold text-[#E5A04D] leading-none">
+            {dish.price.toLocaleString('ar-EG')}
+            <span className="text-[13px] font-medium text-[#9CA3AF] mr-1">ج.م</span>
           </span>
+
           <div className="flex items-center gap-1 text-[#9CA3AF]">
-            <Clock className="w-3.5 h-3.5" />
-            <span className="text-xs">{dish.preparation_time} دقيقة</span>
+            <Clock className="w-3.5 h-3.5 shrink-0" />
+            <span className="text-[12px]">{dish.preparation_time} دقيقة</span>
           </div>
         </div>
       </div>
 
-      <div className="border-t border-[#E5E7EB] px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleToggle}
-            disabled={isToggling}
-            className={`relative w-12 h-6 rounded-full transition-colors ${
-              dish.is_available ? 'bg-[#10B981]' : 'bg-[#E5E7EB]'
-            } ${isToggling ? 'opacity-50 cursor-not-allowed' : ''}`}
+      {/* ── Footer ── */}
+      <div className="border-t border-[#F3F4F6] px-4 py-2.5 flex items-center justify-between">
+        {/* Toggle */}
+        <button
+          onClick={handleToggle}
+          disabled={isToggling}
+          aria-label={dish.is_available ? 'إيقاف الطبق' : 'تفعيل الطبق'}
+          className={`
+            flex items-center gap-2
+            ${isToggling ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+          `}
+        >
+          <div
+            className={`
+              relative w-10 h-5 rounded-full transition-colors duration-200
+              ${dish.is_available ? 'bg-emerald-500' : 'bg-[#E5E7EB]'}
+            `}
           >
             <div
-              className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform ${
-                dish.is_available ? 'right-0.5' : 'left-0.5'
-              }`}
+              className={`
+                absolute top-0.5 w-4 h-4 bg-white rounded-full
+                shadow-[0_1px_3px_rgba(0,0,0,0.2)]
+                transition-all duration-200
+                ${dish.is_available ? 'right-0.5' : 'left-0.5'}
+              `}
             />
-          </button>
-          <span className="text-xs text-[#6B7280]">
+          </div>
+          <span className="text-[12px] text-[#6B7280]">
             {dish.is_available ? 'متاح' : 'غير متاح'}
           </span>
-        </div>
+        </button>
 
-        <div className="flex items-center gap-2">
+        {/* Action buttons */}
+        <div className="flex items-center gap-1.5">
           <button
             onClick={() => onEdit(dish)}
-            className="w-9 h-9 flex items-center justify-center bg-[#F3F4F6] hover:bg-[#E5A04D] rounded-lg transition-colors group"
+            aria-label="تعديل الطبق"
+            className="
+              w-8 h-8 flex items-center justify-center rounded-lg
+              bg-[#F9FAFB] hover:bg-[#E5A04D]
+              border border-[#E5E7EB] hover:border-[#E5A04D]
+              transition-all duration-150
+              group/edit
+            "
           >
-            <Pencil className="w-4 h-4 text-[#6B7280] group-hover:text-white" />
+            <Pencil className="w-3.5 h-3.5 text-[#6B7280] group-hover/edit:text-white" />
           </button>
+
           <button
             onClick={() => onDelete(dish)}
-            className="w-9 h-9 flex items-center justify-center bg-[#FEE2E2] hover:bg-[#EF4444] rounded-lg transition-colors group"
+            aria-label="حذف الطبق"
+            className="
+              w-8 h-8 flex items-center justify-center rounded-lg
+              bg-[#FEF2F2] hover:bg-[#EF4444]
+              border border-[#FECACA] hover:border-[#EF4444]
+              transition-all duration-150
+              group/del
+            "
           >
-            <Trash2 className="w-4 h-4 text-[#EF4444] group-hover:text-white" />
+            <Trash2 className="w-3.5 h-3.5 text-[#EF4444] group-hover/del:text-white" />
           </button>
         </div>
       </div>
     </div>
   );
 });
-
-
