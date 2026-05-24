@@ -7,7 +7,7 @@ import Image from 'next/image';
 import api, { isTimeoutError } from '@/lib/api';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useGeolocation } from '@/hooks/useGeolocation';
-import { RestaurantCardSkeleton, CategoryChipSkeleton } from '@/components/ui/Skeleton';
+import { RestaurantCardSkeleton } from '@/components/ui/Skeleton';
 import { useInView } from 'react-intersection-observer';
 import { EmptyState } from '@/components/ui';
 import { cn, getFirstImage } from '@/lib/utils';
@@ -16,53 +16,53 @@ import { ProtectedRoute } from '@/app/context/AuthContext';
 
 const LocationCustomer = dynamic(() => import('./LocationCustomer'), { ssr: false });
 
-// ─── Constants ───
-const RESTAURANTS_CACHE_TTL = 60_000;
-const DISH_FETCH_BATCH_SIZE = 5;
-const RESTAURANTS_PER_PAGE = 9;
+// ─── Constants ────────────────────────────────────────────────────────────────
+const RESTAURANTS_CACHE_TTL   = 60_000;
+const DISH_FETCH_BATCH_SIZE   = 5;
+const RESTAURANTS_PER_PAGE    = 9;
 
+// ─── Types ────────────────────────────────────────────────────────────────────
 interface Restaurant {
-  id: number;
-  restaurant_name: string;
-  location: string;
-  latitude: number;
-  longitude: number;
-  can_deliver: boolean;
-  can_reserve: boolean;
-  delivery_fees: number;
-  image?: string;
+  id:                number;
+  restaurant_name:   string;
+  location:          string;
+  latitude:          number;
+  longitude:         number;
+  can_deliver:       boolean;
+  can_reserve:       boolean;
+  delivery_fees:     number;
+  image?:            string;
 }
 
 interface Dish {
-  id: number;
-  name: string;
-  price: number;
-  image: string;
+  id:        number;
+  name:      string;
+  price:     number;
+  image:     string;
   category?: string;
 }
 
 type RestaurantsCache = {
-  data: Restaurant[];
-  dishes: Record<number, Dish[]>;
+  data:      Restaurant[];
+  dishes:    Record<number, Dish[]>;
   updatedAt: number;
 } | null;
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 function isAbortError(err: unknown): boolean {
-  if (err instanceof Error) {
-    return err.name === 'AbortError' || err.name === 'CanceledError';
-  }
-  return false;
+  return err instanceof Error &&
+    (err.name === 'AbortError' || err.name === 'CanceledError');
 }
 
-// ─── Restaurant Card ───
+// ─── RestaurantCard ───────────────────────────────────────────────────────────
 const RestaurantCard = memo(function RestaurantCard({
   restaurant,
   dishes,
   isNearby,
 }: {
   restaurant: Restaurant;
-  dishes: Dish[];
-  isNearby: boolean;
+  dishes:     Dish[];
+  isNearby:   boolean;
 }) {
   const coverImage =
     restaurant.image ||
@@ -73,7 +73,7 @@ const RestaurantCard = memo(function RestaurantCard({
       href={`/restaurant/${encodeURIComponent(restaurant.restaurant_name)}`}
       className="group block bg-white rounded-[16px] overflow-hidden border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
     >
-      {/* Cover */}
+      {/* Cover Image */}
       <div className="relative h-36 sm:h-40 bg-gradient-to-br from-orange-100 to-red-50 overflow-hidden">
         {coverImage && !coverImage.includes('undefined') ? (
           <Image
@@ -105,7 +105,7 @@ const RestaurantCard = memo(function RestaurantCard({
           )}
         </div>
 
-        {/* Dish previews */}
+        {/* Dish Previews */}
         {dishes.length > 1 && (
           <div className="absolute bottom-3 left-3 flex -space-x-2">
             {dishes.slice(0, 3).map((dish, i) => {
@@ -166,7 +166,7 @@ const RestaurantCard = memo(function RestaurantCard({
   );
 });
 
-
+// ─── ExplorePage ──────────────────────────────────────────────────────────────
 export default function ExplorePage() {
   const [mounted, setMounted]                         = useState(false);
   const [allRestaurants, setAllRestaurants]           = useState<Restaurant[]>([]);
@@ -189,9 +189,10 @@ export default function ExplorePage() {
   const restaurantsCacheRef  = useRef<RestaurantsCache>(null);
 
   const debouncedSearch = useDebounce(searchQuery, 300);
-  const { lat, lng, isLocating, getCurrentPosition, setPosition } = useGeolocation();
-  const { ref: infiniteScrollRef, inView } = useInView({ threshold: 0.1 });
+  const { lat, lng, isLocating, getCurrentPosition } = useGeolocation();
+  const { ref: infiniteScrollRef, inView }           = useInView({ threshold: 0.1 });
 
+  // ─── Data Fetching ───────────────────────────────────────────────────────────
 
   const fetchRestaurantDishes = useCallback(async (
     restaurantId: number,
@@ -215,15 +216,18 @@ export default function ExplorePage() {
     signal: AbortSignal,
   ): Promise<Record<number, Dish[]>> => {
     const dishesMap: Record<number, Dish[]> = {};
+
     for (let i = 0; i < restaurants.length; i += DISH_FETCH_BATCH_SIZE) {
       if (signal.aborted) break;
-      const batch = restaurants.slice(i, i + DISH_FETCH_BATCH_SIZE);
+
+      const batch   = restaurants.slice(i, i + DISH_FETCH_BATCH_SIZE);
       const settled = await Promise.allSettled(
         batch.map(async (r) => {
           const dishes = await fetchRestaurantDishes(r.id, signal);
           return [r.id, dishes] as const;
         }),
       );
+
       settled.forEach((result) => {
         if (result.status === 'fulfilled') {
           const [id, dishes] = result.value;
@@ -231,14 +235,15 @@ export default function ExplorePage() {
         }
       });
     }
+
     return dishesMap;
   }, [fetchRestaurantDishes]);
 
   const fetchAllRestaurants = useCallback(async () => {
-    const cache = restaurantsCacheRef.current;
+    const cache        = restaurantsCacheRef.current;
     const cacheIsFresh = cache && Date.now() - cache.updatedAt < RESTAURANTS_CACHE_TTL;
 
-    if (cacheIsFresh && cache) {
+    if (cacheIsFresh) {
       setAllRestaurants(cache.data);
       setRestaurantDishes(cache.dishes);
       setIsLoading(false);
@@ -257,6 +262,7 @@ export default function ExplorePage() {
         signal: controller.signal,
         params: { page: 1, limit: RESTAURANTS_PER_PAGE },
       });
+
       const restaurants: Restaurant[] = res.data.restaurants || [];
       const dishesMap = await fetchDishesWithBatching(restaurants, controller.signal);
 
@@ -266,17 +272,17 @@ export default function ExplorePage() {
       setHasMore(restaurants.length === RESTAURANTS_PER_PAGE);
 
       restaurantsCacheRef.current = {
-        data: restaurants,
-        dishes: dishesMap,
+        data:      restaurants,
+        dishes:    dishesMap,
         updatedAt: Date.now(),
       };
     } catch (err: unknown) {
       if (isAbortError(err)) return;
-      if (isTimeoutError(err)) {
-        setLoadError('انتهت المهلة أثناء تحميل المطاعم. حاول مرة أخرى.');
-      } else {
-        setLoadError('تعذر تحميل المطاعم حالياً');
-      }
+      setLoadError(
+        isTimeoutError(err)
+          ? 'انتهت المهلة أثناء تحميل المطاعم. حاول مرة أخرى.'
+          : 'تعذر تحميل المطاعم حالياً',
+      );
     } finally {
       setIsLoading(false);
     }
@@ -297,6 +303,7 @@ export default function ExplorePage() {
         signal: controller.signal,
         params: { page: nextPage, limit: RESTAURANTS_PER_PAGE },
       });
+
       const newRestaurants: Restaurant[] = res.data.restaurants || [];
       const newDishesMap = await fetchDishesWithBatching(newRestaurants, controller.signal);
 
@@ -312,7 +319,7 @@ export default function ExplorePage() {
   }, [fetchDishesWithBatching, hasMore, isFetchingMore, isLoading, page]);
 
   const fetchNearbyRestaurants = useCallback(async (
-    latitude: number,
+    latitude:  number,
     longitude: number,
   ) => {
     try {
@@ -320,10 +327,11 @@ export default function ExplorePage() {
         lng: longitude,
         lat: latitude,
       });
+
       if (res.data.nearby_restaurants?.length > 0) {
         const nearbyIds = new Set<number>(
           res.data.nearby_restaurants.map(
-            (r: { restaurant_id?: number; id: number }) => r.restaurant_id || r.id,
+            (r: { restaurant_id?: number; id: number }) => r.restaurant_id ?? r.id,
           ),
         );
         setNearbyRestaurantIds(nearbyIds);
@@ -338,14 +346,15 @@ export default function ExplorePage() {
   }, []);
 
   const getLocationName = useCallback(async (
-    latitude: number,
+    latitude:  number,
     longitude: number,
   ): Promise<string | null> => {
     try {
-      const res = await api.get('https://nominatim.openstreetmap.org/reverse', {
-        params: { lat: latitude, lon: longitude, format: 'json', 'accept-language': 'ar' },
-      });
-      return res.data?.address?.city || res.data?.address?.town || null;
+      // Note: Using fetch directly to avoid baseURL conflicts with the api instance
+      const url = `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=ar`;
+      const res = await fetch(url);
+      const data = await res.json();
+      return data?.address?.city || data?.address?.town || null;
     } catch {
       return null;
     }
@@ -360,11 +369,11 @@ export default function ExplorePage() {
       ]);
       setCity(locationName);
     } catch {
-      // handled by useGeolocation hook
+      // Error handled by useGeolocation hook
     }
   }, [getCurrentPosition, getLocationName, fetchNearbyRestaurants]);
 
-  // ─── Computed values ──────────────────────────────────────
+  // ─── Derived State ───────────────────────────────────────────────────────────
 
   const filteredRestaurants = useMemo(() => {
     let filtered = [...allRestaurants];
@@ -406,13 +415,13 @@ export default function ExplorePage() {
     setActiveCategory(null);
   }, []);
 
-  // ─── Effects ─────────────────────────────────────────────
+  // ─── Effects ─────────────────────────────────────────────────────────────────
 
   useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     if (!mounted) return;
-    fetchAllRestaurants();
+    fetchAllRestaurants(); // eslint-disable-line react-hooks/exhaustive-deps
     return () => {
       initialControllerRef.current?.abort();
       moreControllerRef.current?.abort();
@@ -426,38 +435,41 @@ export default function ExplorePage() {
     }
   }, [inView, hasMore, isLoading, isFetchingMore, fetchMoreRestaurants, mounted]);
 
+  // ─── Filter Chips Config ─────────────────────────────────────────────────────
+
   const filterChips = [
     {
-      label: 'قريب مني',
-      icon: Navigation,
-      active: nearbyOnly,
+      label:   'قريب مني',
+      icon:    Navigation,
+      active:  nearbyOnly,
       loading: isLocating,
       onClick: () => nearbyOnly ? setNearbyOnly(false) : handleGetLocation(),
     },
     {
-      label: 'يوصل',
-      icon: Truck,
-      active: deliveryOnly,
+      label:   'يوصل',
+      icon:    Truck,
+      active:  deliveryOnly,
       loading: false,
-      onClick: () => setDeliveryOnly(!deliveryOnly),
+      onClick: () => setDeliveryOnly(prev => !prev),
     },
     {
-      label: 'حجز',
-      icon: BookOpen,
-      active: bookingOnly,
+      label:   'حجز',
+      icon:    BookOpen,
+      active:  bookingOnly,
       loading: false,
-      onClick: () => setBookingOnly(!bookingOnly),
+      onClick: () => setBookingOnly(prev => !prev),
     },
   ];
 
-  // ─── Render ───────────────────────────────────────────────
+  // ─── Render ───────────────────────────────────────────────────────────────────
 
   return (
     <ProtectedRoute role="customer">
       <div className="min-h-screen bg-[#FAFAFA]" dir="rtl">
 
-        {/* ── Hero ── */}
+        {/* Hero */}
         <section className="relative bg-gradient-to-br from-[#FF6B35] to-[#E63946] pt-14 pb-16 sm:pt-16 sm:pb-20 overflow-hidden">
+          {/* Decorative elements */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
             <div className="absolute top-4 right-8 text-xl sm:text-2xl opacity-15">🍕</div>
             <div className="absolute bottom-8 left-12 text-xl sm:text-2xl opacity-10">🍔</div>
@@ -478,7 +490,7 @@ export default function ExplorePage() {
             </h1>
             <p className="text-sm text-white/70 mb-6">اكتشف ألذ الأكلات حواليك</p>
 
-            {/* Search */}
+            {/* Search Bar */}
             <div className="relative max-w-xl">
               <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#6B7280]" />
               <input
@@ -502,15 +514,16 @@ export default function ExplorePage() {
             </div>
           </div>
 
+          {/* Wave separator */}
           <svg className="absolute bottom-0 left-0 right-0 h-6" viewBox="0 0 1440 24" fill="none" preserveAspectRatio="none">
             <path d="M0 24h1440V12c-120 8-240 12-360 12s-240-4-360-12c-120-8-240-12-360-12S120 4 0 12v12z" fill="#FAFAFA" />
           </svg>
         </section>
 
-        {/* ── Location & Filter Chips ── */}
+        {/* Location & Filter Chips */}
         <div className="px-4 sm:px-5 pt-4 pb-2">
           <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar pb-2">
-            {/* Location */}
+            {/* Location button */}
             <button
               onClick={handleGetLocation}
               disabled={isLocating}
@@ -523,8 +536,6 @@ export default function ExplorePage() {
                 {isLocating ? 'جاري التحديد...' : 'موقعي'}
               </span>
             </button>
-
-       
 
             {/* City badge */}
             {city && (
@@ -557,6 +568,7 @@ export default function ExplorePage() {
               );
             })}
 
+            {/* Clear filters */}
             {activeFiltersCount > 0 && (
               <button
                 onClick={clearAllFilters}
@@ -569,7 +581,7 @@ export default function ExplorePage() {
           </div>
         </div>
 
-        {/* ── Restaurant Grid ── */}
+        {/* Restaurant Grid */}
         <main className="px-4 sm:px-5 py-4 pb-28 sm:pb-10">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -622,15 +634,23 @@ export default function ExplorePage() {
                     : 'لم نجد مطاعم بهذه الفلاتر'
               }
               actionLabel={
-                nearbyOnly ? 'عرض كل المطاعم' : activeFiltersCount > 0 ? 'مسح الفلاتر' : undefined
+                nearbyOnly
+                  ? 'عرض كل المطاعم'
+                  : activeFiltersCount > 0
+                    ? 'مسح الفلاتر'
+                    : undefined
               }
               onAction={
-                nearbyOnly ? () => setNearbyOnly(false) : activeFiltersCount > 0 ? clearAllFilters : undefined
+                nearbyOnly
+                  ? () => setNearbyOnly(false)
+                  : activeFiltersCount > 0
+                    ? clearAllFilters
+                    : undefined
               }
             />
           )}
 
-          {/* More skeleton */}
+          {/* Loading more skeleton */}
           {isFetchingMore && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
               {Array.from({ length: 3 }).map((_, i) => (
@@ -639,10 +659,9 @@ export default function ExplorePage() {
             </div>
           )}
 
+          {/* Infinite scroll trigger */}
           <div ref={infiniteScrollRef} className="h-1" />
         </main>
-
-     
 
       </div>
     </ProtectedRoute>
