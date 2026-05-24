@@ -17,9 +17,8 @@ import { ProtectedRoute } from '@/app/context/AuthContext';
 const LocationCustomer = dynamic(() => import('./LocationCustomer'), { ssr: false });
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const RESTAURANTS_CACHE_TTL   = 60_000;
-const DISH_FETCH_BATCH_SIZE   = 5;
-const RESTAURANTS_PER_PAGE    = 9;
+const RESTAURANTS_CACHE_TTL = 60_000;
+const RESTAURANTS_PER_PAGE  = 9;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Restaurant {
@@ -36,7 +35,7 @@ interface Restaurant {
 
 interface Dish {
   name:              string;
-  price:             number;
+  price:             number; // Normalized from string on fetch
   image:             string;
   category?:         string;
   description?:      string;
@@ -195,50 +194,27 @@ export default function ExplorePage() {
 
   // ─── Data Fetching ───────────────────────────────────────────────────────────
 
-  const fetchRestaurantDishes = useCallback(async (
-    restaurantId: number,
-    signal: AbortSignal,
-  ): Promise<Dish[]> => {
-    if (signal.aborted) return [];
-    try {
-      const res = await api.post(
-        '/restaurant/all-dishes-for-restaurantE',
-        { restaurantId },
-        { signal },
-      );
-      return res.data.dishes || [];
-    } catch {
-      return [];
-    }
-  }, []);
-
-  const fetchDishesWithBatching = useCallback(async (
-    restaurants: Restaurant[],
+  const fetchAllDishes = useCallback(async (
     signal: AbortSignal,
   ): Promise<Record<number, Dish[]>> => {
-    const dishesMap: Record<number, Dish[]> = {};
-
-    for (let i = 0; i < restaurants.length; i += DISH_FETCH_BATCH_SIZE) {
-      if (signal.aborted) break;
-
-      const batch   = restaurants.slice(i, i + DISH_FETCH_BATCH_SIZE);
-      const settled = await Promise.allSettled(
-        batch.map(async (r) => {
-          const dishes = await fetchRestaurantDishes(r.id, signal);
-          return [r.id, dishes] as const;
-        }),
-      );
-
-      settled.forEach((result) => {
-        if (result.status === 'fulfilled') {
-          const [id, dishes] = result.value;
-          dishesMap[id] = dishes;
-        }
-      });
+    if (signal.aborted) return {};
+    try {
+      const res = await api.get('/restaurant/all-dishes-for-restaurantE', { signal });
+      // Backend returns { dishes: { [restaurant_id]: Dish[] } }
+      // Normalize price from string "45.00" to number
+      const raw: Record<string, Dish[]> = res.data.dishes || {};
+      const normalized: Record<number, Dish[]> = {};
+      for (const [restaurantId, dishes] of Object.entries(raw)) {
+        normalized[Number(restaurantId)] = dishes.map(dish => ({
+          ...dish,
+          price: parseFloat(String(dish.price)),
+        }));
+      }
+      return normalized;
+    } catch {
+      return {};
     }
-
-    return dishesMap;
-  }, [fetchRestaurantDishes]);
+  }, []);
 
   const fetchAllRestaurants = useCallback(async () => {
     const cache        = restaurantsCacheRef.current;
@@ -259,13 +235,16 @@ export default function ExplorePage() {
     setLoadError(null);
 
     try {
-      const res = await api.get('/restaurant/all', {
-        signal: controller.signal,
-        params: { page: 1, limit: RESTAURANTS_PER_PAGE },
-      });
+      // Fetch restaurants and all dishes in parallel
+      const [restaurantsRes, dishesMap] = await Promise.all([
+        api.get('/restaurant/all', {
+          signal: controller.signal,
+          params: { page: 1, limit: RESTAURANTS_PER_PAGE },
+        }),
+        fetchAllDishes(controller.signal),
+      ]);
 
-      const restaurants: Restaurant[] = res.data.restaurants || [];
-      const dishesMap = await fetchDishesWithBatching(restaurants, controller.signal);
+      const restaurants: Restaurant[] = restaurantsRes.data.restaurants || [];
 
       setAllRestaurants(restaurants);
       setRestaurantDishes(dishesMap);
@@ -287,7 +266,7 @@ export default function ExplorePage() {
     } finally {
       setIsLoading(false);
     }
-  }, [fetchDishesWithBatching]);
+  }, [fetchAllDishes]);
 
   const fetchMoreRestaurants = useCallback(async () => {
     if (isFetchingMore || !hasMore || isLoading) return;
@@ -306,10 +285,9 @@ export default function ExplorePage() {
       });
 
       const newRestaurants: Restaurant[] = res.data.restaurants || [];
-      const newDishesMap = await fetchDishesWithBatching(newRestaurants, controller.signal);
 
+      // Dishes are already fetched globally — no need to re-fetch
       setAllRestaurants(prev => [...prev, ...newRestaurants]);
-      setRestaurantDishes(prev => ({ ...prev, ...newDishesMap }));
       setPage(nextPage);
       setHasMore(newRestaurants.length === RESTAURANTS_PER_PAGE);
     } catch (err: unknown) {
@@ -317,7 +295,7 @@ export default function ExplorePage() {
     } finally {
       setIsFetchingMore(false);
     }
-  }, [fetchDishesWithBatching, hasMore, isFetchingMore, isLoading, page]);
+  }, [hasMore, isFetchingMore, isLoading, page]);
 
   const fetchNearbyRestaurants = useCallback(async (
     latitude:  number,

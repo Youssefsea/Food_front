@@ -176,7 +176,7 @@ export function RestaurantCard({
                       {dish.name}
                     </p>
                     <p className="text-[10px] sm:text-xs font-bold text-[#E5A04D]">
-                      {dish.price} ج.م
+                      {Number.isInteger(dish.price) ? dish.price : dish.price.toFixed(2)} ج.م
                     </p>
                   </div>
                 ))}
