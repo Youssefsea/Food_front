@@ -1,6 +1,7 @@
 'use client';
 
 import { ShoppingCart, ChevronLeft } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
 interface FloatingCartBarProps {
   itemCount: number;
@@ -9,57 +10,122 @@ interface FloatingCartBarProps {
 }
 
 export function FloatingCartBar({ itemCount, totalPrice, onViewCart }: FloatingCartBarProps) {
-  if (itemCount === 0) return null;
+  const prevCountRef = useRef(itemCount);
+  const visible = itemCount > 0;
+
+  // Bump animation when quantity changes
+  const [bump, setBump] = useState(false);
+  useEffect(() => {
+    let enterT: ReturnType<typeof setTimeout> | undefined;
+    let exitT: ReturnType<typeof setTimeout> | undefined;
+
+    if (itemCount > 0 && itemCount !== prevCountRef.current) {
+      // defer to avoid synchronous setState in the effect body
+      enterT = setTimeout(() => setBump(true), 0);
+      exitT = setTimeout(() => setBump(false), 350);
+    }
+
+    prevCountRef.current = itemCount;
+
+    return () => {
+      if (enterT) clearTimeout(enterT);
+      if (exitT) clearTimeout(exitT);
+    };
+  }, [itemCount]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!visible) return null;
 
   return (
-    <div className="fixed left-0 right-0 z-[100] p-3 sm:p-4 md:p-5 animate-slideUpBounce fixed-above-bottom-nav">
-      <div className="max-w-2xl mx-auto bg-white rounded-xl sm:rounded-2xl md:rounded-3xl shadow-2xl border border-[#E5E7EB] overflow-hidden">
-        <div className="flex items-center justify-between p-3 sm:p-4 md:p-5">
-          <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 md:w-11 md:h-11 bg-[#FEF3E2] rounded-lg sm:rounded-xl md:rounded-2xl flex items-center justify-center">
-              <ShoppingCart className="w-4 sm:w-5 md:w-6 h-4 sm:h-5 md:h-6 text-[#E5A04D]" strokeWidth={2.5} />
-            </div>
-            <div>
-              <p className="text-[10px] sm:text-xs md:text-sm text-[#6B7280]">
-                {itemCount} {itemCount === 1 ? 'صنف' : 'أصناف'}
-              </p>
-              <p className="text-base sm:text-lg md:text-xl font-bold text-[#1A1A1A]">
-                {totalPrice} ج.م
-              </p>
-            </div>
-          </div>
+    <>
+      {/* Spacer so content isn't hidden behind the bar */}
+      <div className="h-24 md:h-0 pointer-events-none" aria-hidden="true" />
 
-          <button
-            onClick={onViewCart}
-            className="flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 md:px-6 h-9 sm:h-10 md:h-11 bg-[#E5A04D] hover:bg-[#D4903D] text-white rounded-lg sm:rounded-xl md:rounded-2xl font-bold text-xs sm:text-sm md:text-base shadow-lg shadow-[#E5A04D]/30 active:scale-95 transition-all"
-          >
-            <span>عرض السلة</span>
-            <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={3} />
-          </button>
+      <div
+        className="
+          fixed left-0 right-0 z-[100]
+          px-3 sm:px-4 md:px-5
+          /* sit above bottom-nav on mobile (bottom-nav = ~56-64px) */
+          bottom-[72px] md:bottom-6
+          animate-slideUpBounce
+        "
+      >
+        <div
+          className={`
+            max-w-2xl mx-auto bg-white rounded-2xl sm:rounded-3xl
+            shadow-[0_8px_32px_rgba(229,160,77,0.18)] border border-[#F3D9B0]
+            overflow-hidden transition-transform duration-200
+            ${bump ? 'scale-[1.03]' : 'scale-100'}
+          `}
+        >
+          <div className="flex items-center justify-between px-4 py-3 sm:px-5 sm:py-3.5">
+            {/* Left: icon + count + price */}
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <div className="w-10 h-10 bg-[#FEF3E2] rounded-xl flex items-center justify-center">
+                  <ShoppingCart className="w-5 h-5 text-[#E5A04D]" strokeWidth={2.5} />
+                </div>
+                {/* Badge */}
+                <span
+                  className="
+                    absolute -top-1.5 -right-1.5
+                    min-w-[18px] h-[18px] px-1
+                    bg-[#E5A04D] text-white text-[10px] font-bold
+                    rounded-full flex items-center justify-center
+                    shadow-sm
+                  "
+                >
+                  {itemCount}
+                </span>
+              </div>
+
+              <div>
+                <p className="text-[11px] text-[#9CA3AF] leading-none mb-0.5">
+                  {itemCount === 1 ? 'صنف واحد' : `${itemCount} أصناف`}
+                </p>
+                <p className="text-lg font-bold text-[#1A1A1A] leading-none">
+                  {typeof totalPrice === 'number'
+                    ? Number.isInteger(totalPrice)
+                      ? totalPrice
+                      : totalPrice.toFixed(2)
+                    : totalPrice}{' '}
+                  <span className="text-sm font-semibold text-[#E5A04D]">ج.م</span>
+                </p>
+              </div>
+            </div>
+
+            {/* Right: CTA button */}
+            <button
+              onClick={onViewCart}
+              className="
+                flex items-center gap-1.5
+                px-5 h-10
+                bg-gradient-to-l from-[#E5A04D] to-[#D4903D]
+                hover:from-[#D4903D] hover:to-[#C07D2D]
+                text-white rounded-xl font-bold text-sm
+                shadow-md shadow-[#E5A04D]/30
+                active:scale-95 transition-all duration-150
+                whitespace-nowrap
+              "
+            >
+              <span>عرض السلة</span>
+              <ChevronLeft className="w-4 h-4" strokeWidth={2.5} />
+            </button>
+          </div>
         </div>
       </div>
 
       <style>{`
         @keyframes slideUpBounce {
-          0% {
-            transform: translateY(100%);
-            opacity: 0;
-          }
-          60% {
-            transform: translateY(-10px);
-            opacity: 1;
-          }
-          80% {
-            transform: translateY(5px);
-          }
-          100% {
-            transform: translateY(0);
-          }
+          0%   { transform: translateY(110%); opacity: 0; }
+          55%  { transform: translateY(-8px);  opacity: 1; }
+          75%  { transform: translateY(4px); }
+          90%  { transform: translateY(-2px); }
+          100% { transform: translateY(0); }
         }
         .animate-slideUpBounce {
-          animation: slideUpBounce 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+          animation: slideUpBounce 480ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
         }
       `}</style>
-    </div>
+    </>
   );
 }
