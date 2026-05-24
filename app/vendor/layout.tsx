@@ -1,4 +1,4 @@
-import BottomNav from '@/components/layout/BottomNav';
+
 
 export default function VendorLayout({ children }: { children: React.ReactNode }) {
   return (

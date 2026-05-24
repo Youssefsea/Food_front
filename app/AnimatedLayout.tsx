@@ -38,8 +38,6 @@ export default function AnimatedLayout({ children }: { children: React.ReactNode
   const pathname = usePathname();
   const mounted = useMounted();
 
-  // ✅ لو مش mounted، render الـ providers بس بدون nav/sidebar
-  // عشان الـ AuthProvider يشتغل ويحمّل الـ user قبل ما ProtectedRoute يحكم
   if (!mounted) {
     return (
       <AuthProvider>
