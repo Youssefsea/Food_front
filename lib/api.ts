@@ -1,7 +1,7 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://food-back-nod.vercel.app';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://food-blond-three.vercel.app';
 
 // Create API instance
 const api = axios.create({
