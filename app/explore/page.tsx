@@ -192,16 +192,14 @@ export default function ExplorePage() {
   const { lat, lng, isLocating, getCurrentPosition } = useGeolocation();
   const { ref: infiniteScrollRef, inView }           = useInView({ threshold: 0.1 });
 
-  // ─── Data Fetching ───────────────────────────────────────────────────────────
 
   const fetchAllDishes = useCallback(async (
     signal: AbortSignal,
   ): Promise<Record<number, Dish[]>> => {
     if (signal.aborted) return {};
     try {
-      const res = await api.get('/restaurant/all-dishes-for-restaurantE', { signal });
-      // Backend returns { dishes: { [restaurant_id]: Dish[] } }
-      // Normalize price from string "45.00" to number
+      const res = await api.post('/restaurant/all-dishes-for-restaurantE', { signal });
+    
       const raw: Record<string, Dish[]> = res.data.dishes || {};
       const normalized: Record<number, Dish[]> = {};
       for (const [restaurantId, dishes] of Object.entries(raw)) {
