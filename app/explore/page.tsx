@@ -35,11 +35,12 @@ interface Restaurant {
 }
 
 interface Dish {
-  id:        number;
-  name:      string;
-  price:     number;
-  image:     string;
-  category?: string;
+  name:              string;
+  price:             number;
+  image:             string;
+  category?:         string;
+  description?:      string;
+  preparation_time?: number;
 }
 
 type RestaurantsCache = {
@@ -112,7 +113,7 @@ const RestaurantCard = memo(function RestaurantCard({
               const img = getFirstImage(dish.image);
               return img ? (
                 <div
-                  key={dish.id}
+                  key={dish.name}
                   className="w-8 h-8 rounded-full border-2 border-white overflow-hidden bg-white"
                   style={{ zIndex: 3 - i }}
                 >

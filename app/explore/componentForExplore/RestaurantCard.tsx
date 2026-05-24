@@ -6,10 +6,11 @@ import Image from 'next/image';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Dish {
-  id:    number;
-  name:  string;
-  price: number;
-  image: string;
+  name:              string;
+  price:             number;
+  image:             string;
+  description?:      string;
+  preparation_time?: number;
 }
 
 interface RestaurantCardProps {
@@ -57,7 +58,7 @@ export function RestaurantCard({
           {displayDishes.length >= 3 ? (
             <div className="flex h-full gap-0.5">
               {displayDishes.map((dish, index) => (
-                <div key={dish.id ?? index} className="flex-1 overflow-hidden relative">
+                <div key={dish.name ?? index} className="flex-1 overflow-hidden relative">
                   <Image
                     src={dish.image?.split(',')[0]?.trim() || '/placeholder-dish.jpg'}
                     alt={dish.name}
@@ -160,7 +161,7 @@ export function RestaurantCard({
               </p>
               <div className="flex gap-2 sm:gap-3 overflow-x-auto hide-scrollbar pb-1">
                 {displayDishes.map((dish) => (
-                  <div key={dish.id} className="flex-shrink-0 w-20 sm:w-24">
+                  <div key={dish.name} className="flex-shrink-0 w-20 sm:w-24">
                     <div className="relative h-16 sm:h-20 rounded-lg sm:rounded-xl overflow-hidden mb-1 sm:mb-1.5 shadow-sm">
                       <Image
                         src={dish.image?.split(',')[0]?.trim() || '/placeholder-dish.jpg'}
