@@ -63,7 +63,6 @@ function isAbortError(err: unknown): boolean {
   return false;
 }
 
-// ─── Dish Card ────────────────────────────────────────────────────────────────
 
 const DishCard = memo(function DishCard({
   dish,

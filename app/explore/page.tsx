@@ -16,11 +16,9 @@ import { ProtectedRoute } from '@/app/context/AuthContext';
 
 const LocationCustomer = dynamic(() => import('./LocationCustomer'), { ssr: false });
 
-// ─── Constants ────────────────────────────────────────────────────────────────
 const RESTAURANTS_CACHE_TTL = 60_000;
 const RESTAURANTS_PER_PAGE  = 9;
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 interface Restaurant {
   id:                number;
   restaurant_name:   string;
@@ -54,7 +52,6 @@ function isAbortError(err: unknown): boolean {
     (err.name === 'AbortError' || err.name === 'CanceledError');
 }
 
-// ─── RestaurantCard ───────────────────────────────────────────────────────────
 const RestaurantCard = memo(function RestaurantCard({
   restaurant,
   dishes,
