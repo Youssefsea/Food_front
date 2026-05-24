@@ -227,11 +227,6 @@ function DishDetailModal({
   const images = dish ? parseDishImages(dish.image) : [];
   const canOrder = !!dish && isRestaurantOpen && dish.is_available !== false;
 
-  // Sync quantity when dish changes
-  useEffect(() => {
-    setQuantity(Math.max(1, initialQty));
-  }, [dish?.id, initialQty]); // eslint-disable-line react-hooks/exhaustive-deps
-
   // Lock body scroll while modal open
   useEffect(() => {
     if (isOpen) document.body.style.overflow = 'hidden';
@@ -795,6 +790,7 @@ export default function RestaurantPage() {
 
       {/* Dish Detail Modal */}
       <DishDetailModal
+        key={selectedDish?.id ?? 'none'}
         dish={selectedDish}
         isOpen={isModalOpen}
         onClose={closeDishModal}
