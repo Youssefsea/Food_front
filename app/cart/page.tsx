@@ -16,13 +16,14 @@ import {
   CheckoutButton,
   EmptyCart,
   LocationPickerModal,
-  RestaurantSelector
+  RestaurantSelector,
 } from './components';
 import { RestaurantCart, LocationData, PaymentMethod as PaymentMethodType, CartSummary } from './types';
 import { useCart } from '../context/CartContext';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui';
 import { calculateDistance } from '@/lib/utils';
+
 interface CartItemResponse {
   dishId: number;
   name: string;
@@ -93,7 +94,7 @@ export default function CartPage() {
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<number | null>(null);
-  
+
   const [orderSuccess, setOrderSuccess] = useState<{
     show: boolean;
     orderId: number | null;
@@ -107,9 +108,9 @@ export default function CartPage() {
       setLoadError(null);
       const res = await api.get('/customer/view-cart', { signal });
       const data = res.data;
-      
+
       const restaurants = data.groupedByRestaurant || [];
-      
+
       if (restaurants.length === 0 && (!data.cartItems || data.cartItems.length === 0)) {
         setGroupedCarts([]);
         setIsLoading(false);
@@ -122,8 +123,8 @@ export default function CartPage() {
           restaurantName: r.restaurantName,
           restaurantLocation: r.restaurantLocation,
           restaurantLogo: '',
-          restaurantLat: r.restaurantLat || null,
-          restaurantLng: r.restaurantLng || null,
+          restaurantLat: r.restaurantLat ?? null,
+          restaurantLng: r.restaurantLng ?? null,
           is_open: normalizeIsOpen(r.is_open ?? r.restaurantIsOpen),
           can_reserve: r.restaurantCanReserve || false,
           can_delivery: r.restaurantCanDeliver || false,
@@ -138,27 +139,24 @@ export default function CartPage() {
             image: d.image || '',
             price: d.price,
             quantity: d.quantity,
-            subtotal: d.subtotal || d.price * d.quantity
+            subtotal: d.subtotal || d.price * d.quantity,
           })),
           totalPrice: r.totalPrice,
           totalItems: r.totalItems,
           orderType: 'instant' as const,
           reservationDate: '',
           reservationTime: '',
-          isSelected: false
+          isSelected: false,
         }));
-        
+
         setGroupedCarts(mapped);
-        
-        if (mapped.length === 1) {
-          setSelectedRestaurantId(mapped[0].restaurantId);
-        }
+        if (mapped.length === 1) setSelectedRestaurantId(mapped[0].restaurantId);
       } else {
         const cartItems: CartItemResponse[] = data.cartItems || [];
-        
+
         const grouped = cartItems.reduce((acc, item) => {
-          const restaurantId = item.restaurantId;
-          
+          const { restaurantId } = item;
+
           if (!acc[restaurantId]) {
             acc[restaurantId] = {
               restaurantId,
@@ -180,7 +178,7 @@ export default function CartPage() {
               orderType: 'instant' as const,
               reservationDate: '',
               reservationTime: '',
-              isSelected: false
+              isSelected: false,
             };
           }
 
@@ -191,7 +189,7 @@ export default function CartPage() {
             image: item.image,
             price: item.price,
             quantity: item.quantity,
-            subtotal: item.price * item.quantity
+            subtotal: item.price * item.quantity,
           });
 
           acc[restaurantId].totalPrice += item.price * item.quantity;
@@ -202,29 +200,23 @@ export default function CartPage() {
 
         const cartsList = Object.values(grouped);
         setGroupedCarts(cartsList);
-        
-        if (cartsList.length === 1) {
-          setSelectedRestaurantId(cartsList[0].restaurantId);
-        }
+        if (cartsList.length === 1) setSelectedRestaurantId(cartsList[0].restaurantId);
       }
     } catch (err) {
-      if (isTimeoutError(err)) {
-        setLoadError('انتهت المهلة أثناء تحميل السلة. حاول مرة أخرى.');
-      } else {
-        setLoadError('حدث خطأ في تحميل السلة');
-      }
+      const message = isTimeoutError(err)
+        ? 'انتهت المهلة أثناء تحميل السلة. حاول مرة أخرى.'
+        : 'حدث خطأ في تحميل السلة';
+      setLoadError(message);
       toast.error('حدث خطأ في تحميل السلة');
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  // Mount guard - fix for first-visit data loading bug
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Fetch cart only after mounted
   useEffect(() => {
     if (!mounted) return;
     const controller = new AbortController();
@@ -232,10 +224,9 @@ export default function CartPage() {
     return () => controller.abort();
   }, [fetchCart, mounted]);
 
-  // Countdown effect for order success
   useEffect(() => {
     if (!orderSuccess.show) return;
-    
+
     if (orderSuccess.countdown <= 0) {
       router.push('/explore');
       return;
@@ -255,15 +246,16 @@ export default function CartPage() {
       let distanceKm = 0;
       let calculatedFee = 0;
       let isOutsideDeliveryRadius = false;
-      
+
       if (restaurant.restaurantLat && restaurant.restaurantLng) {
-        distanceKm = calculateDistance(
-          deliveryLocation.lat,
-          deliveryLocation.lng,
-          restaurant.restaurantLat,
-          restaurant.restaurantLng
-        );
-        distanceKm = Math.round(distanceKm * 100) / 100;
+        distanceKm = Math.round(
+          calculateDistance(
+            deliveryLocation.lat,
+            deliveryLocation.lng,
+            restaurant.restaurantLat,
+            restaurant.restaurantLng
+          ) * 100
+        ) / 100;
         calculatedFee = Math.round(restaurant.delivery_fees * distanceKm);
         if (typeof restaurant.allowed_radius_km === 'number' && restaurant.allowed_radius_km > 0) {
           isOutsideDeliveryRadius = distanceKm > restaurant.allowed_radius_km;
@@ -272,122 +264,107 @@ export default function CartPage() {
         distanceKm = 5;
         calculatedFee = restaurant.delivery_fees * distanceKm;
       }
-      
-      return {
-        ...restaurant,
-        distanceKm,
-        calculatedDeliveryFee: calculatedFee,
-        isOutsideDeliveryRadius
-      };
+
+      return { ...restaurant, distanceKm, calculatedDeliveryFee: calculatedFee, isOutsideDeliveryRadius };
     }));
   }, [deliveryLocation]);
 
-  const selectedRestaurant = useMemo(() => {
-    return groupedCarts.find(r => r.restaurantId === selectedRestaurantId) || null;
-  }, [groupedCarts, selectedRestaurantId]);
+  const selectedRestaurant = useMemo(
+    () => groupedCarts.find(r => r.restaurantId === selectedRestaurantId) ?? null,
+    [groupedCarts, selectedRestaurantId]
+  );
 
   const cartSummary = useMemo((): CartSummary => {
     if (selectedRestaurant) {
-      const subtotal = selectedRestaurant.totalPrice;
-      const totalItems = selectedRestaurant.totalItems;
       return {
         totalRestaurants: 1,
-        totalItems,
-        subtotal,
+        totalItems: selectedRestaurant.totalItems,
+        subtotal: selectedRestaurant.totalPrice,
         totalDeliveryFees: selectedRestaurant.calculatedDeliveryFee || 0,
-        grandTotal: selectedRestaurant.totalPrice + (selectedRestaurant.calculatedDeliveryFee || 0)
+        grandTotal: selectedRestaurant.totalPrice + (selectedRestaurant.calculatedDeliveryFee || 0),
       };
     }
 
-    // If no selection, show total for all
-    const totalRestaurants = groupedCarts.length;
-    const totalItems = groupedCarts.reduce((sum, r) => sum + r.totalItems, 0);
     const subtotal = groupedCarts.reduce((sum, r) => sum + r.totalPrice, 0);
     const totalDeliveryFees = groupedCarts.reduce((sum, r) => sum + (r.calculatedDeliveryFee || 0), 0);
-    const grandTotal = subtotal + totalDeliveryFees;
 
-    return { totalRestaurants, totalItems, subtotal, totalDeliveryFees, grandTotal };
+    return {
+      totalRestaurants: groupedCarts.length,
+      totalItems: groupedCarts.reduce((sum, r) => sum + r.totalItems, 0),
+      subtotal,
+      totalDeliveryFees,
+      grandTotal: subtotal + totalDeliveryFees,
+    };
   }, [groupedCarts, selectedRestaurant]);
 
-  // Handle quantity change
   const handleQuantityChange = useCallback(async (restaurantId: number, dishId: number, newQuantity: number) => {
     if (newQuantity < 1) return;
 
-    const restaurant = groupedCarts.find(r => r.restaurantId === restaurantId);
-    const currentDish = restaurant?.dishes.find(d => d.dishId === dishId);
-    const currentQuantity = currentDish?.quantity || 0;
-    const quantityDiff = newQuantity - currentQuantity;
+    const currentDish = groupedCarts
+      .find(r => r.restaurantId === restaurantId)
+      ?.dishes.find(d => d.dishId === dishId);
+    const quantityDiff = newQuantity - (currentDish?.quantity ?? 0);
 
     try {
-      await api.put('/customer/update-dish-quantity-in-cart', {
-        dishId,
-        quantity: newQuantity
-      });
+      await api.put('/customer/update-dish-quantity-in-cart', { dishId, quantity: newQuantity });
 
-      setGroupedCarts(prev => prev.map(restaurant => {
-        if (restaurant.restaurantId !== restaurantId) return restaurant;
+      setGroupedCarts(prev => prev.map(r => {
+        if (r.restaurantId !== restaurantId) return r;
 
-        const updatedDishes = restaurant.dishes.map(dish => {
-          if (dish.dishId !== dishId) return dish;
-          return {
-            ...dish,
-            quantity: newQuantity,
-            subtotal: dish.price * newQuantity
-          };
-        });
+        const updatedDishes = r.dishes.map(d =>
+          d.dishId !== dishId ? d : { ...d, quantity: newQuantity, subtotal: d.price * newQuantity }
+        );
 
-        const totalPrice = updatedDishes.reduce((sum, d) => sum + d.subtotal, 0);
-        const totalItems = updatedDishes.reduce((sum, d) => sum + d.quantity, 0);
-
-        return { ...restaurant, dishes: updatedDishes, totalPrice, totalItems };
+        return {
+          ...r,
+          dishes: updatedDishes,
+          totalPrice: updatedDishes.reduce((sum, d) => sum + d.subtotal, 0),
+          totalItems: updatedDishes.reduce((sum, d) => sum + d.quantity, 0),
+        };
       }));
 
-      if (quantityDiff > 0) {
-        incrementCount(quantityDiff);
-      } else if (quantityDiff < 0) {
-        decrementCount(Math.abs(quantityDiff));
-      }
+      if (quantityDiff > 0) incrementCount(quantityDiff);
+      else if (quantityDiff < 0) decrementCount(Math.abs(quantityDiff));
 
       toast.success('تم تحديث الكمية');
-    } catch (_err) {
+    } catch {
       toast.error('حدث خطأ في تحديث الكمية');
     }
   }, [decrementCount, groupedCarts, incrementCount]);
 
   const handleRemoveDish = useCallback(async (restaurantId: number, dishId: number) => {
-    const restaurant = groupedCarts.find(r => r.restaurantId === restaurantId);
-    const removedDish = restaurant?.dishes.find(d => d.dishId === dishId);
-    const removedQuantity = removedDish?.quantity || 0;
+    const removedQuantity = groupedCarts
+      .find(r => r.restaurantId === restaurantId)
+      ?.dishes.find(d => d.dishId === dishId)?.quantity ?? 0;
 
     try {
-      await api.delete('/customer/remove-dish-from-cart', {
-        data: { dishId }
-      });
+      await api.delete('/customer/remove-dish-from-cart', { data: { dishId } });
 
       setGroupedCarts(prev => {
-        const updated = prev.map(restaurant => {
-          if (restaurant.restaurantId !== restaurantId) return restaurant;
+        const updated = prev.map(r => {
+          if (r.restaurantId !== restaurantId) return r;
 
-          const updatedDishes = restaurant.dishes.filter(d => d.dishId !== dishId);
-          const totalPrice = updatedDishes.reduce((sum, d) => sum + d.subtotal, 0);
-          const totalItems = updatedDishes.reduce((sum, d) => sum + d.quantity, 0);
-
-          return { ...restaurant, dishes: updatedDishes, totalPrice, totalItems };
+          const updatedDishes = r.dishes.filter(d => d.dishId !== dishId);
+          return {
+            ...r,
+            dishes: updatedDishes,
+            totalPrice: updatedDishes.reduce((sum, d) => sum + d.subtotal, 0),
+            totalItems: updatedDishes.reduce((sum, d) => sum + d.quantity, 0),
+          };
         });
 
         const filtered = updated.filter(r => r.dishes.length > 0);
-        
+
         if (selectedRestaurantId && !filtered.find(r => r.restaurantId === selectedRestaurantId)) {
           setSelectedRestaurantId(filtered.length === 1 ? filtered[0].restaurantId : null);
         }
-        
+
         return filtered;
       });
 
       decrementCount(removedQuantity);
-
       toast.success('تم حذف الطبق من السلة');
-    } catch (_err) {
+    } catch {
       toast.error('حدث خطأ في حذف الطبق');
     }
   }, [decrementCount, groupedCarts, selectedRestaurantId]);
@@ -396,126 +373,111 @@ export default function CartPage() {
     if (!confirm('هل أنت متأكد من إفراغ السلة بالكامل؟')) return;
 
     try {
-      for (const restaurant of groupedCarts) {
-        for (const dish of restaurant.dishes) {
-          await api.delete('/customer/remove-dish-from-cart', {
-            data: { dishId: dish.dishId }
-          });
-        }
-      }
+      await Promise.all(
+        groupedCarts.flatMap(r =>
+          r.dishes.map(d =>
+            api.delete('/customer/remove-dish-from-cart', { data: { dishId: d.dishId } })
+          )
+        )
+      );
 
       setGroupedCarts([]);
       setSelectedRestaurantId(null);
-      
       setCount(0);
-      
       toast.success('تم إفراغ السلة');
-    } catch (_err) {
+    } catch {
       toast.error('حدث خطأ في إفراغ السلة');
     }
   }, [groupedCarts, setCount]);
 
-  const handleReservationTimeChange = (restaurantId: number, time: string) => {
-    setGroupedCarts(prev => prev.map(r => 
+  const handleSelectRestaurant = useCallback((restaurantId: number) => {
+    setSelectedRestaurantId(restaurantId);
+    setPaymentImage(null);
+  }, []);
+
+  const handleOrderTypeChange = useCallback((restaurantId: number, orderType: 'instant' | 'reservation') => {
+    setGroupedCarts(prev => prev.map(r =>
+      r.restaurantId === restaurantId ? { ...r, orderType } : r
+    ));
+  }, []);
+
+  const handleReservationDateChange = useCallback((restaurantId: number, date: string) => {
+    setGroupedCarts(prev => prev.map(r =>
+      r.restaurantId === restaurantId ? { ...r, reservationDate: date } : r
+    ));
+  }, []);
+
+  const handleReservationTimeChange = useCallback((restaurantId: number, time: string) => {
+    setGroupedCarts(prev => prev.map(r =>
       r.restaurantId === restaurantId ? { ...r, reservationTime: time } : r
     ));
-  };
+  }, []);
 
-  // Handle restaurant selection
-  const handleSelectRestaurant = (restaurantId: number) => {
-    setSelectedRestaurantId(restaurantId);
-    // Reset payment when changing restaurant
-    setPaymentImage(null);
-  };
-
-
-  // Validation
-  const getCheckoutDisabledReason = (): string => {
+  const checkoutDisabledReason = useMemo((): string => {
     if (groupedCarts.length === 0) return 'السلة فارغة';
     if (!deliveryLocation) return 'حدد عنوان التوصيل';
+    if (groupedCarts.length > 1 && !selectedRestaurantId) return 'اختر مطعم للطلب';
 
-    // Must select a restaurant when multiple exist
-    if (groupedCarts.length > 1 && !selectedRestaurantId) {
-      return 'اختر مطعم للطلب';
+    const restaurant = selectedRestaurant ?? groupedCarts[0];
+    if (!restaurant) return '';
+
+    const isReservation = restaurant.orderType === 'reservation';
+
+    if (restaurant.is_open === 0) return 'هذا المطعم مغلق حالياً ولا يمكن إتمام الطلب';
+
+    if (!isReservation && restaurant.isOutsideDeliveryRadius) {
+      const distance = restaurant.distanceKm > 0 ? restaurant.distanceKm.toFixed(1) : '';
+      const radius = restaurant.allowed_radius_km ? restaurant.allowed_radius_km.toFixed(1) : '';
+      return `المسافة خارج نطاق التوصيل${distance ? ` (${distance} كم${radius ? `، الحد ${radius} كم` : ''})` : ''}`;
     }
 
-    // Check requirements based on order type
-    const restaurant = selectedRestaurant || groupedCarts[0];
-    if (restaurant) {
-      const isReservation = restaurant.orderType === 'reservation';
-      if (restaurant.is_open === 0) {
-        return 'هذا المطعم مغلق حالياً ولا يمكن إتمام الطلب';
-      }
-      if (!isReservation && restaurant.isOutsideDeliveryRadius) {
-        const distance = restaurant.distanceKm > 0 ? restaurant.distanceKm.toFixed(1) : '';
-        const radius = restaurant.allowed_radius_km ? restaurant.allowed_radius_km.toFixed(1) : '';
-        return `المسافة خارج نطاق التوصيل${distance ? ` (${distance} كم${radius ? `، الحد ${radius} كم` : ''})` : ''}`;
-      }
-
-      // Reservation orders require payment proof
-      if (isReservation) {
-        if (!paymentMethod) return 'اختر طريقة الدفع';
-        if (!paymentImage) return 'ارفع صورة إثبات الدفع';
-        if (!restaurant.reservationDate || !restaurant.reservationTime) {
-          return 'حدد وقت الحجز';
-        }
-      }
-      // Delivery orders use cash on delivery - no proof needed
+    if (isReservation) {
+      if (!paymentMethod) return 'اختر طريقة الدفع';
+      if (!paymentImage) return 'ارفع صورة إثبات الدفع';
+      if (!restaurant.reservationDate || !restaurant.reservationTime) return 'حدد وقت الحجز';
     }
 
     return '';
-  };
+  }, [groupedCarts, deliveryLocation, selectedRestaurantId, selectedRestaurant, paymentMethod, paymentImage]);
 
-  const isCheckoutDisabled = getCheckoutDisabledReason() !== '';
-
-  // Handle checkout
   const handleCheckout = async () => {
-    const disabledReason = getCheckoutDisabledReason();
-    if (disabledReason) {
-      toast.error(disabledReason);
+    if (checkoutDisabledReason) {
+      toast.error(checkoutDisabledReason);
       return;
     }
 
-    if (!selectedRestaurant && groupedCarts.length > 1) {
-      toast.error('يرجى اختيار مطعم واحد للطلب');
-      return;
-    }
+    const restaurantToOrder = selectedRestaurant ?? groupedCarts[0];
+    if (!restaurantToOrder) return;
 
-    const restaurantToOrder = selectedRestaurant || groupedCarts[0];
     setIsSubmitting(true);
 
     try {
-      // Step 1: Create the order
       const isReservationOrder = restaurantToOrder.orderType === 'reservation';
       const reservationDate = isReservationOrder
         ? `${restaurantToOrder.reservationDate} ${restaurantToOrder.reservationTime}`
         : null;
-      const orderData = {
+
+      const orderResponse = await api.post('/customer/place-order', {
         is_reservation: isReservationOrder,
         lat: deliveryLocation!.lat,
         lng: deliveryLocation!.lng,
         restaurantId: restaurantToOrder.restaurantId,
-        ...(reservationDate ? { reservation_date: reservationDate } : {})
-      };
+        ...(reservationDate ? { reservation_date: reservationDate } : {}),
+      });
 
-      const orderResponse = await api.post('/customer/place-order', orderData);
-      
-      const createdOrders = orderResponse.data.createdOrders || [];
+      const createdOrders: OrderResponse[] = orderResponse.data.createdOrders || [];
       const failedOrders = orderResponse.data.failedOrders || [];
-      
+
       if (createdOrders.length === 0) {
-        const failureReason = failedOrders[0]?.reason || 'فشل في إنشاء الطلب';
-        toast.error(failureReason);
-        setIsSubmitting(false);
+        toast.error(failedOrders[0]?.reason || 'فشل في إنشاء الطلب');
         return;
       }
 
-      const ourOrder = createdOrders.find((o: OrderResponse) => 
-        o.restaurantId === restaurantToOrder.restaurantId || 
+      const ourOrder = createdOrders.find(o =>
+        o.restaurantId === restaurantToOrder.restaurantId ||
         o.restaurantId === String(restaurantToOrder.restaurantId)
-      ) || createdOrders[0];
+      ) ?? createdOrders[0];
 
-      // Step 2: Upload payment proof ONLY for reservation orders
       if (isReservationOrder && paymentMethod && paymentImage) {
         const formData = new FormData();
         formData.append('orderId', ourOrder.orderId.toString());
@@ -523,48 +485,27 @@ export default function CartPage() {
         formData.append('images', paymentImage);
 
         const paymentResponse = await api.post('/customer/upload-payment-proof', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
+          headers: { 'Content-Type': 'multipart/form-data' },
         });
 
         if (paymentResponse.data.success === false) {
           toast.error(paymentResponse.data.message || 'فشل في رفع إثبات الدفع');
-          setIsSubmitting(false);
           return;
         }
       }
 
-      // Clear cart and show success
       setGroupedCarts(prev => prev.filter(r => r.restaurantId !== restaurantToOrder.restaurantId));
       setSelectedRestaurantId(null);
       setPaymentImage(null);
       setPaymentMethod(null);
-      
-      setOrderSuccess({
-        show: true,
-        orderId: ourOrder.orderId,
-        countdown: 5,
-        isReservation: isReservationOrder
-      });
 
+      setOrderSuccess({ show: true, orderId: ourOrder.orderId, countdown: 5, isReservation: isReservationOrder });
     } catch (err) {
       const axiosError = err as { response?: { data?: { error?: string; message?: string } } };
-      const errorMessage = axiosError.response?.data?.error || axiosError.response?.data?.message || 'حدث خطأ في إنشاء الطلب';
-      toast.error(errorMessage);
+      toast.error(axiosError.response?.data?.error ?? axiosError.response?.data?.message ?? 'حدث خطأ في إنشاء الطلب');
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleOrderTypeChange = (restaurantId: number, orderType: 'instant' | 'reservation') => {
-    setGroupedCarts(prev => prev.map(r =>
-      r.restaurantId === restaurantId ? { ...r, orderType } : r
-    ));
-  };
-
-  const handleReservationDateChange = (restaurantId: number, date: string) => {
-    setGroupedCarts(prev => prev.map(r =>
-      r.restaurantId === restaurantId ? { ...r, reservationDate: date } : r
-    ));
   };
 
   const summary = cartSummary;
@@ -579,7 +520,7 @@ export default function CartPage() {
       </div>
     );
   }
- 
+
   if (loadError) {
     return (
       <div className="min-h-screen bg-[#F5F5F5] flex items-center justify-center px-4" dir="rtl">
@@ -599,16 +540,16 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F5F5] pb-32 dir-rtl" dir="rtl">
+    <div className="min-h-screen bg-[#F5F5F5] pb-32" dir="rtl">
       <Toaster position="top-center" richColors />
-      <div className="h-4"/>
-      
-      <CartHeader 
+      <div className="h-4" />
+
+      <CartHeader
         itemCount={summary.totalItems}
         onClearCart={handleClearCart}
         hasItems={groupedCarts.length > 0}
       />
-      <div className="h-4"/>
+      <div className="h-4" />
 
       {groupedCarts.length > 1 && <NoticeBanner />}
 
@@ -624,7 +565,11 @@ export default function CartPage() {
           <RestaurantCartGroup
             key={restaurant.restaurantId}
             restaurant={restaurant}
-            orderNumber={groupedCarts.length > 1 ? groupedCarts.findIndex(r => r.restaurantId === restaurant.restaurantId) + 1 : 1}
+            orderNumber={
+              groupedCarts.length > 1
+                ? groupedCarts.findIndex(r => r.restaurantId === restaurant.restaurantId) + 1
+                : 1
+            }
             onQuantityChange={handleQuantityChange}
             onRemoveDish={handleRemoveDish}
             onOrderTypeChange={handleOrderTypeChange}
@@ -647,7 +592,7 @@ export default function CartPage() {
           paymentImage={paymentImage}
           onImageSelect={setPaymentImage}
           isDisabled={isSubmitting}
-          orderType={selectedRestaurant?.orderType || 'instant'}
+          orderType={selectedRestaurant?.orderType ?? 'instant'}
         />
       )}
 
@@ -658,10 +603,9 @@ export default function CartPage() {
 
       <CheckoutButton
         totalItems={summary.totalItems}
-        _totalRestaurants={summary.totalRestaurants}
         grandTotal={summary.grandTotal}
-        isDisabled={isCheckoutDisabled}
-        disabledReason={getCheckoutDisabledReason()}
+        isDisabled={!!checkoutDisabledReason}
+        disabledReason={checkoutDisabledReason}
         isSubmitting={isSubmitting}
         onCheckout={handleCheckout}
       />
@@ -681,30 +625,30 @@ export default function CartPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            
+
             <h2 className="text-[22px] font-bold text-[#1A1A1A] mb-2">
               تم الطلب بنجاح! 🎉
             </h2>
-            
+
             <p className="text-[16px] text-[#6B7280] mb-4">
               رقم الطلب: <span className="font-bold text-[#E5A04D]">#{orderSuccess.orderId}</span>
             </p>
-            
+
             <p className="text-[14px] text-[#9CA3AF] mb-6">
               {orderSuccess.isReservation
                 ? 'تم استلام إثبات الدفع. الدفع قيد المراجعة وسنتواصل معك لتأكيد الحجز.'
                 : 'شكراً لك! سيتم التواصل معك قريباً لتأكيد الطلب'}
             </p>
-            
+
             <div className="flex items-center justify-center gap-2 text-[14px] text-[#6B7280]">
               <div className="w-8 h-8 rounded-full bg-[#E5A04D]/10 flex items-center justify-center">
                 <span className="text-[#E5A04D] font-bold">{orderSuccess.countdown}</span>
               </div>
               <span>جاري التحويل إلى الصفحة الرئيسية...</span>
             </div>
-            
+
             <div className="mt-4 h-1 bg-gray-200 rounded-full overflow-hidden">
-              <div 
+              <div
                 className="h-full bg-gradient-to-r from-[#E5A04D] to-[#F8B358] transition-all duration-1000 ease-linear"
                 style={{ width: `${((5 - orderSuccess.countdown) / 5) * 100}%` }}
               />

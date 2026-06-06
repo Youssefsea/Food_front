@@ -19,14 +19,13 @@ import {
   AlertTriangle,
   Utensils,
   Smartphone,
+  ArrowRight,
 } from 'lucide-react';
 import { cn, formatCurrency, getFirstImage } from '@/lib/utils';
 import { LocationData, PaymentMethod as PaymentMethodType, CartSummary, RestaurantCart } from './types';
-import { Modal, Badge, Button,EmptyState } from '@/components/ui';
-import BackButton from '../../components/layout/BackButton'
+import { Modal, Badge, Button, EmptyState } from '@/components/ui';
+import BackButton from '../../components/layout/BackButton';
 
-
-// Custom Leaflet marker icon
 const customIcon = new L.Icon({
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -35,18 +34,20 @@ const customIcon = new L.Icon({
   iconAnchor: [12, 41],
 });
 
-// Re-center map component
-const RecenterMapno = (({ lat, lng }: { lat: number; lng: number }):React.ReactElement | null=> {
+const RecenterMap = memo(({ lat, lng }: { lat: number; lng: number }) => {
   const map = useMap();
   useEffect(() => {
     map.setView([lat, lng], map.getZoom());
   }, [lat, lng, map]);
   return null;
 });
-const RecenterMap = memo(RecenterMapno);
+RecenterMap.displayName = 'RecenterMap';
 
-// Customer marker component
-const CustomerMarkerm = (({ lat, lng, onChange }: { lat: number; lng: number; onChange: (lat: number, lng: number) => void }) => {
+const CustomerMarker = memo(({ lat, lng, onChange }: {
+  lat: number;
+  lng: number;
+  onChange: (lat: number, lng: number) => void;
+}) => {
   useMapEvents({
     click(e) {
       onChange(e.latlng.lat, e.latlng.lng);
@@ -67,21 +68,20 @@ const CustomerMarkerm = (({ lat, lng, onChange }: { lat: number; lng: number; on
     />
   );
 });
-const CustomerMarker = memo(CustomerMarkerm);
+CustomerMarker.displayName = 'CustomerMarker';
 
-const LocationPickerModalm = (({ isOpen, onClose, onSelectLocation, initialLocation }: {
+export const LocationPickerModal = memo(({ isOpen, onClose, onSelectLocation, initialLocation }: {
   isOpen: boolean;
   onClose: () => void;
   onSelectLocation: (location: LocationData) => void;
   initialLocation: LocationData | null;
 }) => {
-  const [currentLat, setCurrentLat] = useState(() => initialLocation?.lat || 30.0444);
-  const [currentLng, setCurrentLng] = useState(() => initialLocation?.lng || 31.2357);
-  const [address, setAddress] = useState<string>(initialLocation?.address || '');
+  const [currentLat, setCurrentLat] = useState(() => initialLocation?.lat ?? 30.0444);
+  const [currentLng, setCurrentLng] = useState(() => initialLocation?.lng ?? 31.2357);
+  const [address, setAddress] = useState<string>(initialLocation?.address ?? '');
   const [isLoadingAddress, setIsLoadingAddress] = useState(false);
   const geocodeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Reverse geocode using OSM Nominatim — free, no API key needed
   const reverseGeocode = useCallback(async (lat: number, lng: number) => {
     setIsLoadingAddress(true);
     try {
@@ -93,12 +93,11 @@ const LocationPickerModalm = (({ isOpen, onClose, onSelectLocation, initialLocat
 
       if (data?.address) {
         const a = data.address;
-        // Build a human-friendly address: road → neighbourhood → suburb → city
         const parts = [
-          a.road || a.pedestrian || a.footway,
-          a.neighbourhood || a.quarter,
-          a.suburb || a.village || a.town,
-          a.city || a.county,
+          a.road ?? a.pedestrian ?? a.footway,
+          a.neighbourhood ?? a.quarter,
+          a.suburb ?? a.village ?? a.town,
+          a.city ?? a.county,
         ].filter(Boolean);
         setAddress(parts.join('، ') || data.display_name || 'موقع محدد');
       } else {
@@ -111,7 +110,6 @@ const LocationPickerModalm = (({ isOpen, onClose, onSelectLocation, initialLocat
     }
   }, []);
 
-  // Debounce geocoding so it fires 600ms after the marker stops moving
   const debouncedGeocode = useCallback((lat: number, lng: number) => {
     if (geocodeTimeoutRef.current) clearTimeout(geocodeTimeoutRef.current);
     geocodeTimeoutRef.current = setTimeout(() => reverseGeocode(lat, lng), 600);
@@ -123,10 +121,10 @@ const LocationPickerModalm = (({ isOpen, onClose, onSelectLocation, initialLocat
     };
   }, []);
 
-  // Geocode on mount if no address yet
   useEffect(() => {
     if (!address) reverseGeocode(currentLat, currentLng);
-  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleMarkerChange = useCallback((lat: number, lng: number) => {
     setCurrentLat(lat);
@@ -136,13 +134,12 @@ const LocationPickerModalm = (({ isOpen, onClose, onSelectLocation, initialLocat
 
   const locateMe = useCallback(() => {
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        setCurrentLat(latitude);
-        setCurrentLng(longitude);
-        reverseGeocode(latitude, longitude);
+      ({ coords }) => {
+        setCurrentLat(coords.latitude);
+        setCurrentLng(coords.longitude);
+        reverseGeocode(coords.latitude, coords.longitude);
       },
-      () => alert("تعذر الوصول لموقعك الحالي")
+      () => alert('تعذر الوصول لموقعك الحالي')
     );
   }, [reverseGeocode]);
 
@@ -173,21 +170,15 @@ const LocationPickerModalm = (({ isOpen, onClose, onSelectLocation, initialLocat
           center={[currentLat, currentLng]}
           zoom={13}
           className="h-full w-full rounded-b-xl"
-          scrollWheelZoom={true}
+          scrollWheelZoom
         >
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           <RecenterMap lat={currentLat} lng={currentLng} />
-          {/* Pass handleMarkerChange instead of direct setters */}
-          <CustomerMarker
-            lat={currentLat}
-            lng={currentLng}
-            onChange={handleMarkerChange}
-          />
+          <CustomerMarker lat={currentLat} lng={currentLng} onChange={handleMarkerChange} />
         </MapContainer>
       </div>
 
       <div className="p-4 space-y-3">
-        {/* Address display */}
         <div className="flex items-start gap-2 bg-[#FFF8F0] rounded-xl p-3 border border-[#E5A04D]/20 min-h-[48px]">
           <MapPin className="w-4 h-4 text-[#FF6B35] mt-0.5 shrink-0" />
           {isLoadingAddress ? (
@@ -199,7 +190,6 @@ const LocationPickerModalm = (({ isOpen, onClose, onSelectLocation, initialLocat
           )}
         </div>
 
-        {/* Coords (subtle) */}
         <p className="text-xs text-gray-400 text-center">
           ({currentLat.toFixed(6)}، {currentLng.toFixed(6)})
         </p>
@@ -220,12 +210,13 @@ const LocationPickerModalm = (({ isOpen, onClose, onSelectLocation, initialLocat
     </Modal>
   );
 });
+LocationPickerModal.displayName = 'LocationPickerModal';
 
-export const LocationPickerModal = memo(LocationPickerModalm);
-
-
-// Cart Header
- const CartHeaderm = (({ itemCount, onClearCart, hasItems }: { itemCount: number; onClearCart: () => void; hasItems: boolean }) => (
+export const CartHeader = memo(({ itemCount, onClearCart, hasItems }: {
+  itemCount: number;
+  onClearCart: () => void;
+  hasItems: boolean;
+}) => (
   <div className="flex items-center justify-between px-5">
     <BackButton />
     <h1 className="text-xl font-bold text-[#1A1A2E] flex items-center gap-2">
@@ -240,21 +231,17 @@ export const LocationPickerModal = memo(LocationPickerModalm);
     )}
   </div>
 ));
-export const CartHeader = memo(CartHeaderm);
+CartHeader.displayName = 'CartHeader';
 
-// Notice Banner
- const NoticeBannerm = (() => (
-  <div className="bg-blue-50 border-blue-200 text-blue-700 px-4 py-3 rounded-xl mx-5 flex items-center gap-3 text-sm">
+export const NoticeBanner = memo(() => (
+  <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-xl mx-5 flex items-center gap-3 text-sm">
     <AlertTriangle className="w-5 h-5 flex-shrink-0" />
-    <span>
-      لديك عناصر من عدة مطاعم. يرجى اختيار مطعم واحد لإتمام الطلب.
-    </span>
+    <span>لديك عناصر من عدة مطاعم. يرجى اختيار مطعم واحد لإتمام الطلب.</span>
   </div>
 ));
+NoticeBanner.displayName = 'NoticeBanner';
 
-export const NoticeBanner = memo(NoticeBannerm);
-// Restaurant Selector
- const RestaurantSelectorm = (({ restaurants, selectedRestaurantId, onSelectRestaurant, hasLocation }: {
+export const RestaurantSelector = memo(({ restaurants, selectedRestaurantId, onSelectRestaurant, hasLocation }: {
   restaurants: RestaurantCart[];
   selectedRestaurantId: number | null;
   onSelectRestaurant: (id: number) => void;
@@ -272,11 +259,11 @@ export const NoticeBanner = memo(NoticeBannerm);
             onClick={() => onSelectRestaurant(r.restaurantId)}
             disabled={!hasLocation}
             className={cn(
-              "flex items-center justify-between p-4 rounded-xl border transition-all",
+              'flex items-center justify-between p-4 rounded-xl border transition-all',
               selectedRestaurantId === r.restaurantId
-                ? "border-[#FF6B35] bg-[#FFF8F0] shadow-sm"
-                : "border-gray-200 bg-white hover:border-gray-300",
-              !hasLocation && "opacity-50 cursor-not-allowed"
+                ? 'border-[#FF6B35] bg-[#FFF8F0] shadow-sm'
+                : 'border-gray-200 bg-white hover:border-gray-300',
+              !hasLocation && 'opacity-50 cursor-not-allowed'
             )}
           >
             <div className="flex items-center gap-3">
@@ -301,19 +288,18 @@ export const NoticeBanner = memo(NoticeBannerm);
     </div>
   );
 });
-export const RestaurantSelector = memo(RestaurantSelectorm);
+RestaurantSelector.displayName = 'RestaurantSelector';
 
-// Cart Item Row
-const CartItemRowm = (({ item, onQuantityChange, onRemoveDish }: {
+export const CartItemRow = memo(({ item, onQuantityChange, onRemoveDish }: {
   item: RestaurantCart['dishes'][0];
   onQuantityChange: (dishId: number, quantity: number) => void;
   onRemoveDish: (dishId: number) => void;
 }) => {
   const image = getFirstImage(item.image);
 
-  const handleIncrement = useCallback(() => onQuantityChange(item.dishId, item.quantity + 1), [item, onQuantityChange]);
-  const handleDecrement = useCallback(() => onQuantityChange(item.dishId, item.quantity - 1), [item, onQuantityChange]);
-  const handleRemove = useCallback(() => onRemoveDish(item.dishId), [item, onRemoveDish]);
+  const handleIncrement = useCallback(() => onQuantityChange(item.dishId, item.quantity + 1), [item.dishId, item.quantity, onQuantityChange]);
+  const handleDecrement = useCallback(() => onQuantityChange(item.dishId, item.quantity - 1), [item.dishId, item.quantity, onQuantityChange]);
+  const handleRemove = useCallback(() => onRemoveDish(item.dishId), [item.dishId, onRemoveDish]);
 
   return (
     <div className="flex items-center gap-3 py-3 border-b border-gray-100 last:border-b-0">
@@ -324,16 +310,16 @@ const CartItemRowm = (({ item, onQuantityChange, onRemoveDish }: {
           <div className="w-full h-full flex items-center justify-center text-2xl opacity-30">🍽️</div>
         )}
       </div>
-      <div className="flex-1">
+      <div className="flex-1 min-w-0">
         <h3 className="text-sm font-semibold text-[#1A1A2E] line-clamp-1">{item.dishName}</h3>
         <p className="text-xs text-[#9CA3AF] line-clamp-1">{item.description}</p>
         <span className="text-sm font-bold text-[#FF6B35]">{formatCurrency(item.price)}</span>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-shrink-0">
         <Button variant="primary" size="sm" onClick={handleDecrement} disabled={item.quantity <= 1}>
           <Minus className="w-4 h-4" />
         </Button>
-        <span className="text-sm font-bold text-[#1A1A2E]">{item.quantity}</span>
+        <span className="text-sm font-bold text-[#1A1A2E] w-5 text-center">{item.quantity}</span>
         <Button variant="outline" size="sm" onClick={handleIncrement}>
           <Plus className="w-4 h-4" />
         </Button>
@@ -344,10 +330,9 @@ const CartItemRowm = (({ item, onQuantityChange, onRemoveDish }: {
     </div>
   );
 });
-export const CartItemRow = memo(CartItemRowm);
+CartItemRow.displayName = 'CartItemRow';
 
-// Restaurant Cart Group
- const RestaurantCartGroupm = (({ restaurant, orderNumber, onQuantityChange, onRemoveDish,onOrderTypeChange,onReservationDateChange,onReservationTimeChange }: {
+export const RestaurantCartGroup = memo(({ restaurant, orderNumber, onQuantityChange, onRemoveDish, onOrderTypeChange, onReservationDateChange, onReservationTimeChange }: {
   restaurant: RestaurantCart;
   orderNumber: number;
   onQuantityChange: (restaurantId: number, dishId: number, quantity: number) => void;
@@ -364,6 +349,9 @@ export const CartItemRow = memo(CartItemRowm);
     onRemoveDish(restaurant.restaurantId, dishId);
   }, [restaurant.restaurantId, onRemoveDish]);
 
+  const isReservation = restaurant.orderType === 'reservation';
+  const hasReservationDateTime = !!restaurant.reservationDate && !!restaurant.reservationTime;
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-4">
       <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-3">
@@ -373,6 +361,7 @@ export const CartItemRow = memo(CartItemRowm);
         </h2>
         <Badge variant="neutral" size="sm">طلب رقم {orderNumber}</Badge>
       </div>
+
       <div className="space-y-2">
         {restaurant.dishes.map(dish => (
           <CartItemRow
@@ -383,48 +372,61 @@ export const CartItemRow = memo(CartItemRowm);
           />
         ))}
       </div>
+
       {restaurant.can_reserve && (
         <div className="mt-4 pt-3 border-t border-gray-100">
           <h3 className="text-sm font-semibold text-[#1A1A2E] mb-2">نوع الطلب</h3>
           <div className="flex gap-2">
             <Button
-              variant={restaurant.orderType === 'instant' ? 'primary' : 'outline'}
+              variant={isReservation ? 'outline' : 'primary'}
               onClick={() => onOrderTypeChange(restaurant.restaurantId, 'instant')}
               size="sm"
             >
               فوري
             </Button>
             <Button
-              variant={restaurant.orderType === 'reservation' ? 'primary' : 'outline'}
+              variant={isReservation ? 'primary' : 'outline'}
               onClick={() => onOrderTypeChange(restaurant.restaurantId, 'reservation')}
               size="sm"
             >
               حجز
             </Button>
           </div>
-          {restaurant.orderType === 'reservation' && (
+
+          {isReservation && (
             <div className="flex gap-2 mt-3">
-              <input type="date" className="p-2 border rounded-md" onChange={(e) => onReservationDateChange(restaurant.restaurantId, e.target.value)} />
-              <input type="time" className="p-2 border rounded-md" onChange={(e) => onReservationTimeChange(restaurant.restaurantId, e.target.value)} />
+              <input
+                type="date"
+                className="p-2 border rounded-md text-sm flex-1"
+                value={restaurant.reservationDate}
+                onChange={(e) => onReservationDateChange(restaurant.restaurantId, e.target.value)}
+              />
+              <input
+                type="time"
+                className="p-2 border rounded-md text-sm flex-1"
+                value={restaurant.reservationTime}
+                onChange={(e) => onReservationTimeChange(restaurant.restaurantId, e.target.value)}
+              />
             </div>
           )}
-          {restaurant.orderType === 'reservation' && (!restaurant.reservationDate || !restaurant.reservationTime) && (
+
+          {isReservation && !hasReservationDateTime && (
             <p className="text-sm text-red-500 mt-2">يرجى تحديد تاريخ ووقت الحجز.</p>
           )}
-          {restaurant.orderType === 'reservation' && restaurant.reservationDate && restaurant.reservationTime && (
-            <p className="text-sm text-green-500 mt-2">تم تحديد الحجز ليوم {restaurant.reservationDate} في تمام {restaurant.reservationTime}.</p>
-          )
-          }
-          
+
+          {isReservation && hasReservationDateTime && (
+            <p className="text-sm text-green-500 mt-2">
+              تم تحديد الحجز ليوم {restaurant.reservationDate} في تمام {restaurant.reservationTime}.
+            </p>
+          )}
         </div>
       )}
     </div>
   );
 });
-export const RestaurantCartGroup = memo(RestaurantCartGroupm);
+RestaurantCartGroup.displayName = 'RestaurantCartGroup';
 
-// Delivery Location
- const DeliveryLocationm = (({ location, onOpenLocationPicker }: {
+export const DeliveryLocation = memo(({ location, onOpenLocationPicker }: {
   location: LocationData | null;
   onOpenLocationPicker: () => void;
 }) => (
@@ -443,9 +445,9 @@ export const RestaurantCartGroup = memo(RestaurantCartGroupm);
     </p>
   </div>
 ));
-export const DeliveryLocation = memo(DeliveryLocationm);
+DeliveryLocation.displayName = 'DeliveryLocation';
 
-const PaymentMethodm = (({ paymentMethod, setPaymentMethod, grandTotal, paymentImage, onImageSelect, isDisabled, orderType = 'instant' }: {
+export const PaymentMethod = memo(({ paymentMethod, setPaymentMethod, grandTotal: _grandTotal, paymentImage, onImageSelect, isDisabled, orderType = 'instant' }: {
   paymentMethod: PaymentMethodType;
   setPaymentMethod: (method: PaymentMethodType) => void;
   grandTotal: number;
@@ -455,13 +457,27 @@ const PaymentMethodm = (({ paymentMethod, setPaymentMethod, grandTotal, paymentI
   orderType?: 'instant' | 'reservation';
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const previewUrlRef = useRef<string | null>(null);
   const isReservation = orderType === 'reservation';
+  const needsProof = isReservation && (paymentMethod === 'vodafone_cash' || paymentMethod === 'instapay');
 
-  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
+  const previewUrl = paymentImage ? URL.createObjectURL(paymentImage) : null;
+
+  useEffect(() => {
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+    }
+    previewUrlRef.current = previewUrl;
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.[0]) {
       onImageSelect(e.target.files[0]);
     }
-  }, [onImageSelect]);
+  };
 
   const triggerFileInput = useCallback(() => {
     fileInputRef.current?.click();
@@ -472,8 +488,6 @@ const PaymentMethodm = (({ paymentMethod, setPaymentMethod, grandTotal, paymentI
     if (fileInputRef.current) fileInputRef.current.value = '';
   }, [onImageSelect]);
 
-  const needsProof = isReservation && (paymentMethod === 'vodafone_cash' || paymentMethod === 'instapay');
-
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mx-5 mb-4">
       <h2 className="text-base font-bold text-[#1A1A2E] flex items-center gap-2 mb-3">
@@ -483,7 +497,6 @@ const PaymentMethodm = (({ paymentMethod, setPaymentMethod, grandTotal, paymentI
 
       {isReservation ? (
         <>
-          {/* Payment Method Buttons */}
           <div className="grid grid-cols-2 gap-3 mb-4">
             <Button
               variant={paymentMethod === 'vodafone_cash' ? 'primary' : 'outline'}
@@ -505,14 +518,12 @@ const PaymentMethodm = (({ paymentMethod, setPaymentMethod, grandTotal, paymentI
             </Button>
           </div>
 
-          {/* Payment Proof Upload — shown when a method is selected */}
           {needsProof && (
             <div className="mt-2">
               <p className="text-sm font-medium text-[#1A1A2E] mb-2">
                 صورة تأكيد الدفع <span className="text-red-500">*</span>
               </p>
 
-              {/* Hidden file input */}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -522,11 +533,10 @@ const PaymentMethodm = (({ paymentMethod, setPaymentMethod, grandTotal, paymentI
                 disabled={isDisabled}
               />
 
-              {paymentImage ? (
-                /* Preview selected image */
+              {paymentImage && previewUrl ? (
                 <div className="relative h-40 rounded-xl overflow-hidden border border-[#E5A04D]/40 bg-[#FFF8F0]">
                   <Image
-                    src={URL.createObjectURL(paymentImage)}
+                    src={previewUrl}
                     alt="تأكيد الدفع"
                     fill
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
@@ -556,7 +566,6 @@ const PaymentMethodm = (({ paymentMethod, setPaymentMethod, grandTotal, paymentI
                   </div>
                 </div>
               ) : (
-                /* Upload button */
                 <button
                   onClick={triggerFileInput}
                   disabled={isDisabled}
@@ -573,24 +582,20 @@ const PaymentMethodm = (({ paymentMethod, setPaymentMethod, grandTotal, paymentI
           )}
         </>
       ) : (
-        /* Delivery: Cash on delivery only */
         <div className="p-3 bg-[#FFF8F0] rounded-lg border border-[#E5A04D]/20">
           <div className="flex items-center gap-2 text-[#1A1A2E]">
             <Banknote className="w-5 h-5 text-[#E5A04D]" />
             <span className="font-medium">الدفع عند الاستلام (كاش)</span>
           </div>
-          <p className="text-xs text-[#6B7280] mt-1">
-            سيتم الدفع نقداً عند استلام الطلب
-          </p>
+          <p className="text-xs text-[#6B7280] mt-1">سيتم الدفع نقداً عند استلام الطلب</p>
         </div>
       )}
     </div>
   );
 });
-export const PaymentMethod = memo(PaymentMethodm);
+PaymentMethod.displayName = 'PaymentMethod';
 
-// Order Summary
- const OrderSummarym = (({ summary, restaurants }: {
+export const OrderSummary = memo(({ summary, restaurants }: {
   summary: CartSummary;
   restaurants: RestaurantCart[];
 }) => (
@@ -617,13 +622,10 @@ export const PaymentMethod = memo(PaymentMethodm);
     </div>
   </div>
 ));
-export const OrderSummary = memo(OrderSummarym);
+OrderSummary.displayName = 'OrderSummary';
 
-
-// Checkout Button
-const CheckoutButtonm = (({ totalItems, grandTotal, isDisabled, disabledReason, _totalRestaurants ,isSubmitting, onCheckout }: {
+export const CheckoutButton = memo(({ totalItems, grandTotal, isDisabled, disabledReason, isSubmitting, onCheckout }: {
   totalItems: number;
-  _totalRestaurants: number;
   grandTotal: number;
   isDisabled: boolean;
   disabledReason: string;
@@ -641,32 +643,41 @@ const CheckoutButtonm = (({ totalItems, grandTotal, isDisabled, disabledReason, 
       ) : (
         <Fragment>
           <ShoppingCart className="w-4 h-4" />
-          <span>
-            إتمام الطلب ({totalItems} صنف) — {formatCurrency(grandTotal)}
-          </span>
+          <span>إتمام الطلب ({totalItems} صنف) — {formatCurrency(grandTotal)}</span>
         </Fragment>
       )}
     </Button>
-    {isDisabled && !isSubmitting && (
+    {isDisabled && !isSubmitting && disabledReason && (
       <p className="text-red-500 text-xs text-center mt-2">{disabledReason}</p>
     )}
   </div>
 ));
-export const CheckoutButton = memo(CheckoutButtonm);
+CheckoutButton.displayName = 'CheckoutButton';
 
-// Empty Cart State
- const EmptyCartm = (() => {
+export const EmptyCart = memo(() => {
   const router = useRouter();
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA]" dir="rtl">
-      <EmptyState
-        icon="🛒"
-        title="سلة المشتريات فارغة"
-        description="ابدأ بتصفح المطاعم وإضافة أطباقك المفضلة."
-        actionLabel="تصفح المطاعم"
-        onAction={() => router.push('/explore')}
-      />
+    <div className="min-h-screen bg-[#FAFAFA]" dir="rtl">
+      <div className="px-4 pt-5 pb-2">
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-2 text-[#6B7280] hover:text-[#1A1A2E] transition-colors"
+        >
+          <ArrowRight className="w-5 h-5" />
+          <span className="text-sm font-medium">رجوع</span>
+        </button>
+      </div>
+      <div className="flex items-center justify-center" style={{ minHeight: 'calc(100vh - 72px)' }}>
+        <EmptyState
+          icon="🛒"
+          title="سلة المشتريات فارغة"
+          description="ابدأ بتصفح المطاعم وإضافة أطباقك المفضلة."
+          actionLabel="تصفح المطاعم"
+          onAction={() => router.push('/explore')}
+        />
+      </div>
     </div>
   );
 });
-export const EmptyCart = memo(EmptyCartm);
+EmptyCart.displayName = 'EmptyCart';
