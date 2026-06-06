@@ -68,12 +68,10 @@ export default function OrdersPage() {
     }
   }, [mounted]);
 
-  // Mount guard - fix for first-visit data loading bug
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Initial fetch
   useEffect(() => {
     if (!mounted) return;
     const controller = new AbortController();

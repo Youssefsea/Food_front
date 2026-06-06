@@ -41,6 +41,12 @@ export function OrderCard({ order, onStatusChange, onViewDetails, onCancel, onCh
               📅 حجز
             </span>
           )}
+          {order.is_reservation==false && (
+              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 flex items-center gap-1">
+              🛍️ طلب فوري
+            </span>
+          )}
+
 
           <span className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
             <Clock className="w-3.5 h-3.5 flex-shrink-0" />
@@ -119,7 +125,7 @@ export function OrderCard({ order, onStatusChange, onViewDetails, onCancel, onCh
             <span className="line-clamp-2 leading-relaxed">{order.location || 'العنوان غير محدد'}</span>
           </div>
 
-          {order.payment_status === 'confirmed' ? (
+          {order.payment_status === 'confirmed' && order.is_reservation === true ? (
             <div className="bg-emerald-50 text-emerald-600 border border-emerald-100 px-3 py-1.5 rounded-lg text-xs font-bold text-center">
               ✓ تم الدفع بنجاح
             </div>
