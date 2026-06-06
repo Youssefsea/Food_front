@@ -125,11 +125,13 @@ export function OrderCard({ order, onStatusChange, onViewDetails, onCancel, onCh
             <span className="line-clamp-2 leading-relaxed">{order.location || 'العنوان غير محدد'}</span>
           </div>
 
-          {order.payment_status === 'confirmed' && order.is_reservation === true ? (
+          {order.payment_status === 'confirmed' && order.is_reservation === true && (
             <div className="bg-emerald-50 text-emerald-600 border border-emerald-100 px-3 py-1.5 rounded-lg text-xs font-bold text-center">
               ✓ تم الدفع بنجاح
             </div>
-          ) : (
+          ) }
+
+          {order.payment_status !== 'confirmed' && order.is_reservation === true && (
             <div className="bg-amber-50 text-amber-600 border border-amber-100 px-3 py-1.5 rounded-lg text-xs font-bold text-center flex items-center justify-center gap-1.5">
               <span className="animate-pulse">⏳</span> في انتظار الدفع
             </div>
