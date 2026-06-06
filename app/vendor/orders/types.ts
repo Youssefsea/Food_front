@@ -22,6 +22,7 @@ export interface Order {
   customer_name: string;
   customer_phone: string;
   customer_email: string;
+  chat_room_id:number;
   items: OrderItem[];
 }
 

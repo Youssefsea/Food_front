@@ -252,7 +252,7 @@ export function OrderCard({ order, onStatusChange, onViewDetails, onCancel }: Or
           {/* Action Buttons (Unified responsive layout) */}
           <div className="grid grid-cols-2 md:flex items-center gap-2">
             {showChatButton && 
-<Link href={`/vendor/chat/${order.id}`} passHref>
+<Link href={`/vendor/chat/${order.chat_room_id}`} passHref>
   <button className="py-2.5 px-3 bg-white border border-purple-200 text-purple-600 hover:bg-purple-50 rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-sm">
     <MessageCircle className="w-4 h-4" />
     <span>محادثة</span>
