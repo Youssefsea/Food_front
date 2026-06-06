@@ -3,17 +3,17 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { Clock, MapPin, Phone, MoreVertical, Eye, X, ChevronDown, MessageCircle } from 'lucide-react';
-import { Order, OrderStatus, statusConfig } from '../types';
-
+import { Order, OrderStatus, statusConfig } from '../types'
+import Link from "next/link";
 interface OrderCardProps {
   order: Order;
   onStatusChange: (orderId: number, status: OrderStatus) => void;
   onViewDetails: (order: Order) => void;
   onCancel: (orderId: number) => void;
-  onChatClick?: (orderId: number, customerName: string) => void;
+ 
 }
 
-export function OrderCard({ order, onStatusChange, onViewDetails, onCancel, onChatClick }: OrderCardProps) {
+export function OrderCard({ order, onStatusChange, onViewDetails, onCancel }: OrderCardProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
 
@@ -251,15 +251,14 @@ export function OrderCard({ order, onStatusChange, onViewDetails, onCancel, onCh
 
           {/* Action Buttons (Unified responsive layout) */}
           <div className="grid grid-cols-2 md:flex items-center gap-2">
-            {showChatButton && onChatClick && (
-              <button
-                onClick={() => onChatClick(order.id, order.customer_name || 'عميل')}
-                className="py-2.5 px-3 bg-white border border-purple-200 text-purple-600 hover:bg-purple-50 rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-sm"
-              >
-                <MessageCircle className="w-4 h-4" />
-                <span>محادثة</span>
-              </button>
-            )}
+            {showChatButton && 
+<Link href={`/vendor/chat/${order.id}`} passHref>
+  <button className="py-2.5 px-3 bg-white border border-purple-200 text-purple-600 hover:bg-purple-50 rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-sm">
+    <MessageCircle className="w-4 h-4" />
+    <span>محادثة</span>
+  </button>
+</Link>
+}
             <button
               onClick={() => onViewDetails(order)}
               className="py-2.5 px-3 bg-white border border-gray-200 text-gray-700 hover:border-orange-300 hover:text-orange-600 hover:bg-orange-50 rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-sm"

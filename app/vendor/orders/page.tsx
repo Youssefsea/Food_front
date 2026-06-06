@@ -5,6 +5,7 @@ import { Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 import api from '@/lib/api';
 import Cookies from 'js-cookie';
 import { Order, OrderStatus, OrdersStats as StatsType } from './types';
+import Link from "next/link";
 import {
   OrderCard,
   OrderDetailsModal,
@@ -14,6 +15,7 @@ import {
   VendorChatModal,
 } from './components';
 import { ProtectedRoute } from '@/app/context/AuthContext';
+import { link } from 'fs/promises';
 
 export default function OrdersPage() {
   const [mounted, setMounted] = useState(false);
@@ -152,7 +154,8 @@ export default function OrdersPage() {
   const handleChatClick = (orderId: number, customerName: string) => {
     setSelectedOrderIdForChat(orderId);
     setSelectedCustomerName(customerName);
-    setIsChatOpen(true);
+
+   
   };
 
   const handleCloseChat = () => {
@@ -233,7 +236,7 @@ export default function OrdersPage() {
                   onStatusChange={handleStatusChange}
                   onViewDetails={handleViewDetails}
                   onCancel={handleCancelOrder}
-                  onChatClick={handleChatClick}
+                 
                 />
                 <div className="h-5"/>
               </div>
