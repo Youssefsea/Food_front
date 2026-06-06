@@ -59,6 +59,7 @@ export function OrderCard({ order, onStatusChange, onViewDetails, onCancel, onCh
             className="px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold flex items-center gap-1.5 whitespace-nowrap shadow-sm"
             style={{ backgroundColor: statusInfo.bg, color: statusInfo.color }}
           >
+            <span>{statusInfo.label}</span>
             <span>{statusInfo.icon}</span>
             <span className="hidden xs:inline">{statusInfo.label}</span>
           </span>
