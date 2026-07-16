@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+:root {
+  --font-arabic: "Cairo", "Noto Sans Arabic", system-ui, sans-serif;
+  --bg-primary: #fff8f0;
+  --text-primary: #1a1a2e;
+  --text-secondary: #6b7280;
+  --gradient-primary: linear-gradient(135deg, #ff6b35, #e63946);
+}
+
+html {
+  direction: rtl;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-arabic);
+}
+
+.gradient-primary {
+  background: var(--gradient-primary);
+}
+
+.glass {
+  @apply border border-white/20 bg-white/10 backdrop-blur-md;
+}
