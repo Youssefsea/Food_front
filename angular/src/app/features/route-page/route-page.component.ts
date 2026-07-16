@@ -1,5 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { PAGE_DATA } from './page-data';
 import { UiButtonComponent } from '../../shared/ui/ui-button.component';
 import { UiCardComponent } from '../../shared/ui/ui-card.component';
@@ -10,7 +10,7 @@ import { UiModalComponent } from '../../shared/ui/ui-modal.component';
 @Component({
   selector: 'app-route-page',
   standalone: true,
-  imports: [RouterLink, UiButtonComponent, UiCardComponent, UiBadgeComponent, UiInputComponent, UiModalComponent],
+  imports: [UiButtonComponent, UiCardComponent, UiBadgeComponent, UiInputComponent, UiModalComponent],
   template: `
     <section class="mx-auto max-w-6xl space-y-6 px-4 py-8 md:px-8">
       <header class="rounded-3xl gradient-primary p-6 text-white shadow-lg">
