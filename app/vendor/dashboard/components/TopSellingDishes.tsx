@@ -2,6 +2,7 @@
 
 import { ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
+import Link from "next/link";
 
 interface Dish {
   id: number;
@@ -22,13 +23,19 @@ export function TopSellingDishes({ dishes }: TopSellingDishesProps) {
 
   return (
     <section className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-[#1A1A1A]">الأطباق الأكثر مبيعاً</h2>
-        <button className="flex items-center gap-2 text-[#E5A04D] hover:text-[#D4903D] transition-colors">
-          <span className="text-sm font-medium">عرض الكل</span>
-          <ArrowLeft className="w-4 h-4" />
-        </button>
-      </div>
+   <div className="flex items-center justify-between">
+  <h2 className="text-xl font-bold text-[#1A1A1A]">
+    الأطباق الأكثر مبيعاً
+  </h2>
+
+  <Link
+    href="/vendor/dishes"
+    className="flex items-center gap-2 text-[#E5A04D] hover:text-[#D4903D] transition-colors"
+  >
+    <span className="text-sm font-medium">عرض الكل</span>
+    <ArrowLeft className="w-4 h-4" />
+  </Link>
+</div>
 
       {topDishes.length === 0 ? (
         <div className="bg-white rounded-2xl p-8 text-center">
