@@ -36,8 +36,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9001617720284522"
-     crossorigin="anonymous"></script>
+     <Script
+  id="adsense-script"
+  async
+  strategy="afterInteractive"
+  src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9001617720284522"
+  crossOrigin="anonymous"
+/>
       </head>
       <body className={cairo.variable}>
         <AnimatedLayout>
