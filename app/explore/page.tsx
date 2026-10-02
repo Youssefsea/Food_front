@@ -303,17 +303,20 @@ export default function ExplorePage() {
       });
 
       if (res.data.nearby_restaurants?.length > 0) {
-        const nearbyIds = new Set<number>(
-          res.data.nearby_restaurants.map(
-            (r: { restaurant_id?: number; id: number }) => r.restaurant_id ?? r.id,
-          ),
-        );
-        setNearbyRestaurantIds(nearbyIds);
-        setNearbyOnly(true);
-      } else {
-        setNearbyRestaurantIds(new Set());
-        setNearbyOnly(false);
-      }
+  const nearbyIds = new Set<number>(
+    res.data.nearby_restaurants.map(
+      (r: { restaurant_id?: number; id: number }) =>
+        r.restaurant_id ?? r.id,
+    ),
+  );
+
+  setNearbyRestaurantIds(nearbyIds);
+  setNearbyOnly(true);
+} else {
+  // Keep the nearby filter active even when there are no nearby restaurants
+  setNearbyRestaurantIds(new Set());
+  setNearbyOnly(true);
+}
     } catch {
       setNearbyRestaurantIds(new Set());
     }
@@ -598,30 +601,30 @@ export default function ExplorePage() {
             </div>
           ) : (
             <EmptyState
-              icon="🔍"
-              title="لا توجد مطاعم"
-              description={
-                nearbyOnly
-                  ? 'لا توجد مطاعم قريبة حالياً. جرّب توسيع نطاق البحث.'
-                  : searchQuery
-                    ? 'جرب كلمات بحث مختلفة'
-                    : 'لم نجد مطاعم بهذه الفلاتر'
-              }
-              actionLabel={
-                nearbyOnly
-                  ? 'عرض كل المطاعم'
-                  : activeFiltersCount > 0
-                    ? 'مسح الفلاتر'
-                    : undefined
-              }
-              onAction={
-                nearbyOnly
-                  ? () => setNearbyOnly(false)
-                  : activeFiltersCount > 0
-                    ? clearAllFilters
-                    : undefined
-              }
-            />
+  icon={nearbyOnly ? '📍' : '🔍'}
+  title={nearbyOnly ? 'لا توجد مطاعم قريبة منك' : 'لا توجد مطاعم'}
+  description={
+    nearbyOnly
+      ? 'لم نجد أي مطاعم ضمن النطاق القريب من موقعك الحالي.'
+      : searchQuery
+        ? 'جرب كلمات بحث مختلفة'
+        : 'لم نجد مطاعم بهذه الفلاتر'
+  }
+  actionLabel={
+    nearbyOnly
+      ? undefined
+      : activeFiltersCount > 0
+        ? 'مسح الفلاتر'
+        : undefined
+  }
+  onAction={
+    nearbyOnly
+      ? undefined
+      : activeFiltersCount > 0
+        ? clearAllFilters
+        : undefined
+  }
+/>
           )}
 
           {/* Loading more skeleton */}
